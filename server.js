@@ -59,7 +59,9 @@ function isAuthenticated(req, res, next) {
 
 // Startseite
 app.get('/', (req, res) => {
-  res.render('start', { user: req.session.user });
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('start', { user: req.session.user, username, from });
 });
 
 // Registrierung
@@ -87,7 +89,7 @@ app.post('/register', async (req, res) => {
           });
 
         req.session.user = { id: userId, username, email };
-        res.redirect(`/profile/${username}`);
+        res.redirect(`/?from=register`);
       }
     );
   } catch (e) {
@@ -110,7 +112,7 @@ app.post('/login', (req, res) => {
     if (!valid) return res.render('login', { error: 'Ungültige Anmeldedaten.' });
 
     req.session.user = { id: user.id, username: user.username, email: user.email };
-    res.redirect(`/profile/${user.username}`);
+    res.redirect(`/?from=login`);
   });
 });
 

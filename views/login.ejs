@@ -1,22 +1,32 @@
-<!DOCTYPE html>
-<html lang="de">
+<!DOCTYPE html> 
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Login</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8" />
+    <meta property="og:type" content="website" />
+    <meta name="robots" content="index, follow" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/login.css" />
+    <title>Velink - Login</title>
 </head>
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/elements/cookies.css') }}" />
 <body>
-  <h1>Login</h1>
+    <div class="login_container"> 
+        <div class="login_window">
+            <h2>Login</h2>
+            <form id="Form" action="/login" method="Post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <label for="email">Username:</label>
+                <input autocomplete="off" type="text" id="username" name="username" required />
 
-  <% if (error) { %>
-    <p style="color: red;"><%= error %></p>
-  <% } %>
+                <label for="password">Password:</label>
+                <input autocomplete="off" type="password" id="password" name="password" required minlength="8" />
 
-  <form method="POST" action="/login">
-    <label>Benutzername: <input type="text" name="username" required></label><br>
-    <label>Passwort: <input type="password" name="password" required></label><br>
-    <button type="submit">Einloggen</button>
-  </form>
-
-  <p><a href="/register">Noch kein Konto? Jetzt registrieren</a></p>
+                <button type="submit">Login</button>
+                <p><a href="/register">Don't have an account yet?</a></p>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

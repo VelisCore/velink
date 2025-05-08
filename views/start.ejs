@@ -1,18 +1,306 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Startseite</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Velink – Coming Soon</title>
+  <link rel="icon" href="https://link.velis.me/icon.iconset/icon_256x256@2x.png" type="image/png">
+  <meta name="description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
+  <meta name="keywords" content="Velink, Linktree alternative, customizable links, online presence, minimal design">
+  <meta name="author" content="Velis">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Velink – Coming Soon">
+  <meta property="og:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
+  <meta property="og:image" content="https://link.velis.me/icon.iconset/icon_256x256@2x.png">
+  <meta property="og:url" content="https://link.velis.me">
+  <meta property="og:type" content="website">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3166078894407448" crossorigin="anonymous"></script>
+  <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"></noscript>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+  <meta name="twitter:title" content="Velink – Coming Soon">
+  <meta name="twitter:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
+  <meta name="twitter:image" content="https://link.velis.me/icon.iconset/icon_256x256@2x.png">
+  <meta name="twitter:card" content="https://link.velis.me/icon.iconset/icon_256x256@2x.png">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Velink",
+      "url": "https://link.velis.me",
+      "description": "Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Velis",
+        "logo": "https://link.velis.me/icon.iconset/icon_256x256@2x.png"
+      }
+    }
+  </script>
+  <link href="css/styles.css" rel="stylesheet" />
+  <link href="css/timeline.css" rel="stylesheet" />
+  <link href="css/contact.css" rel="stylesheet" />
+  <link href="css/pricing.css" rel="stylesheet" />
+  <link href="css/confetti.css" rel="stylesheet" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
 </head>
 <body>
-  <h1>Willkommen <%= user ? user.username : 'Gast' %>!</h1>
+  <nav>
+    <div class="logo">Velink</div>
+    <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#early-access">Early Access</a></li>
+      <li>
+        <% if (user) { %>
+          <a href="/profile/<%= user.username %>" class="nav-avatar">
+            <img src="<%= user.profileImage || 'https://avatars.githubusercontent.com/u/158351052?v=4' %>" alt="Profile Picture" />
+          </a>
+        <% } else { %>
+          <a href="/login" class="login-button">Login</a>
+        <% } %>
+      </li>
+    </ul>
+  </nav>
 
-  <% if (user) { %>
-    <p><a href="/profile/<%= user.username %>">Profil anzeigen</a></p>
-    <p><a href="/logout">Logout</a></p>
-  <% } else { %>
-    <p><a href="/login">Login</a></p>
-    <p><a href="/register">Registrieren</a></p>
+  <% if (user && from === 'register') { %>
+    <div id="confetti-container"></div>
+    <script src="js/confetti.js"></script>
   <% } %>
+
+  <section class="hero">
+    <h1>
+      <% if (user) { %>
+        Welcome, <%= user.username %>
+      <% } else { %>
+        Simplify Your Online Presence
+      <% } %>
+    </h1>
+  
+    <p>Velink is a minimalist, customizable alternative to Linktree – launching soon.</p>
+  
+    <% if (user) { %>
+      <a href="/profile/<%= username %>" class="cta-button">View your Profile</a>
+      <a onclick="sharePage()" class="cta-button2">Share</a>
+    <% } else { %>
+      <a href="/login" class="cta-button">Claim Your Link</a>
+      <a href="/profile/wfxey" class="cta-button2">Example</a>
+    <% } %>
+  </section>
+  
+
+  <section id="features" class="features-carousel">
+    <div class="carousel-track">
+      <div class="feature"><h3>🚀 Minimal & Modern</h3><p>Clean design that puts your links front and center – no clutter, just utility.</p></div>
+      <div class="feature"><h3>🎨 Custom Profiles</h3><p>Choose your name, colors, and soon – styles! Make your page truly yours.</p></div>
+      <div class="feature"><h3>📱 Mobile-Ready</h3><p>Optimized for mobile and desktop. Share your links anywhere, beautifully.</p></div>
+      <div class="feature"><h3>🔗 Easy Link Manager</h3><p>Use a simple dashboard to control what your visitors see – anytime.</p></div>
+      <div class="feature"><h3>🌐 Share Anywhere</h3><p>Send one link to rule them all – across all platforms.</p></div>
+      <div class="feature"><h3>🧩 Widget Support</h3><p>Widgets and extensions coming soon for advanced users.</p></div>
+      <div class="feature"><h3>📊 Analytics</h3><p>See which links get clicks and when – with lightweight stats.</p></div>
+      <div class="feature"><h3>🔒 Privacy-First</h3><p>We respect your data – no tracking, no profiling.</p></div>
+    </div>
+  </section>
+  
+  <section id="pricing" class="pricing-section">
+    <div class="pricing-header">
+      <h2>Choose Your Plan</h2>
+      <p>Simple. Transparent. Fair.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-title">Free</div>
+        <div class="pricing-price">€0</div>
+        <div class="pricing-description">Minimal ads, full functionality</div>
+        <ul class="pricing-features">
+          <li>🌐 Custom link</li>
+          <li>🎨 Basic themes</li>
+          <li>🧩 Link manager</li>
+          <li>📢 Subtle advertising</li>
+        </ul>
+        <button class="pricing-button">Start for free</button>
+      </div>
+  
+      <div class="pricing-card featured">
+        <div class="badge">Recommended</div>
+        <div class="pricing-title">Standard</div>
+        <div class="pricing-price">€3.99</div>
+        <div class="pricing-description">For creatives & professionals</div>
+        <ul class="pricing-features">
+          <li>🚫 No ads</li>
+          <li>📊 Analytics</li>
+          <li>🎨 Custom styles (coming soon)</li>
+          <li>⚙️ All Free features</li>
+        </ul>
+        <button class="pricing-button featured-btn">Choose Standard</button>
+      </div>
+  
+      <div class="pricing-card">
+        <div class="pricing-title">Premium</div>
+        <div class="pricing-price">€8.99</div>
+        <div class="pricing-description">Maximum control & support</div>
+        <ul class="pricing-features">
+          <li>🧩 Widget support</li>
+          <li>💬 Priority support</li>
+          <li>🚀 Early access to new tools</li>
+          <li>⚙️ All Standard features</li>
+        </ul>
+        <button class="pricing-button">Activate Premium</button>
+      </div>
+    </div>
+  </section>  
+
+  <section id="early-access" class="early-access-section">
+    <div class="timeline-header">
+      <h2>Want Early Access?</h2>
+      <p>
+        Join our <a href="https://discord.gg/NGUy2WBb?event=1368257511681163285" target="_blank">Discord</a>
+        to be among the first to try Velink!
+      </p>
+    </div>
+  
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-content left animate">
+          <h3>📢 Announcement</h3>
+          <p>Project revealed live in Discord event.</p>
+          <span>April 2025</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-content right animate">
+          <h3>🧪 Closed Beta</h3>
+          <p>First community testers explore early build.</p>
+          <span>May 2025</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-content left animate">
+          <h3>📬 Feedback Phase</h3>
+          <p>Bug reports and feature feedback welcome.</p>
+          <span>June 2025</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-content right animate">
+          <h3>🚀 Public Beta</h3>
+          <p>Open access begins, everyone can join.</p>
+          <span>July 2025</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-content right animate">
+          <h3>🎉 Official Release</h3>
+          <p>Launch complete. Feedback loop remains open.</p>
+          <span>August 2025</span>
+        </div>
+      </div>
+    </div>
+    
+  </section>
+
+  <section id="contact" class="contact-section">
+    <div class="container">
+      <h2>Contact Us</h2>
+      <p>Have questions or want to collaborate? We’d love to hear from you.</p>
+  
+      <div class="contact-details">
+        <div class="contact-item">
+          <i class="bi bi-envelope-fill"></i>
+          <a href="mailto:mail@velis.me">mail@velis.me</a>
+        </div>
+        <div class="contact-item">
+          <i class="bi bi-discord"></i>
+          <a href="https://discord.gg/mrgg7vuF48" target="_blank">Join us on Discord</a>
+        </div>
+        <div class="contact-item">
+          <i class="bi bi-globe2"></i>
+          <a href="https://velis.me" target="_blank">https://velis.me</a>
+        </div>
+      </div>
+    </div>
+  </section>  
+
+  <script>
+    function sharePage() {
+      if (navigator.share) {
+        navigator.share({
+          title: 'Velink – Your Linktree Alternative',
+          text: 'Schau dir das an!',
+          url: window.location.href,
+        })
+        .then(() => console.log('Erfolgreich geteilt'))
+        .catch((error) => console.error('Fehler beim Teilen:', error));
+      } else {
+        alert('Teilen wird von deinem Browser nicht unterstützt.');
+      }
+    }
+    </script>
+
+  <script>
+    window.addEventListener('resize', function() {
+      updateTimelineClasses();
+    });
+    
+    function updateTimelineClasses() {
+      const timelineItems = document.querySelectorAll('.timeline-item');
+      
+      timelineItems.forEach(item => {
+        const content = item.querySelector('.timeline-content');
+        
+        if (window.innerWidth <= 768) {
+          content.classList.remove('right');
+          content.classList.add('left');
+        } else {
+          content.classList.remove('left');
+          content.classList.add('right');
+        }
+      });
+    }
+    
+    updateTimelineClasses();
+    
+  </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const elements = document.querySelectorAll(".timeline-content");
+  
+      function animateOnScroll() {
+        const scrollTop = window.pageYOffset;
+        const windowHeight = window.innerHeight;
+  
+        elements.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const offsetTop = scrollTop + rect.top;
+          if (scrollTop + windowHeight > offsetTop + 100) {
+            el.classList.add("visible");
+          }
+        });
+      }
+  
+      window.addEventListener("scroll", animateOnScroll);
+      animateOnScroll();
+    });
+  </script>
+
+  <footer>
+    &copy; 2025 Velis – Crafted with ♥ by Velis
+    <p></p>
+    <iframe title="Velis Services Health" src="https://status.velis.me/badge?theme=light" width="175.55" height="40" frameborder="0" scrolling="no" style="color-scheme: normal"></iframe>
+
+  </footer>
+
+  <script>
+    const toggleButton = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+  
+    toggleButton.addEventListener('click', () => {
+      navLinks.classList.toggle('show');
+    });
+  </script>
 </body>
 </html>

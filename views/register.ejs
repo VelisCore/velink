@@ -1,23 +1,39 @@
-<!DOCTYPE html>
-<html lang="de">
+<!DOCTYPE html> 
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Registrieren</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8" />
+    <meta property="og:type" content="website" />
+    <meta name="robots" content="index, follow" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/register.css" />
+    <title>Velink - Register</title>
 </head>
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/elements/cookies.css') }}" />
 <body>
-  <h1>Registrieren</h1>
+    <div class="login_container"> 
+        <div class="login_window">
+            <h2>Register</h2>
+            <form method="POST" action="/register"></form>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-  <% if (error) { %>
-    <p style="color: red;"><%= error %></p>
-  <% } %>
+                <label for="email">Username:</label>
+                <input autocomplete="off" type="text" id="username" name="username" required />
 
-  <form method="POST" action="/register">
-    <label>Benutzername: <input type="text" name="username" required></label><br>
-    <label>E-Mail: <input type="email" name="email" required></label><br>
-    <label>Passwort: <input type="password" name="password" required></label><br>
-    <button type="submit">Registrieren</button>
-  </form>
+                <label>E-Mail:</label>
+                <input type="email" name="email" required>
 
-  <p><a href="/login">Bereits registriert? Zum Login</a></p>
+                <label for="password">Password:</label>
+                <input autocomplete="off" type="password" id="password" name="password" required minlength="8" />
+
+                <button type="submit">Login</button>
+                <p><a href="/login">Already have got an account?</a></p>
+            </form>
+        </div>
+    </div>
+    <div class="footer-powered-by">
+      <a href="/">Powered by <strong>Velink</strong></a>
+    </div>    
 </body>
 </html>

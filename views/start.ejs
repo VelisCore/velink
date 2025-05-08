@@ -57,7 +57,7 @@
       <li><a href="#early-access">Early Access</a></li>
       <li>
         <% if (user) { %>
-          <a href="/profile/<%= user.username %>" class="nav-avatar">
+          <a href="/manage" class="nav-avatar">
             <img src="<%= user.profileImage || 'https://avatars.githubusercontent.com/u/158351052?v=4' %>" alt="Profile Picture" />
           </a>
         <% } else { %>

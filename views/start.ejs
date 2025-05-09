@@ -22,6 +22,8 @@
   <meta name="twitter:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
   <meta name="twitter:image" content="https://link.velis.me/icon.iconset/icon_256x256@2x.png">
   <meta name="twitter:card" content="https://link.velis.me/icon.iconset/icon_256x256@2x.png">
+  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -48,24 +50,25 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
 </head>
 <body>
-  <nav>
-    <div class="logo">Velink</div>
-    <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
-    <ul class="nav-links">
-      <li><a href="#features">Features</a></li>
-      <li><a href="#pricing">Pricing</a></li>
-      <li><a href="#early-access">Early Access</a></li>
-      <li>
-        <% if (user) { %>
-          <a href="/manage" class="nav-avatar">
-            <img src="<%= user.profileImage || 'https://avatars.githubusercontent.com/u/158351052?v=4' %>" alt="Profile Picture" />
-          </a>
-        <% } else { %>
-          <a href="/login" class="login-button">Login</a>
-        <% } %>
-      </li>
-    </ul>
-  </nav>
+  <nav data-aos="fade-down" data-aos-duration="800">
+  <div class="logo" data-aos="fade-right" data-aos-duration="600">Velink</div>
+  <button class="menu-toggle" aria-label="Toggle menu" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="500">&#9776;</button>
+  <ul class="nav-links">
+    <li data-aos="fade-up" data-aos-delay="300" data-aos-duration="600"><a href="#features">Features</a></li>
+    <li data-aos="fade-up" data-aos-delay="400" data-aos-duration="600"><a href="#pricing">Pricing</a></li>
+    <li data-aos="fade-up" data-aos-delay="500" data-aos-duration="600"><a href="#early-access">Early Access</a></li>
+    <li data-aos="fade-up" data-aos-delay="600" data-aos-duration="600">
+      <% if (user) { %>
+        <a href="/manage" class="nav-avatar">
+          <img src="<%= user.profileImage || 'https://avatars.githubusercontent.com/u/158351052?v=4' %>" alt="Profile Picture" />
+        </a>
+      <% } else { %>
+        <a href="/login" class="login-button">Login</a>
+      <% } %>
+    </li>
+  </ul>
+</nav>
+
 
   <% if (user && from === 'register') { %>
     <div id="confetti-container"></div>
@@ -73,16 +76,19 @@
   <% } %>
 
   <section class="hero">
-    <h1>
-      <% if (user) { %>
-        Welcome, <%= user.username %>
-      <% } else { %>
-        Simplify Your Online Presence
-      <% } %>
-    </h1>
-  
-    <p>Velink is a minimalist, customizable alternative to Linktree – launching soon.</p>
-  
+  <h1 data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
+    <% if (user) { %>
+      Welcome, <%= user.username %>
+    <% } else { %>
+      Simplify Your Online Presence
+    <% } %>
+  </h1>
+
+  <p data-aos="fade-up" data-aos-duration="800" data-aos-delay="250">
+    Velink is a minimalist, customizable alternative to Linktree – launching soon.
+  </p>
+
+  <div class="hero-buttons" data-aos="fade-up" data-aos-delay="400" data-aos-duration="700">
     <% if (user) { %>
       <a href="/profile/<%= username %>" class="cta-button">View your Profile</a>
       <a onclick="sharePage()" class="cta-button2">Share</a>
@@ -90,124 +96,155 @@
       <a href="/register" class="cta-button">Claim Your Link</a>
       <a href="/profile/wfxey" class="cta-button2">Example</a>
     <% } %>
-  </section>
-  
+  </div>
+</section>
 
-  <section id="features" class="features-carousel">
-    <div class="carousel-track">
-      <div class="feature"><h3>🚀 Minimal & Modern</h3><p>Clean design that puts your links front and center – no clutter, just utility.</p></div>
-      <div class="feature"><h3>🎨 Custom Profiles</h3><p>Choose your name, colors, and soon – styles! Make your page truly yours.</p></div>
-      <div class="feature"><h3>📱 Mobile-Ready</h3><p>Optimized for mobile and desktop. Share your links anywhere, beautifully.</p></div>
-      <div class="feature"><h3>🔗 Easy Link Manager</h3><p>Use a simple dashboard to control what your visitors see – anytime.</p></div>
-      <div class="feature"><h3>🌐 Share Anywhere</h3><p>Send one link to rule them all – across all platforms.</p></div>
-      <div class="feature"><h3>🧩 Widget Support</h3><p>Widgets and extensions coming soon for advanced users.</p></div>
-      <div class="feature"><h3>📊 Analytics</h3><p>See which links get clicks and when – with lightweight stats.</p></div>
-      <div class="feature"><h3>🔒 Privacy-First</h3><p>We respect your data – no tracking, no profiling.</p></div>
+<section id="features" class="features-carousel">
+  <div class="carousel-track">
+    <div class="feature" data-aos="zoom-in-up" data-aos-delay="100" data-aos-duration="600">
+      <h3>🚀 Minimal & Modern</h3>
+      <p>Clean design that puts your links front and center – no clutter, just utility.</p>
     </div>
-  </section>
-  
-  <section id="pricing" class="pricing-section">
-    <div class="pricing-header">
-      <h2>Choose Your Plan</h2>
-      <p>Simple. Transparent. Fair.</p>
+    <div class="feature" data-aos="zoom-in-up" data-aos-delay="200" data-aos-duration="600">
+      <h3>🎨 Custom Profiles</h3>
+      <p>Choose your name, colors, and soon – styles! Make your page truly yours.</p>
     </div>
-    <div class="pricing-grid">
-      <div class="pricing-card">
-        <div class="pricing-title">Free</div>
-        <div class="pricing-price">€0</div>
-        <div class="pricing-description">Minimal ads, full functionality</div>
-        <ul class="pricing-features">
-          <li>🌐 Custom link</li>
-          <li>🎨 Basic themes</li>
-          <li>🧩 Link manager</li>
-          <li>📢 Subtle advertising</li>
-        </ul>
-        <button class="pricing-button">Start for free</button>
-      </div>
-  
-      <div class="pricing-card featured">
-        <div class="badge">Recommended</div>
-        <div class="pricing-title">Standard</div>
-        <div class="pricing-price">€3.99</div>
-        <div class="pricing-description">For creatives & professionals</div>
-        <ul class="pricing-features">
-          <li>🚫 No ads</li>
-          <li>📊 Analytics</li>
-          <li>🎨 Custom styles (coming soon)</li>
-          <li>⚙️ All Free features</li>
-        </ul>
-        <button class="pricing-button featured-btn">Choose Standard</button>
-      </div>
-  
-      <div class="pricing-card">
-        <div class="pricing-title">Premium</div>
-        <div class="pricing-price">€8.99</div>
-        <div class="pricing-description">Maximum control & support</div>
-        <ul class="pricing-features">
-          <li>🧩 Widget support</li>
-          <li>💬 Priority support</li>
-          <li>🚀 Early access to new tools</li>
-          <li>⚙️ All Standard features</li>
-        </ul>
-        <button class="pricing-button">Activate Premium</button>
-      </div>
+    <div class="feature" data-aos="zoom-in-up" data-aos-delay="300" data-aos-duration="600">
+      <h3>📱 Mobile-Ready</h3>
+      <p>Optimized for mobile and desktop. Share your links anywhere, beautifully.</p>
     </div>
-  </section>  
+    <div class="feature" data-aos="zoom-in-up" data-aos-delay="400" data-aos-duration="600">
+      <h3>🔗 Easy Link Manager</h3>
+      <p>Use a simple dashboard to control what your visitors see – anytime.</p>
+    </div>
+    <div class="feature" data-aos="zoom-in-up" data-aos-delay="500" data-aos-duration="600">
+      <h3>🌐 Share Anywhere</h3>
+      <p>Send one link to rule them all – across all platforms.</p>
+    </div>
+    <div class="feature" data-aos="zoom-in-up" data-aos-delay="600" data-aos-duration="600">
+      <h3>🧩 Widget Support</h3>
+      <p>Widgets and extensions coming soon for advanced users.</p>
+    </div>
+    <div class="feature" data-aos="zoom-in-up" data-aos-delay="700" data-aos-duration="600">
+      <h3>📊 Analytics</h3>
+      <p>See which links get clicks and when – with lightweight stats.</p>
+    </div>
+    <div class="feature" data-aos="zoom-in-up" data-aos-delay="800" data-aos-duration="600">
+      <h3>🔒 Privacy-First</h3>
+      <p>We respect your data – no tracking, no profiling.</p>
+    </div>
+  </div>
+</section>
+
+  
+ <section id="pricing" class="pricing-section">
+  <div class="pricing-header" data-aos="fade-up" data-aos-duration="600">
+    <h2>Choose Your Plan</h2>
+    <p>Simple. Transparent. Fair.</p>
+  </div>
+  
+  <div class="pricing-grid">
+    <div class="pricing-card" data-aos="fade-right" data-aos-delay="100" data-aos-duration="700">
+      <div class="pricing-title">Free</div>
+      <div class="pricing-price">€0</div>
+      <div class="pricing-description">Minimal ads, full functionality</div>
+      <ul class="pricing-features">
+        <li>🌐 Custom link</li>
+        <li>🎨 Basic themes</li>
+        <li>🧩 Link manager</li>
+        <li>📢 Subtle advertising</li>
+      </ul>
+      <button class="pricing-button">Start for free</button>
+    </div>
+
+    <div class="pricing-card featured" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="700">
+      <div class="badge">Recommended</div>
+      <div class="pricing-title">Standard</div>
+      <div class="pricing-price">€3.99</div>
+      <div class="pricing-description">For creatives & professionals</div>
+      <ul class="pricing-features">
+        <li>🚫 No ads</li>
+        <li>📊 Analytics</li>
+        <li>🎨 Custom styles (coming soon)</li>
+        <li>⚙️ All Free features</li>
+      </ul>
+      <button class="pricing-button featured-btn">Choose Standard</button>
+    </div>
+
+    <div class="pricing-card" data-aos="fade-left" data-aos-delay="300" data-aos-duration="700">
+      <div class="pricing-title">Premium</div>
+      <div class="pricing-price">€8.99</div>
+      <div class="pricing-description">Maximum control & support</div>
+      <ul class="pricing-features">
+        <li>🧩 Widget support</li>
+        <li>💬 Priority support</li>
+        <li>🚀 Early access to new tools</li>
+        <li>⚙️ All Standard features</li>
+      </ul>
+      <button class="pricing-button">Activate Premium</button>
+    </div>
+  </div>
+</section>
+
 
   <section id="early-access" class="early-access-section">
-    <div class="timeline-header">
-      <h2>Want Early Access?</h2>
-      <p>
-        Join our <a href="https://discord.gg/NGUy2WBb?event=1368257511681163285" target="_blank">Discord</a>
-        to be among the first to try Velink!
-      </p>
-    </div>
-  
-    <div class="timeline">
-      <div class="timeline-item">
-        <div class="timeline-content left animate">
-          <h3>📢 Announcement</h3>
-          <p>Project revealed live in Discord event.</p>
-          <span>April 2025</span>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-content right animate">
-          <h3>🧪 Closed Beta</h3>
-          <p>First community testers explore early build.</p>
-          <span>May 2025</span>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-content left animate">
-          <h3>📬 Feedback Phase</h3>
-          <p>Bug reports and feature feedback welcome.</p>
-          <span>June 2025</span>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-content right animate">
-          <h3>🚀 Public Beta</h3>
-          <p>Open access begins, everyone can join.</p>
-          <span>July 2025</span>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-content right animate">
-          <h3>🎉 Official Release</h3>
-          <p>Launch complete. Feedback loop remains open.</p>
-          <span>August 2025</span>
-        </div>
-      </div>
-    </div>
-    
-  </section>
+  <div class="timeline-header" data-aos="fade-up" data-aos-duration="600">
+    <h2>Want Early Access?</h2>
+    <p>
+      Join our <a href="https://discord.gg/NGUy2WBb?event=1368257511681163285" target="_blank">Discord</a>
+      to be among the first to try Velink!
+    </p>
+  </div>
 
+  <div class="timeline">
+    <div class="timeline-item" data-aos="fade-left" data-aos-delay="100" data-aos-duration="700">
+      <div class="timeline-content left animate">
+        <h3>📢 Announcement</h3>
+        <p>Project revealed live in Discord event.</p>
+        <span>April 2025</span>
+      </div>
+    </div>
+
+    <div class="timeline-item" data-aos="fade-right" data-aos-delay="200" data-aos-duration="700">
+      <div class="timeline-content right animate">
+        <h3>🧪 Closed Beta</h3>
+        <p>First community testers explore early build.</p>
+        <span>May 2025</span>
+      </div>
+    </div>
+
+    <div class="timeline-item" data-aos="fade-left" data-aos-delay="300" data-aos-duration="700">
+      <div class="timeline-content left animate">
+        <h3>📬 Feedback Phase</h3>
+        <p>Bug reports and feature feedback welcome.</p>
+        <span>June 2025</span>
+      </div>
+    </div>
+
+    <div class="timeline-item" data-aos="fade-right" data-aos-delay="400" data-aos-duration="700">
+      <div class="timeline-content right animate">
+        <h3>🚀 Public Beta</h3>
+        <p>Open access begins, everyone can join.</p>
+        <span>July 2025</span>
+      </div>
+    </div>
+
+    <div class="timeline-item" data-aos="fade-left" data-aos-delay="500" data-aos-duration="700">
+      <div class="timeline-content right animate">
+        <h3>🎉 Official Release</h3>
+        <p>Launch complete. Feedback loop remains open.</p>
+        <span>August 2025</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+  
   <section id="contact" class="contact-section">
     <div class="container">
       <h2>Contact Us</h2>
       <p>Have questions or want to collaborate? We’d love to hear from you.</p>
-  
+      
       <div class="contact-details">
         <div class="contact-item">
           <i class="bi bi-envelope-fill"></i>
@@ -302,5 +339,12 @@
       navLinks.classList.toggle('show');
     });
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 800, // Dauer der Animationen
+    once: true,    // nur einmal animieren
+  });
+</script>
 </body>
 </html>

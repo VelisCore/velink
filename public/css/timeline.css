@@ -1,0 +1,151 @@
+.early-access-section {
+    background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
+    padding: 4rem 2rem;
+  }
+  
+  .timeline-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+  
+  .timeline-header h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .timeline-header p {
+    font-size: 1.1rem;
+  }
+  
+  .timeline-header a {
+    color: #0066ff;
+    text-decoration: underline;
+  }
+  
+  .timeline {
+    position: relative;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 0;
+  }
+  
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 4px;
+    background: #ddd;
+    transform: translateX(-50%);
+  }
+  
+  .timeline-item {
+    position: relative;
+    width: 50%;
+    padding: 1.5rem 2rem;
+    box-sizing: border-box;
+  }
+  
+  .timeline-item:nth-child(odd) {
+    left: 0;
+  }
+  
+  .timeline-item:nth-child(even) {
+    left: 50%;
+  }
+  
+  .timeline-content {
+    background: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+    padding: 1.5rem;
+    border-radius: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.6s ease;
+    backdrop-filter: blur(10px); /* Adds a blur effect */
+  }
+
+  
+  .timeline-content.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .timeline-content::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    background: #4f46e5;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px #e6f0ff;
+    z-index: 1;
+  }
+  
+  .timeline-item:nth-child(odd) .timeline-content {
+    text-align: right;
+    margin-right: auto;
+  }
+  
+  .timeline-item:nth-child(odd) .timeline-content::before {
+    right: -32px;
+  }
+  
+  .timeline-item:nth-child(even) .timeline-content {
+    text-align: left;
+    margin-left: auto;
+  }
+  
+  .timeline-item:nth-child(even) .timeline-content::before {
+    left: -32px;
+  }
+  
+  .timeline-content h3 {
+    margin-top: 0;
+    font-size: 1.25rem;
+  }
+  
+  .timeline-content span {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #888;
+  }
+  
+  @media (max-width: 768px) {
+    /* Timeline-Linie für kleinere Geräte */
+    .timeline::before {
+        left: 8px;  /* Position der vertikalen Linie */
+    }
+    
+    /* Timeline-Elemente untereinander anordnen */
+    .timeline-item {
+        width: 100%;  /* Volle Breite für jedes Element */
+        padding-left: 20px;  /* Weniger Padding für mehr Platz */
+        padding-right: 20px; /* Etwas Padding für die rechte Seite */
+        margin-bottom: 2rem; /* Abstand zwischen den Elementen */
+    }
+  
+    /* Timeline-Inhalte immer linksbündig */
+    .timeline-item .timeline-content {
+        text-align: left !important;
+        margin-left: 0;  /* Verhindert übermäßigen Abstand */
+        margin-right: 0; /* Verhindert übermäßigen Abstand */
+    }
+  
+    /* Anpassung der Timeline-Punkte */
+    .timeline-content::before {
+        left: -16px !important;  /* Punkte links anpassen */
+        right: auto !important;  /* Verhindert, dass der Punkt auf der rechten Seite erscheint */
+    }
+
+    /* Timeline-Inhalte auf mobilen Geräten mittig ausrichten */
+    .timeline-item:nth-child(odd), .timeline-item:nth-child(even) {
+        left: 0;  /* Beide Seiten gleich ausrichten */
+    }
+}
+
+  

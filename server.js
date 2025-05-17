@@ -5,11 +5,40 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
 
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0';
+const CERT_DIR = '/etc/letsencrypt/live/velink.me';
+const KEY_PATH = path.join(CERT_DIR, 'privkey.pem');
+const CERT_PATH = path.join(CERT_DIR, 'fullchain.pem');
+
+function certificatesExist() {
+  try {
+    return fs.existsSync(KEY_PATH) && fs.existsSync(CERT_PATH);
+  } catch {
+    return false;
+  }
+}
+
+if (certificatesExist()) {
+  console.log('Zertifikate gefunden, starte HTTPS-Server...');
+  const options = {
+    key: fs.readFileSync(KEY_PATH),
+    cert: fs.readFileSync(CERT_PATH),
+  };
+
+    https.createServer(options, app).listen(443, '0.0.0.0', () => {
+    console.log('HTTPS-Server läuft auf Port 443');
+  });
+} else {
+  console.log('Keine Zertifikate gefunden, starte HTTP-Server auf Port 80...');
+  http.createServer(app).listen(80, '0.0.0.0', () => {
+    console.log('HTTP-Server läuft auf Port 80');
+  });
+}
 
 const whitelist = [
 ];
@@ -157,9 +186,4 @@ app.get('/logout', ipWhitelist, (req, res) => {
   req.session.destroy(() => {
     res.redirect('/');
   });
-});
-
-
-app.listen(PORT, HOST, () => {
-  console.log(`✅ Server läuft unter http://${HOST}:${PORT}`);
 });

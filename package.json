@@ -5,6 +5,7 @@
     "expess": "^0.0.1-security",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "http": "^0.0.1-security",
     "sqlite3": "^5.1.7"
   }
 }

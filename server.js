@@ -109,6 +109,47 @@ app.get('/', (req, res) => {
   res.render('start', { user: req.session.user, username, from });
 });
 
+app.get('/sitemap.xml', (req, res) => {
+  res.header('Content-Type', 'application/xml');
+
+  db.all("SELECT username FROM users", (err, rows) => {
+    if (err) {
+      return res.status(500).send('Fehler beim Erstellen der Sitemap');
+    }
+
+    const urls = rows.map(user => `
+      <url>
+        <loc>https://velink.me/profile/${user.username}</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+      </url>
+    `).join('');
+
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://velink.me/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://velink.me/register</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://velink.me/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  ${urls}
+</urlset>`;
+
+    res.send(sitemap);
+  });
+});
+
+
 // Registrierung
 app.get('/register',ipWhitelist, (req, res) => {
   res.render('register', { error: null });

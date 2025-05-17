@@ -8,6 +8,9 @@ const bcrypt = require('bcrypt');
 
 const app = express();
 
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+
 // Nutzerdatenbank initialisieren
 const db = new sqlite3.Database('./users.db', (err) => {
   if (err) console.error('DB-Fehler:', err.message);
@@ -143,7 +146,7 @@ app.get('/logout', (req, res) => {
   });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server läuft unter http://localhost:${PORT}`);
+
+app.listen(PORT, HOST, () => {
+  console.log(`✅ Server läuft unter http://${HOST}:${PORT}`);
 });

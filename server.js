@@ -11,6 +11,19 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
+const whitelist = [
+];
+
+function ipWhitelist(req, res, next) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+
+  if (whitelist.includes(ip)) {
+    next(); 
+  } else {
+    res.status(403).render('no_access', { ip });
+  }
+}
+
 // Nutzerdatenbank initialisieren
 const db = new sqlite3.Database('./users.db', (err) => {
   if (err) console.error('DB-Fehler:', err.message);
@@ -68,11 +81,11 @@ app.get('/', (req, res) => {
 });
 
 // Registrierung
-app.get('/register', (req, res) => {
+app.get('/register',ipWhitelist, (req, res) => {
   res.render('register', { error: null });
 });
 
-app.post('/register', async (req, res) => {
+app.post('/register', ipWhitelist,  async (req, res) => {
   const { username, email, password } = req.body;
   if (!username || !email || !password)
     return res.render('register', { error: 'Alle Felder ausfüllen.' });
@@ -101,11 +114,11 @@ app.post('/register', async (req, res) => {
 });
 
 // Login
-app.get('/login', (req, res) => {
+app.get('/login', ipWhitelist,  (req, res) => {
   res.render('login', { error: null });
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', ipWhitelist, (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.render('login', { error: 'Alle Felder ausfüllen.' });
 
@@ -140,7 +153,7 @@ app.get('/profile/:username', (req, res) => {
 });
 
 // Logout
-app.get('/logout', (req, res) => {
+app.get('/logout', ipWhitelist, (req, res) => {
   req.session.destroy(() => {
     res.redirect('/');
   });

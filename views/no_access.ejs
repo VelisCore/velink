@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zugriff verweigert</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #1a1a1a, #333);
+      color: #fff;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .card {
+      background-color: #222;
+      border: 1px solid #444;
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .icon {
+      font-size: 4rem;
+      color: #e74c3c;
+      margin-bottom: 1rem;
+    }
+
+    .title {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: #bbb;
+      margin-bottom: 1.5rem;
+    }
+
+    .ip-info {
+      background-color: #111;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      color: #e67e22;
+      font-family: monospace;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🚫</div>
+    <div class="title">Zugriff verweigert</div>
+    <div class="subtitle">Deine IP-Adresse ist nicht auf der Whitelist eingetragen.</div>
+    <div class="ip-info">Deine IP: <%= ip %></div>
+  </div>
+</body>
+</html>

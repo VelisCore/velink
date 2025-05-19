@@ -278,6 +278,26 @@ app.post('/login', ipWhitelist, async (req, res) => {
   });
 });
 
+app.use((req, res, next) => {
+  const err = new Error('Die angeforderte Seite wurde nicht gefunden.');
+  err.status = 404;
+  next(err);
+});
+
+app.use((err, req, res, next) => {
+  const errorCode = err.status || 500;
+  const errorMessage = err.message || 'Ein unerwarteter Fehler ist aufgetreten.';
+
+  console.error(err.stack);
+
+  res.status(errorCode).render('error', {
+    errorCode,
+    errorMessage
+  });
+});
+
+
+
 app.get('/profile/:username', async (req, res) => {
   const start = Date.now();
   const requestedUsername = req.params.username;

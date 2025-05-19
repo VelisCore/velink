@@ -49,22 +49,22 @@ if (certificatesExist()) {
 }
 
 const whitelist = [
-  "88.45.1.255"
+  "88.45.1.255",
 ];
+
+const isWhitelistActive = false;
 
 function isWhitelisted(ipAddress) {
   if (!ip.isV4Format(ipAddress) && !ip.isV6Format(ipAddress)) {
-    return false; // keine valide IP
+    return false;
   }
 
   for (const entry of whitelist) {
     if (entry.includes('/')) {
-      // CIDR prüfen
       if (ip.cidrSubnet(entry).contains(ipAddress)) {
         return true;
       }
     } else {
-      // exakte IP-Prüfung
       if (ipAddress === entry) {
         return true;
       }
@@ -74,10 +74,10 @@ function isWhitelisted(ipAddress) {
 }
 
 function ipWhitelist(req, res, next) {
-  // trust proxy in Express aktivieren, damit req.ip sauber funktioniert:
-  // app.set('trust proxy', true);
+  if (!isWhitelistActive) {
+    return next();
+  }
 
-  // Hole die Client-IP zuverlässig
   let clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim();
 
   if (!clientIp || !net.isIP(clientIp)) {
@@ -85,16 +85,17 @@ function ipWhitelist(req, res, next) {
   }
 
   if (isWhitelisted(clientIp)) {
-    next();
+    return next();
   } else {
-    console.warn(`Blocked IP: ${clientIp}`); // Logging
-    res.status(403).render('no_access', { ip: clientIp });
+    const err = new Error('Access denied: This IP address is not allowed.');
+    err.status = 403;
+    console.warn(`Blocked IP: ${clientIp}`);
+    return next(err);
   }
 }
 
 module.exports = ipWhitelist;
 
-// Nutzerdatenbank initialisieren
 const db = new sqlite3.Database('./users.db', (err) => {
   if (err) console.error('DB-Fehler:', err.message);
   else console.log('📦 SQLite3-Nutzerdatenbank verbunden');
@@ -107,7 +108,6 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
   password TEXT NOT NULL
 )`);
 
-// Profildatenbank initialisieren
 const profileDB = new sqlite3.Database('./profiles.db', (err) => {
   if (err) console.error('Profil-DB-Fehler:', err.message);
   else console.log('📦 SQLite3-Profil-Datenbank verbunden');
@@ -120,7 +120,6 @@ profileDB.run(`CREATE TABLE IF NOT EXISTS profiles (
   FOREIGN KEY(user_id) REFERENCES users(id)
 )`);
 
-// Konfiguration
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -132,12 +131,11 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false, // auf true setzen bei HTTPS
-    maxAge: 1000 * 60 * 60 * 2 // 2 Stunden
+    secure: false,
+    maxAge: 1000 * 60 * 60 * 2
   }
 }));
 
-// Middleware zur Prüfung, ob der Nutzer eingeloggt ist
 function isAuthenticated(req, res, next) {
   if (req.session.user) return next();
   res.redirect('/login');

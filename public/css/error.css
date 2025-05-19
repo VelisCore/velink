@@ -65,6 +65,7 @@ html, body {
     height: 100%; /* 100% statt 95%, damit nichts rausragt */
     overflow: hidden; /* sicherstellen, dass nichts raus scrollt */
     box-sizing: border-box;
+    z-index: 1000;
 }
 
 .characters {
@@ -72,4 +73,10 @@ html, body {
     height: 18%;
     position: absolute;
     /* Positionierung der Charaktere muss innerhalb von #charactersDiv bleiben */
+}
+
+a {
+    text-decoration: none;
+    color: rgb(41, 41, 41);
+    z-index: 1;
 }

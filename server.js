@@ -1,4 +1,3 @@
-// Benötigte Module importieren
 const express = require('express');
 const session = require('express-session');
 const sqlite3 = require('sqlite3').verbose();
@@ -9,16 +8,38 @@ const https = require('https');
 const http = require('http');
 const ip = require('ip');
 const net = require('net');
-
+const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-app.set('trust proxy', true);
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  message: 'Zu viele Anfragen von dieser IP. Bitte später erneut versuchen.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-const MIN_RESPONSE_TIME = 500;
+app.use(limiter);
+app.set('trust proxy', false);
+
+app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(session({
+  secret: 'ultrageheimes_sitzungsgeheimnis_!123',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    maxAge: 1000 * 60 * 60 * 2,
+    SameSite: 'strict',
+  }
+}));
 
 app.disable('x-powered-by');
+
 const CERT_DIR = '/etc/letsencrypt/live/velink.me';
 const KEY_PATH = path.join(CERT_DIR, 'privkey.pem');
 const CERT_PATH = path.join(CERT_DIR, 'fullchain.pem');
@@ -38,7 +59,7 @@ if (certificatesExist()) {
     cert: fs.readFileSync(CERT_PATH),
   };
 
-    https.createServer(options, app).listen(443, '0.0.0.0', () => {
+  https.createServer(options, app).listen(443, '0.0.0.0', () => {
     console.log('HTTPS-Server läuft auf Port 443');
   });
 } else {
@@ -48,10 +69,7 @@ if (certificatesExist()) {
   });
 }
 
-const whitelist = [
-  "88.45.1.255",
-];
-
+const whitelist = ["88.45.1.255"];
 const isWhitelistActive = false;
 
 function isWhitelisted(ipAddress) {
@@ -123,26 +141,16 @@ profileDB.run(`CREATE TABLE IF NOT EXISTS profiles (
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(session({
-  secret: 'ultrageheimes_sitzungsgeheimnis_!123',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: false,
-    maxAge: 1000 * 60 * 60 * 2,
-    SameSite: 'strict',
-  }
-}));
+app.use(limiter);
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const MIN_RESPONSE_TIME = 500;
 
 function isAuthenticated(req, res, next) {
   if (req.session.user) return next();
   res.redirect('/login');
 }
 
-// Startseite
 app.get('/', (req, res) => {
   const username = req.session.user ? req.session.user.username : null;
   const from = req.query.from;
@@ -189,9 +197,7 @@ app.get('/sitemap.xml', (req, res) => {
   });
 });
 
-
-// Registrierung
-app.get('/register',ipWhitelist, (req, res) => {
+app.get('/register', ipWhitelist, (req, res) => {
   res.render('register', { error: null });
 });
 
@@ -207,7 +213,6 @@ app.post('/register', ipWhitelist, async (req, res) => {
       if (err) return res.render('register', { error: 'Interner Fehler.' });
 
       if (user) {
-        // Warte ggf. künstlich, um Timing-Angriffen vorzubeugen
         const elapsed = Date.now() - start;
         if (elapsed < MIN_RESPONSE_TIME) await delay(MIN_RESPONSE_TIME - elapsed);
 
@@ -235,8 +240,7 @@ app.post('/register', ipWhitelist, async (req, res) => {
   }
 });
 
-// Login
-app.get('/login', ipWhitelist,  (req, res) => {
+app.get('/login', ipWhitelist, (req, res) => {
   res.render('login', { error: null });
 });
 
@@ -277,25 +281,27 @@ app.post('/login', ipWhitelist, async (req, res) => {
   });
 });
 
-app.use((req, res, next) => {
-  const err = new Error('Die angeforderte Seite wurde nicht gefunden.');
-  err.status = 404;
-  next(err);
-});
+app.get('/logout', ipWhitelist, (req, res) => {
+  if (!req.session) {
+    return res.redirect('/');
+  }
 
-app.use((err, req, res, next) => {
-  const errorCode = err.status || 500;
-  const errorMessage = err.message || 'Ein unerwarteter Fehler ist aufgetreten.';
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Fehler beim Logout:', err.message);
+      return res.redirect('/?error=session');
+    }
 
-  console.error(err.stack);
+    res.clearCookie('connect.sid', {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
 
-  res.status(errorCode).render('error', {
-    errorCode,
-    errorMessage
+    res.redirect('/?from=logout');
   });
 });
-
-
 
 app.get('/profile/:username', async (req, res) => {
   const start = Date.now();
@@ -318,7 +324,7 @@ app.get('/profile/:username', async (req, res) => {
       profile = await new Promise((resolve, reject) => {
         profileDB.get("SELECT * FROM profiles WHERE user_id = ?", [user.id], (err, row) => {
           if (err) return reject(err);
-          resolve(row || profile); // falls kein Profil existiert
+          resolve(row || profile);
         });
       });
     }
@@ -326,14 +332,12 @@ app.get('/profile/:username', async (req, res) => {
     console.error("Fehler bei Profilabruf:", e.message);
   }
 
-  // Timing-Schutz
   const elapsed = Date.now() - start;
   if (elapsed < MIN_RESPONSE_TIME) {
     await delay(MIN_RESPONSE_TIME - elapsed);
   }
 
   if (!user) {
-    // Dummy-Render statt 404 → erschwert Enumeration
     return res.render('profile', {
       username: requestedUsername,
       email: '',
@@ -352,26 +356,45 @@ app.get('/profile/:username', async (req, res) => {
   });
 });
 
-app.get('/logout', ipWhitelist, (req, res) => {
-  if (!req.session) {
-    return res.redirect('/');
-  }
+app.get('/manage', isAuthenticated, (req, res) => {
+  const user = req.session.user;
+  res.render('acc/manage', { user });
+});
 
-  req.session.destroy(err => {
-    if (err) {
-      console.error('Fehler beim Logout:', err.message);
-      // Optional: Zeige eine freundliche Fehlermeldung oder leite trotzdem weiter
-      return res.redirect('/?error=session');
-    }
+app.get('/feed', isAuthenticated, (req, res) => {
+  const user = req.session.user;
+  res.render('acc/feed', { user });
+});
 
-    // Zusätzlicher Schutz: Session-Cookie explizit löschen
-    res.clearCookie('connect.sid', {
-      path: '/',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
-    });
+app.get('/settings', isAuthenticated, (req, res) => {
+  const user = req.session.user;
+  res.render('acc/settings', { user });
+});
 
-    res.redirect('/?from=logout');
+app.get('/customize', isAuthenticated, (req, res) => {
+  const user = req.session.user;
+  res.render('acc/customize', { user });
+});
+
+app.get('/extensions', isAuthenticated, (req, res) => {
+  const user = req.session.user;
+  res.render('acc/extensions', { user });
+});
+
+app.use((req, res, next) => {
+  const err = new Error('Die angeforderte Seite wurde nicht gefunden.');
+  err.status = 404;
+  next(err);
+});
+
+app.use((err, req, res, next) => {
+  const errorCode = err.status || 500;
+  const errorMessage = err.message || 'Ein unerwarteter Fehler ist aufgetreten.';
+
+  console.error(err.stack);
+
+  res.status(errorCode).render('error', {
+    errorCode,
+    errorMessage
   });
 });

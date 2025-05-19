@@ -344,11 +344,6 @@
     }
   }
   
-  .logo_link {
-    display: flex;
-    text-decoration: none;
-  }
-
   /* Carousel */
   .features-carousel {
     overflow: hidden;
@@ -363,7 +358,10 @@
     width: max-content;
     will-change: transform;
   }
-  
+   .logo_link {
+    display: flex;
+    text-decoration: none;
+  }
   .carousel-track:hover {
     animation-play-state: paused;
     scroll-behavior: smooth;

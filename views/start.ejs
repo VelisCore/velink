@@ -50,7 +50,7 @@
 </head>
 <body>
   <nav data-aos="fade-down" data-aos-duration="800">
-  <div class="logo" data-aos="fade-right" data-aos-duration="600">Velink</div>
+  <a class="logo_link" href="/"><div class="logo" data-aos="fade-right" data-aos-duration="600">Velink</div></a>
   <button class="menu-toggle" aria-label="Toggle menu" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="500">&#9776;</button>
   <ul class="nav-links">
     <li data-aos="fade-up" data-aos-delay="300" data-aos-duration="600"><a href="#features">Features</a></li>
@@ -154,11 +154,14 @@
       <li>☕ KoFi Support</li>
       <li>🍵 BuyMeACoffee Donations</li>
     </ul>
-    <button class="pricing-button">Get Started</button>
+    <button onclick="window.location.href='/register'" class="pricing-button">Get Started</button>
   </div>
 
   <div class="pricing-card featured" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="700">
     <div class="badge">Recommended</div>
+    <% if (user) { %>
+      <div class="activated-badge">Activated</div>
+    <% } %>
     <div class="pricing-title">Standard</div>
     <div class="pricing-price">€0</div>
     <div class="pricing-description">For creatives & professionals</div>
@@ -169,7 +172,7 @@
       <li>🎨 Custom styles (coming soon)</li>
       <li>⚙️ All features</li>
     </ul>
-    <button class="pricing-button featured-btn">Start for free</button>
+    <button onclick="window.location.href='/register'" class="pricing-button featured-btn">Start for free</button>
   </div>
 
   <div class="pricing-card" data-aos="fade-left" data-aos-delay="300" data-aos-duration="700">
@@ -184,7 +187,7 @@
       <li>🧩 Custom Event Tracking</li>
       <li>🔒 GDPR Compliant</li>
     </ul>
-     <button class="pricing-button">Get Started</button>
+     <button onclick="window.location.href='/register'" class="pricing-button">Get Started</button>
 </section>
 
   <section id="early-access" class="early-access-section">

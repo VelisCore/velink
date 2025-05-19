@@ -150,3 +150,16 @@
 .featured-btn:hover {
   background: #3b32e2;
 }
+
+.activated-badge {
+  position: absolute;
+  top: -1rem;
+  right: 15rem;
+  background: green;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}

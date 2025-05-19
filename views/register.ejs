@@ -1,38 +1,70 @@
-<!DOCTYPE html> 
-<html lang="en">
+<!DOCTYPE html>
+<html lang="de">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta charset="UTF-8" />
-    <meta property="og:type" content="website" />
-    <meta name="robots" content="index, follow" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/css/register.css" />
-    <title>Velink - Register</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Velink - Register</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/register.css" />
+  <script src="/js/register.js" defer></script>
 </head>
 <body>
-    <div class="login_container"> 
-        <div class="login_window">
-            <h2>Register</h2>
-            <form method="POST" action="/register"></form>
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-                <label for="email">Username:</label>
-                <input autocomplete="off" type="text" id="username" name="username" required />
+  <div class="container">
 
-                <label>E-Mail:</label>
-                <input type="email" name="email" required>
-
-                <label for="password">Password:</label>
-                <input autocomplete="off" type="password" id="password" name="password" required minlength="8" />
-
-                <button type="submit">Login</button>
-                <p><a href="/login">Already have got an account?</a></p>
-            </form>
-        </div>
+    <div class="image-side" aria-label="Inspiring background image">
+      <div class="image-text">
+        Welcome to Velink.<br />
+      </div>
     </div>
-    <div class="footer-powered-by">
-      <a href="/">Powered by <strong>Velink</strong></a>
-    </div>    
+
+    <div class="register-side" role="main" aria-labelledby="register-title">
+
+      <h2 id="register-title">Register</h2>
+      <p class="subtitle">Please sign up with your credentials.</p>
+
+      <form id="registerForm" action="/register" method="POST" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div class="form-step step-1 active">
+          <label for="username">Username</label>
+          <input autocomplete="off" type="text" id="username" name="username" required />
+
+          <label for="email">Email</label>
+          <input autocomplete="off" type="email" id="email" name="email" required />
+
+          <button type="button" id="nextBtn">Weiter</button>
+        </div>
+
+        <div class="form-step step-2">
+          <label for="password">Password</label>
+          <input autocomplete="off" type="password" id="password" name="password" required minlength="8" />
+
+          <label for="password-repeat">Repeat Password</label>
+          <input autocomplete="off" type="password" id="password-repeat" required minlength="8" />
+
+          <button type="submit">Registrieren</button>
+        </div>
+      </form>
+
+      <div class="register-link">
+        Already have an account? <a href="/login">Login here</a>
+      </div>
+
+      <div class="social-register" aria-label="Alternative sign-in options">
+        <button type="button" title="Sign in with Google"><i class="fab fa-google"></i> Google</button>
+        <button type="button" title="Sign in with Facebook"><i class="fab fa-facebook-f"></i> Facebook</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="footer-powered-by">
+    <a href="/">Powered by <strong>Velink</strong></a>
+  </div>
+
+  <script src="register.js"></script>
+
 </body>
 </html>

@@ -248,37 +248,126 @@ button[type="submit"]:hover {
   text-decoration: underline;
 }
 
-/* Responsive Anpassungen */
+
 @media (max-width: 900px) {
   .container {
     flex-direction: column;
     height: auto;
-    max-width: 400px;
+    max-width: 95vw;
     border-radius: 12px;
+    box-shadow: none;
+    background-color: #f9fafb00;;
   }
+
   .image-side {
-    height: 200px;
+    height: 180px;
     flex: none;
     border-radius: 12px 12px 0 0;
+    background-position: center;
   }
+
+  .image-text {
+    font-size: 1.8rem;
+    padding: 1.2rem;
+    max-width: 90%;
+    line-height: 1.2;
+  }
+
   .login-side {
     flex: none;
-    padding: 30px 25px;
-    box-shadow: none;
+    padding: 20px 20px;
     border-radius: 0 0 12px 12px;
+    box-shadow: none;
   }
-}
 
-@media (max-width: 420px) {
+  .login-side h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .login-side p.subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-step {
+    gap: 0.8rem;
+  }
+
   input[type="text"],
   input[type="email"],
   input[type="password"] {
     font-size: 0.9rem;
+    padding: 10px 12px;
   }
 
   button[type="button"],
   button[type="submit"] {
     font-size: 1rem;
     padding: 12px;
+    margin-top: 0.8rem;
   }
+
+  .login-link {
+    font-size: 0.85rem;
+    margin-top: 1.5rem;
+  }
+
+  .social-login {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 1.5rem;
+  }
+
+  .social-login button {
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 10px;
+  }
+
+  .footer-powered-by {
+    display: hidden;
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .image-text {
+    font-size: 1.5rem;
+    padding: 1rem;
+  }
+
+  .login-side h2 {
+    font-size: 1.4rem;
+  }
+
+  .login-side p.subtitle {
+    font-size: 0.85rem;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    font-size: 0.85rem;
+    padding: 9px 10px;
+  }
+
+  button[type="button"],
+  button[type="submit"] {
+    font-size: 0.95rem;
+    padding: 10px;
+  }
+
+  .login-link {
+    font-size: 0.8rem;
+  }
+
+  .social-login {
+    gap: 8px;
+  }
+
+  .social-login button {
+    font-size: 0.8rem;
+  }
+
 }

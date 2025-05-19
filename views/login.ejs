@@ -1,58 +1,191 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Velink - Login</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/css/login.css" />
-  <style>
-
-  </style>
+  <script src="/js/login.js" defer></script>
 </head>
 <body>
 
   <div class="container">
 
+    <!-- Bild-Seite -->
     <div class="image-side" aria-label="Inspiring background image">
-        <div class="image-text">
+      <div class="image-text">
         Welcome to Velink.<br />
-        </div>
+      </div>
     </div>
 
+    <!-- Login-Seite -->
     <div class="login-side" role="main" aria-labelledby="login-title">
       <h2 id="login-title">Login</h2>
       <p class="subtitle">Please sign in with your credentials.</p>
 
-      <form id="Form" action="/login" method="POST" novalidate>
+      <form id="loginForm" action="/login" method="POST" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-        <label for="username">Username</label>
-        <input autocomplete="off" type="text" id="username" name="username" required />
+        <!-- Schritt 1 -->
+        <div class="form-step step-1 active">
+          <label for="username">Username</label>
+          <input autocomplete="off" type="text" id="username" name="username" required />
 
-        <label for="password">Password</label>
-        <input autocomplete="off" type="password" id="password" name="password" required minlength="8" />
+          <button type="button" id="nextBtn">Weiter</button>
+        </div>
 
-        <a href="/forgot-password" class="forgot-password">Forgot password?</a>
+        <!-- Schritt 2 -->
+        <div class="form-step step-2">
+          <label for="password">Password</label>
+          <input autocomplete="off" type="password" id="password" name="password" required minlength="8" />
 
-        <button type="submit">Sign In</button>
+          <a href="/forgot-password" class="forgot-password">Forgot password?</a>
+
+          <button type="submit">Sign In</button>
+        </div>
       </form>
 
-      <div class="register-link">
+      <div class="login-link">
         No account? <a href="/register">Register now</a>
       </div>
 
+      <!-- Social Login Optionen -->
       <div class="social-login" aria-label="Alternative sign-in options">
-        <button title="Sign in with Google"><i class="fab fa-google"></i> Google</button>
-        <button title="Sign in with Facebook"><i class="fab fa-facebook-f"></i> Facebook</button>
+        <button type="button" title="Sign in with Google"><i class="fab fa-google"></i> Google</button>
+        <button type="button" title="Sign in with Facebook"><i class="fab fa-facebook-f"></i> Facebook</button>
+        <button id="moreOptionsBtn" type="button" aria-haspopup="dialog" aria-expanded="false" title="Weitere Anmeldeoptionen">+</button>
+      </div>
+
+      <!-- Modal Fenster -->
+      <div id="moreOptionsModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+        <div class="modal-content">
+          <button id="closeModalBtn" aria-label="Schließen">&times;</button>
+          <h3 id="modalTitle">Weitere Anmeldeoptionen</h3>
+          <button type="button" title="Sign in with Twitter"><i class="fab fa-twitter"></i> Twitter</button>
+          <button type="button" title="Sign in with LinkedIn"><i class="fab fa-linkedin-in"></i> LinkedIn</button>
+          <button type="button" title="Sign in with GitHub"><i class="fab fa-github"></i> GitHub</button>
+        </div>
       </div>
     </div>
-
   </div>
 
   <div class="footer-powered-by">
     <a href="/">Powered by <strong>Velink</strong></a>
   </div>
+
+  <style>
+    .social-login {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    #moreOptionsBtn {
+      font-size: 1.5rem;
+      border: 1px solid #525252;
+      height: 38px;
+      width: 38px !important;
+      background: transparent;
+      cursor: pointer;
+      line-height: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background-color 0.3s ease;
+    }
+
+    #moreOptionsBtn:hover,
+    #moreOptionsBtn:focus {
+      background-color: #4f46e5;
+      outline: none;
+    }
+
+    #moreOptionsModal {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    #moreOptionsModal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #ffffff;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      min-width: 320px;
+      max-width: 90%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: relative;
+    }
+
+    #closeModalBtn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      color: #9ca3af;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    #closeModalBtn:hover,
+    #closeModalBtn:focus {
+      color: #ef4444;
+      outline: none;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const moreBtn = document.getElementById('moreOptionsBtn');
+      const modal = document.getElementById('moreOptionsModal');
+      const closeBtn = document.getElementById('closeModalBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const steps = document.querySelectorAll('.form-step');
+
+      function openModal() {
+        modal.classList.add('show');
+        moreBtn.setAttribute('aria-expanded', 'true');
+        closeBtn.focus();
+      }
+
+      function closeModal() {
+        modal.classList.remove('show');
+        moreBtn.setAttribute('aria-expanded', 'false');
+        moreBtn.focus();
+      }
+
+      moreBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+          closeModal();
+        }
+      });
+
+      nextBtn.addEventListener('click', () => {
+        steps[0].classList.remove('active');
+        steps[1].classList.add('active');
+      });
+    });
+  </script>
 
 </body>
 </html>

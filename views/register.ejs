@@ -12,12 +12,14 @@
 
   <div class="container">
 
+    <!-- Bild-Seite -->
     <div class="image-side" aria-label="Inspiring background image">
       <div class="image-text">
         Welcome to Velink.<br />
       </div>
     </div>
 
+    <!-- Registrierungs-Seite -->
     <div class="register-side" role="main" aria-labelledby="register-title">
 
       <h2 id="register-title">Register</h2>
@@ -26,6 +28,7 @@
       <form id="registerForm" action="/register" method="POST" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
+        <!-- Schritt 1 -->
         <div class="form-step step-1 active">
           <label for="username">Username</label>
           <input autocomplete="off" type="text" id="username" name="username" required />
@@ -36,6 +39,7 @@
           <button type="button" id="nextBtn">Weiter</button>
         </div>
 
+        <!-- Schritt 2 -->
         <div class="form-step step-2">
           <label for="password">Password</label>
           <input autocomplete="off" type="password" id="password" name="password" required minlength="8" />
@@ -51,20 +55,140 @@
         Already have an account? <a href="/login">Login here</a>
       </div>
 
+      <!-- Social Login Optionen -->
       <div class="social-register" aria-label="Alternative sign-in options">
         <button type="button" title="Sign in with Google"><i class="fab fa-google"></i> Google</button>
         <button type="button" title="Sign in with Facebook"><i class="fab fa-facebook-f"></i> Facebook</button>
+        <button id="moreOptionsBtn" type="button" aria-haspopup="dialog" aria-expanded="false" title="Weitere Anmeldeoptionen">+</button>
+      </div>
+
+      <!-- Modal Fenster -->
+      <div id="moreOptionsModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+        <div class="modal-content">
+          <button id="closeModalBtn" aria-label="Schließen">&times;</button>
+          <h3 id="modalTitle">Weitere Anmeldeoptionen</h3>
+          <button type="button" title="Sign in with Twitter"><i class="fab fa-twitter"></i> Twitter</button>
+          <button type="button" title="Sign in with LinkedIn"><i class="fab fa-linkedin-in"></i> LinkedIn</button>
+          <button type="button" title="Sign in with GitHub"><i class="fab fa-github"></i> GitHub</button>
+        </div>
       </div>
 
     </div>
-
   </div>
 
   <div class="footer-powered-by">
     <a href="/">Powered by <strong>Velink</strong></a>
   </div>
 
-  <script src="register.js"></script>
+  <style>
+    .social-register {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    #moreOptionsBtn {
+      font-size: 1.5rem;
+      border: 1px solid #525252;
+      height: 38px;
+      width: 38px !important;
+      background: transparent;
+      cursor: pointer;
+      line-height: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background-color 0.3s ease;
+    }
+
+    #moreOptionsBtn:hover,
+    #moreOptionsBtn:focus {
+      background-color: #4f46e5;
+      outline: none;
+    }
+
+    #moreOptionsModal {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+  .modal-content {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    min-width: 320px;
+    max-width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+  }
+
+    #closeModalBtn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  #closeModalBtn:hover,
+  #closeModalBtn:focus {
+    color: #ef4444;
+    outline: none;
+  }
+    #moreOptionsModal {
+      display: none;
+    }
+
+    #moreOptionsModal.show {
+      display: flex;
+    }
+
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const moreBtn = document.getElementById('moreOptionsBtn');
+      const modal = document.getElementById('moreOptionsModal');
+      const closeBtn = document.getElementById('closeModalBtn');
+
+      function openModal() {
+        modal.classList.add('show');
+        moreBtn.setAttribute('aria-expanded', 'true');
+        closeBtn.focus();
+      }
+
+      function closeModal() {
+        modal.classList.remove('show');
+        moreBtn.setAttribute('aria-expanded', 'false');
+        moreBtn.focus();
+      }
+
+      moreBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+          closeModal();
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

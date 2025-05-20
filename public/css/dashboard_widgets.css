@@ -1,0 +1,386 @@
+/* === Allgemeine Layouts === */
+.content {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE und Edge */
+  color: #1e293b;
+}
+
+h1 {
+  margin-bottom: 2rem;
+  font-weight: 800;
+  font-size: 2.5rem;
+  color: #334155;
+  letter-spacing: -0.02em;
+  user-select: none;
+}
+
+/* === Grid-Layout für Widgets === */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.75rem;
+}
+
+/* Widget Container für flexibles Wrapping */
+.widget-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.75rem;
+  justify-content: center;
+}
+
+/* Allgemeine Widget-Stile */
+.widget {
+  background-color: #ffffff;
+  padding: 1.75rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  flex: 1 1 22rem;
+  min-width: 18rem;
+  max-width: 32rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+
+.widget:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.15);
+}
+
+/* === Profilübersicht (Modern, Elegant) === */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px solid #e0e7ff;
+  user-select: none;
+}
+
+.profile-header img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid #6366f1;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  flex-shrink: 0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-header img:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+  border-color: #818cf8;
+}
+
+.profile-info {
+  flex-grow: 1;
+}
+
+.profile-header h2 {
+  margin: 0 0 0.3rem 0;
+  font-weight: 900;
+  font-size: 1.8rem;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+}
+
+.profile-header a {
+  font-size: 1rem;
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.profile-header a:hover,
+.profile-header a:focus {
+  color: #4338ca;
+  text-decoration: underline;
+  outline-offset: 2px;
+}
+
+.profile-description {
+  margin-top: 0.75rem;
+  font-size: 1.05rem;
+  color: #475569;
+  line-height: 1.6;
+  max-width: 440px;
+  user-select: text;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* === Buttons === */
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 1rem;
+  user-select: none;
+}
+
+.button {
+  padding: 0.65rem 1.5rem;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, box-shadow 0.2s ease;
+  user-select: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.button:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.button-share {
+  background-color: #6366f1;
+}
+
+.button-share:hover {
+  background-color: #4f46e5;
+}
+
+.button-edit {
+  background-color: #475569;
+}
+
+.button-edit:hover {
+  background-color: #334155;
+}
+
+.button-promote {
+  position: relative;
+  background-color: black;
+  color: white;
+  border-radius: 12px;
+  padding: 0.75rem 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  user-select: none;
+  z-index: 0;
+  border: 4px solid transparent; /* Platz für den Rahmen */
+  background-clip: padding-box;  /* Hintergrund bleibt nur im inneren Bereich */
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Pseudoelement für den animierten Rand */
+.button-promote::before {
+  content: "";
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border-radius: 16px; /* border-radius + border-width */
+  padding: 4px; /* Macht den inneren Bereich frei für die "Maske" */
+  background: linear-gradient(
+    90deg,
+    #ec4899,
+    #8b5cf6,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899
+  );
+  background-size: 400% 100%;
+  animation: rainbowShift 8s linear infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+          mask-composite: exclude; 
+  mask:
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Schwarze innere Fläche sicherstellen */
+.button-promote::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 12px;
+  background-color: black;
+  z-index: -1;
+}
+
+@keyframes rainbowShift {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 400% 0%; }
+}
+
+
+.button-copy {
+  background-color: #10b981;
+}
+
+.button-copy:hover {
+  background-color: #059669;
+}
+
+/* === Profil-Vervollständigung === */
+.profile-completion h2 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.profile-completion p {
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.progress-bar {
+  background-color: #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 14px;
+  margin-bottom: 1.25rem;
+}
+
+.progress-fill {
+  width: 60%;
+  background-color: #6366f1;
+  height: 100%;
+  border-radius: 12px 0 0 12px;
+  transition: width 0.5s ease-in-out;
+}
+
+/* === Newsletter Promo === */
+.newsletter-widget {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  padding: 2rem 2.5rem;
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  font-weight: 600;
+}
+
+.newsletter-widget h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.newsletter-widget p {
+  margin-bottom: 1.25rem;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.newsletter-widget button {
+  padding: 0.65rem 1.4rem;
+  background-color: white;
+  color: #7c3aed;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.45);
+}
+
+.newsletter-widget button:hover {
+  background-color: #e0c1ff;
+}
+
+/* === Pulse Effekt === */
+.newsletter-pulse {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  animation: pulse 3s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+}
+
+/* === Soziale Verbindungen === */
+.social-connections h2 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.social-connections ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.social-connections li {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #475569;
+  user-select: text;
+}
+
+.social-connections button {
+  margin-left: 1rem;
+  padding: 0.35rem 0.8rem;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.45);
+  transition: background-color 0.3s ease;
+}
+
+.social-manage {
+  background-color: #6366f1;
+}
+
+.social-manage:hover {
+  background-color: #4f46e5;
+}
+
+.social-connect {
+  background-color: #16a34a;
+}
+
+.social-connect:hover {
+  background-color: #15803d;
+}

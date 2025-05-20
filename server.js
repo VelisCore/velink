@@ -358,27 +358,51 @@ app.get('/profile/:username', async (req, res) => {
 
 app.get('/manage', isAuthenticated, (req, res) => {
   const user = req.session.user;
-  res.render('acc/manage', { user });
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('acc/manage', { user, username, from });
 });
 
 app.get('/feed', isAuthenticated, (req, res) => {
   const user = req.session.user;
-  res.render('acc/feed', { user });
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('acc/feed', { user, username, from });
 });
 
 app.get('/settings', isAuthenticated, (req, res) => {
   const user = req.session.user;
-  res.render('acc/settings', { user });
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('acc/settings', { user, username, from });
 });
 
 app.get('/customize', isAuthenticated, (req, res) => {
   const user = req.session.user;
-  res.render('acc/customize', { user });
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('acc/customize', { user, username, from });
 });
 
-app.get('/extensions', isAuthenticated, (req, res) => {
+app.get('/connections', isAuthenticated, (req, res) => {
   const user = req.session.user;
-  res.render('acc/extensions', { user });
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('acc/connections', { user, username, from });
+});
+
+app.get('/custom-domain', isAuthenticated, (req, res) => {
+  const user = req.session.user;
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('acc/custom-domain', { user, username, from });
+});
+
+app.get('/analytics', isAuthenticated, (req, res) => {
+  const user = req.session.user;
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('acc/analytics', { user, username, from });
 });
 
 app.use((req, res, next) => {

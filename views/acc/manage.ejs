@@ -37,32 +37,130 @@
       }
     }
   </script>
-  <link href="/css/dashboard.css" rel="stylesheet" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+  <link href="/css/dashboard.css" rel="stylesheet" />
+  <link href="/css/dashboard_layout.css" rel="stylesheet" />
+  <link href="/css/dashboard_widgets.css" rel="stylesheet" />
 </head>
 <body>
   <nav>
-  <a class="logo_link" href="/"><div class="logo">Velink</div></a>
-  <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
-  <ul class="nav-links">
+    <a class="logo_link" href="/"><div class="logo">Velink</div></a>
+    <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+    <ul class="nav-links">
       <% if (user) { %>
-        <a href="/manage" class="nav-avatar">
+        <li><a href="/manage" class="nav-avatar">
           <img src="<%= user.profileImage || 'https://avatars.githubusercontent.com/u/158351052?v=4' %>" alt="Profile Picture" />
-        </a>
+        </a></li>
       <% } else { %>
-        <a href="/login" class="login-button">Login</a>
+        <li><a href="/login" class="login-button">Login</a></li>
       <% } %>
-    </li>
-  </ul>
-</nav>
+    </ul>
+  </nav>
+
+  <div class="page-wrapper">
+    <aside class="sidebar">
+      <div class="nav-section">
+        <div class="nav-section-title">General</div>
+        <a href="/manage" class="nav-item"><i class="bi bi-house"></i> Home</a>
+        <a href="/feed" class="nav-item"><i class="bi bi-rss"></i> News</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Account</div>
+        <a href="/profile/<%= username %>" class="nav-item"><i class="bi bi-person"></i> Profile</a>
+        <a href="/settings" class="nav-item"><i class="bi bi-gear"></i> Settings</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Customization</div>
+        <a href="/customize" class="nav-item"><i class="bi bi-sliders"></i> Customize</a>
+        <a href="/connections" class="nav-item"><i class="bi bi-people"></i> Connections</a>
+        <a href="/custom-domain" class="nav-item"><i class="bi bi-globe"></i> Custom Domain</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Analytics</div>
+        <a href="/analytics" class="nav-item"><i class="bi bi-bar-chart"></i> Analytics</a>
+      </div>
+    </aside>
+
+
+
+     <main class="content">
+    <h1>Dashboard</h1>
+    
+    <div class="dashboard-grid">
+      <div class="widget-container">
+        <!-- Widget: Profilübersicht -->
+        <div class="widget profile_widget">
+          <div class="profile-header">
+            <img src="https://avatars.githubusercontent.com/u/105444012?v=4" alt="Profilbild" />
+            <div>
+              <h2>Velis</h2>
+              <a href="https://velis.me" target="_blank">velis.me</a>
+            </div>
+          </div>
+          <p class="profile-description">Passionate creator, developer, and founder of VelisCore.</p>
+          <div class="button-group">
+            <button class="button button-share">Profil teilen</button>
+            <button class="button button-edit">Profil bearbeiten</button>
+            <button class="button button-promote">Promote your Profile</button>
+            <button class="button button-copy">Profil-Link kopieren</button>
+          </div>
+        </div>
+
+        <!-- Widget: Profil-Vervollständigung -->
+        <div class="widget profile-completion">
+          <h2>Profil-Vervollständigung</h2>
+          <p>Dein Profil ist zu 60 % ausgefüllt.</p>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+          <button class="button button-share">Jetzt vervollständigen</button>
+        </div>
+
+        <!-- Widget: Newsletter -->
+        <div class="widget newsletter-widget">
+          <div class="newsletter-pulse"></div>
+          <h2>✨ Newsletter aktivieren</h2>
+          <p>Erhalte Updates, Angebote und personalisierte Tools direkt in dein Postfach.</p>
+          <button>Jetzt abonnieren</button>
+        </div>
+
+        <!-- Widget: Link-Statistik -->
+        <div class="widget link-stats">
+          <h2>Link-Klicks</h2>
+          <p><strong>Heute:</strong> 34</p>
+          <p><strong>Diese Woche:</strong> 189</p>
+          <p><strong>Insgesamt:</strong> 3.421</p>
+        </div>
+
+        <!-- Widget: Soziale Verbindungen -->
+        <div class="widget social-connections">
+          <h2>Soziale Verbindungen</h2>
+          <ul>
+            <li>
+              <i class="bi bi-instagram"></i> Instagram verknüpft
+              <button class="social-manage">Verwalten</button>
+            </li>
+            <li>
+              <i class="bi bi-twitter"></i> Twitter nicht verknüpft
+              <button class="social-connect">Verbinden</button>
+            </li>
+            <li>
+              <i class="bi bi-youtube"></i> YouTube verknüpft
+              <button class="social-manage">Verwalten</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  </div>
+
   <script>
     const toggleButton = document.querySelector('.menu-toggle');
     const navLinks = document.querySelector('.nav-links');
-  
+
     toggleButton.addEventListener('click', () => {
       navLinks.classList.toggle('show');
     });

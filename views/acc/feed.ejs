@@ -70,7 +70,7 @@
     <ul class="nav-links">
       <% if (user) { %>
         <li><a href="/manage" class="nav-avatar">
-          <img src="<%= user.profileImage || 'https://avatars.githubusercontent.com/u/158351052?v=4' %>" alt="Profile Picture" />
+          <img src="<%= user.profileImage || '/img/not_signed_in/variant2.svg' %>" alt="Profile Picture" />
         </a></li>
       <% } else { %>
         <li><a href="/login" class="login-button">Login</a></li>

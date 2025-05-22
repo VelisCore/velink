@@ -1,0 +1,22 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hintergrund mit abgerundeten Ecken -->
+  <rect x="2" y="2" width="60" height="60" rx="12" ry="12" fill="#E0E0E0" />
+
+  <!-- Kopf mit leichtem Verlauf -->
+  <defs>
+    <linearGradient id="faceGrad" x1="22" y1="12" x2="42" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D6D6D6"/>
+      <stop offset="100%" stop-color="#B0B0B0"/>
+    </linearGradient>
+    <linearGradient id="shoulderGrad" x1="16" y1="44" x2="48" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#BDBDBD"/>
+      <stop offset="100%" stop-color="#999999"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Kopf -->
+  <circle cx="32" cy="22" r="10" fill="url(#faceGrad)" />
+
+  <!-- Schultern/Büste -->
+  <path d="M16,52 Q32,40 48,52 Q32,64 16,52 Z" fill="url(#shoulderGrad)" />
+</svg>

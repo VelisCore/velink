@@ -21,6 +21,14 @@
   <meta name="twitter:title" content="Velink – Coming Soon">
   <meta name="twitter:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
   <meta name="twitter:image" content="/img/logo/fresh/white_purple_rounded.png">
+  <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  integrity="sha512-..."
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+/>
+
   <meta name="twitter:card" content="/img/logo/fresh/white_purple_rounded.png">
   <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet"/>
   <script type="application/ld+json">
@@ -50,7 +58,7 @@
     <ul class="nav-links">
       <% if (user) { %>
         <li><a href="/manage" class="nav-avatar">
-          <img src="<%= user.profileImage || 'https://avatars.githubusercontent.com/u/158351052?v=4' %>" alt="Profile Picture" />
+          <img src="<%= user.profileImage || '/img/not_signed_in/variant2.svg' %>" alt="Profile Picture" />
         </a></li>
       <% } else { %>
         <li><a href="/login" class="login-button">Login</a></li>
@@ -84,11 +92,160 @@
 
 
 
-    
-         <main class="content">
-            <h1>Connections</h1>
+    <main class="content">
+  <h1>Verbindungen verwalten</h1>
 
-        </main>
+  <!-- Suchleiste -->
+  <div style="margin-bottom: 3rem;" class="widget">
+    <input
+      type="text"
+      placeholder="Nach Diensten suchen..."
+      style="
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+      "
+    />
+  </div>
+
+  <!-- Verbindungs-Widgets -->
+  <div class="dashboard-grid">
+    <!-- Instagram -->
+    <div class="widget social-connections">
+      <h2>Instagram</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-instagram"></i> Instagram</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- Discord Server -->
+    <div class="widget social-connections">
+      <h2>Discord (Server)</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-discord"></i> Discord Server</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- Discord User -->
+    <div class="widget social-connections">
+      <h2>Discord (User)</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-discord"></i> Discord Benutzer</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- WhatsApp -->
+    <div class="widget social-connections">
+      <h2>WhatsApp</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-whatsapp"></i> WhatsApp</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- Facebook -->
+    <div class="widget social-connections">
+      <h2>Facebook</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-facebook"></i> Facebook</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- GitHub -->
+    <div class="widget social-connections">
+      <h2>GitHub</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-github"></i> GitHub</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- Google -->
+    <div class="widget social-connections">
+      <h2>Google</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-google"></i> Google</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- LinkedIn -->
+    <div class="widget social-connections">
+      <h2>LinkedIn</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-linkedin"></i> LinkedIn</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- TikTok -->
+    <div class="widget social-connections">
+      <h2>TikTok</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-tiktok"></i> TikTok</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- Twitch -->
+    <div class="widget social-connections">
+      <h2>Twitch</h2>
+      <ul>
+        <li>
+          <span><i class="fab fa-twitch"></i> Twitch</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+
+    <!-- Eigenes System -->
+    <div class="widget social-connections">
+      <h2>Eigenes System</h2>
+      <ul>
+        <li>
+          <span><i class="fas fa-cogs"></i> Velis API</span>
+          <button class="social-manage">Verwalten</button>
+        </li>
+      </ul>
+      <button class="social-connect">Verbinden</button>
+    </div>
+  </div>
+</main>
+
 
   </div>
 

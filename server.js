@@ -405,6 +405,20 @@ app.get('/analytics', isAuthenticated, (req, res) => {
   res.render('acc/analytics', { user, username, from });
 });
 
+app.get('/datenschutz', (req, res) => {
+  const user = req.session.user;
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('datenschutz', { user, username, from });
+})
+
+app.get('/nutzungsbedingungen', (req, res) => {
+  const user = req.session.user;
+  const username = req.session.user ? req.session.user.username : null;
+  const from = req.query.from;
+  res.render('nutzungsbedingungen', { user, username, from });
+});
+
 app.use((req, res, next) => {
   const err = new Error('Die angeforderte Seite wurde nicht gefunden.');
   err.status = 404;

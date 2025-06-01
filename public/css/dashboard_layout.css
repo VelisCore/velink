@@ -17,6 +17,8 @@ nav {
   padding: 0 2rem;
   height: 60px;
   background: #fff;
+  position: relative;
+  z-index: 1100;
 }
 .logo_link {
   font-size: 1.5rem;
@@ -25,10 +27,7 @@ nav {
   text-decoration: none;
 }
 .nav-links {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
+  display: none;
 }
 .nav-avatar img,
 .login-button {
@@ -45,6 +44,28 @@ nav {
   color: #fff;
   text-decoration: none;
   font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+.login-button:hover {
+  background-color: #4338ca;
+}
+
+/* Hamburger-Button */
+.hamburger {
+  display: none;
+  font-size: 2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4f46e5;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+.hamburger:hover,
+.hamburger:focus {
+  color: #4338ca;
+  outline: none;
 }
 
 /* Haupt-Wrapper */
@@ -53,6 +74,7 @@ nav {
   align-items: stretch;
   padding: 0 200px;
   height: calc(100vh - 60px);
+  background: #f9fafb;
 }
 .sidebar {
   width: 220px;
@@ -63,6 +85,7 @@ nav {
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease;
 }
 
 .nav-section {
@@ -87,10 +110,14 @@ nav {
   text-decoration: none;
   border-radius: 999px;
   transition: background 0.2s, color 0.2s;
+  font-weight: 500;
+  cursor: pointer;
 }
-.nav-item:hover {
+.nav-item:hover,
+.nav-item:focus {
   background-color: #4f46e5;
   color: #fff;
+  outline: none;
 }
 .nav-item i {
   margin-right: 0.75rem;
@@ -99,49 +126,76 @@ nav {
 
 /* Content-Bereich */
 .content {
-  width: 1600px;
+  flex: 1;
   margin-left: 1rem;
   padding: 2rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   overflow-y: auto;
   background: #fff;
+  min-width: 0; /* wichtig für flex overflow */
 }
 
-
 /* Responsive Design */
-@media (max-width: 1024px) {
+
+/* Bis 1024px */
+@media (max-width: 1350px) {
   .page-wrapper {
     padding: 0 20px;
   }
 }
 
-@media (max-width: 768px) {
-  .page-wrapper {
-    flex-direction: column;
+/* Ab 768px und kleiner: Off-Canvas Sidebar */
+@media (max-width: 884px) {
+  .hamburger {
+    display: block;
+  }
+
+  nav {
     padding: 0 1rem;
-    height: auto;
+  }
+
+  .nav-links {
+    display: none;
   }
 
   .sidebar {
-    width: 100%;
-    flex-direction: row;
-    overflow-x: auto;
-    white-space: nowrap;
-    padding: 0.5rem;
-    box-shadow: none;
-    border-bottom: 1px solid #e5e7eb;
+    position: fixed;
+    top: 60px; /* Höhe der Navbar */
+    left: 0;
+    width: 250px;
+    height: calc(100vh - 60px);
+    background-color: #fff;
+    padding: 1rem;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    transform: translateX(-100%);
+    z-index: 1000;
+    overflow-y: auto;
+    border-radius: 0 8px 8px 0;
   }
 
-  .nav-section {
-    margin: 0 1rem 0 0;
-    border: none;
-    padding: 0;
+  .sidebar.open {
+    transform: translateX(0);
   }
 
-  .nav-item {
-    border-radius: 8px;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.9rem;
+  /* Overlay beim geöffneten Sidebar */
+  .overlay {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - 60px);
+    background: rgba(0,0,0,0.3);
+    z-index: 900;
+    display: none;
+  }
+
+  .overlay.active {
+    display: block;
+  }
+
+  .page-wrapper {
+    padding: 0 1rem;
+    height: auto;
   }
 
   .content {
@@ -149,6 +203,7 @@ nav {
     margin-top: 1rem;
     padding: 1rem;
     box-shadow: none;
+    border-radius: 0;
   }
 
   .login-button {
@@ -157,21 +212,17 @@ nav {
   }
 }
 
+/* Bis 480px */
 @media (max-width: 480px) {
   nav {
     padding: 0 1rem;
-    flex-direction: column;
-    height: auto;
+    flex-direction: row;
+    height: 60px;
     gap: 0.5rem;
   }
 
   .logo_link {
     font-size: 1.3rem;
-  }
-
-  .nav-links {
-    flex-direction: column;
-    gap: 0.5rem;
   }
 
   .nav-avatar img {
@@ -180,12 +231,12 @@ nav {
   }
 
   .login-button {
-    width: 100%;
+    width: auto;
     text-align: center;
   }
 
   .sidebar {
-    flex-wrap: wrap;
+    width: 250px;
   }
 
   .nav-item i {

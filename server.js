@@ -306,11 +306,14 @@ app.get('/logout', ipWhitelist, (req, res) => {
 app.get('/profile/:username', async (req, res) => {
   const start = Date.now();
   const requestedUsername = req.params.username;
-  const loggedInUser = req.session.user;
+  const loggedInUser = req.session?.user;
   const isOwnProfile = loggedInUser && loggedInUser.username === requestedUsername;
 
   let user = null;
-  let profile = { bio: '', avatar: 'default.png' };
+  let profile = {
+    bio: '',
+    avatar: '/img/default.png'
+  };
 
   try {
     user = await new Promise((resolve, reject) => {
@@ -321,15 +324,20 @@ app.get('/profile/:username', async (req, res) => {
     });
 
     if (user) {
-      profile = await new Promise((resolve, reject) => {
+      const profileData = await new Promise((resolve, reject) => {
         profileDB.get("SELECT * FROM profiles WHERE user_id = ?", [user.id], (err, row) => {
           if (err) return reject(err);
-          resolve(row || profile);
+          resolve(row);
         });
       });
+
+      if (profileData) {
+        profile.bio = profileData.bio || '';
+        profile.avatar = profileData.avatar || '/img/default.png';
+      }
     }
-  } catch (e) {
-    console.error("Fehler bei Profilabruf:", e.message);
+  } catch (error) {
+    console.error('Fehler beim Laden des Profils:', error);
   }
 
   const elapsed = Date.now() - start;
@@ -337,13 +345,20 @@ app.get('/profile/:username', async (req, res) => {
     await delay(MIN_RESPONSE_TIME - elapsed);
   }
 
+  // URL für OpenGraph etc.
+  const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+
   if (!user) {
-    return res.render('profile', {
+    return res.status(404).render('profile', {
       username: requestedUsername,
       email: '',
       isOwnProfile: false,
-      profile: { bio: 'Profil nicht gefunden.', avatar: 'default.png' },
-      user: loggedInUser
+      profile: {
+        bio: 'Profil nicht gefunden.',
+        avatar: '/img/default.png'
+      },
+      user: loggedInUser,
+      url: fullUrl
     });
   }
 
@@ -352,9 +367,12 @@ app.get('/profile/:username', async (req, res) => {
     email: user.email,
     isOwnProfile,
     profile,
-    user: loggedInUser
+    user: loggedInUser,
+    url: fullUrl
   });
 });
+
+
 
 app.get('/manage', isAuthenticated, (req, res) => {
   const user = req.session.user;

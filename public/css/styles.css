@@ -57,6 +57,9 @@
   }
   
   html {
+   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased; /* Für WebKit-Browser */
     -moz-osx-font-smoothing: grayscale;  /* Für Firefox auf macOS */
     text-rendering: optimizeLegibility;  /* Bessere Ligaturen & Kerning */

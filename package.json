@@ -6,6 +6,7 @@
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
+    "geoip-lite": "^1.4.10",
     "helmet": "^8.1.0",
     "http": "^0.0.1-security",
     "ip": "^2.0.1",

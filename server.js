@@ -34,7 +34,7 @@ app.use(session({
     httpOnly: true,
     secure: false,
     maxAge: 1000 * 60 * 60 * 2,
-    SameSite: 'strict',
+    sameSite: 'strict',
   }
 }));
 
@@ -137,6 +137,12 @@ profileDB.run(`CREATE TABLE IF NOT EXISTS profiles (
   avatar TEXT,
   FOREIGN KEY(user_id) REFERENCES users(id)
 )`);
+
+profileDB.run(`ALTER TABLE profiles ADD COLUMN visits TEXT DEFAULT ''`, (err) => {
+  if (err && !err.message.includes("duplicate column")) {
+    console.error('Fehler beim Hinzufügen der visits-Spalte:', err.message);
+  }
+});
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

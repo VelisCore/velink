@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - Admin - Velink</title>
+  <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .admin-sidebar {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <nav class="col-md-3 col-lg-2 d-md-block admin-sidebar sidebar collapse">
+        <div class="position-sticky pt-3">
+          <div class="text-center mb-4">
+            <h4 class="text-white">Admin Panel</h4>
+            <p class="text-white-50">Welcome, <%= user.username %></p>
+          </div>
+          
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link text-white-50" href="/admin">
+                <i class="bi bi-speedometer2"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white-50" href="/admin/users">
+                <i class="bi bi-people"></i> Users
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white active" href="/admin/analytics">
+                <i class="bi bi-graph-up"></i> Analytics
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white-50" href="/admin/logs">
+                <i class="bi bi-journal-text"></i> Logs
+              </a>
+            </li>
+            <li class="nav-item mt-3">
+              <a class="nav-link text-white-50" href="/">
+                <i class="bi bi-house"></i> Back to Site
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white-50" href="/logout">
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Main content -->
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">System Analytics</h1>
+          <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+              <select class="form-select" onchange="changeTimeframe(this.value)">
+                <option value="7days" <%= timeframe === '7days' ? 'selected' : '' %>>Last 7 Days</option>
+                <option value="30days" <%= timeframe === '30days' ? 'selected' : '' %>>Last 30 Days</option>
+                <option value="90days" <%= timeframe === '90days' ? 'selected' : '' %>>Last 90 Days</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Clicks Chart -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title">Daily Click Activity</h5>
+              </div>
+              <div class="card-body">
+                <canvas id="dailyClicksChart" width="400" height="100"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title">Top Countries</h5>
+              </div>
+              <div class="card-body">
+                <% if (topCountries && topCountries.length > 0) { %>
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Country</th>
+                          <th>Clicks</th>
+                          <th>%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% 
+                          const totalCountryClicks = topCountries.reduce((sum, country) => sum + country.count, 0);
+                          topCountries.forEach(country => { 
+                            const percentage = totalCountryClicks > 0 ? ((country.count / totalCountryClicks) * 100).toFixed(1) : 0;
+                        %>
+                        <tr>
+                          <td><%= country.country || 'Unknown' %></td>
+                          <td><%= country.count %></td>
+                          <td><%= percentage %>%</td>
+                        </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% } else { %>
+                  <p class="text-muted">No data available</p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title">Top Referrers</h5>
+              </div>
+              <div class="card-body">
+                <% if (topReferrers && topReferrers.length > 0) { %>
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Referrer</th>
+                          <th>Clicks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% topReferrers.forEach(referrer => { %>
+                        <tr>
+                          <td>
+                            <% if (referrer.referrer) { %>
+                              <%= new URL(referrer.referrer).hostname %>
+                            <% } else { %>
+                              Direct
+                            <% } %>
+                          </td>
+                          <td><%= referrer.count %></td>
+                        </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% } else { %>
+                  <p class="text-muted">No data available</p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Options -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title">Export Data</h5>
+              </div>
+              <div class="card-body">
+                <div class="btn-group">
+                  <button class="btn btn-outline-primary" onclick="exportData('csv')">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+                  </button>
+                  <button class="btn btn-outline-secondary" onclick="exportData('json')">
+                    <i class="bi bi-file-earmark-code"></i> Export JSON
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Daily clicks chart
+    const dailyData = <%- JSON.stringify(dailyClicks) %>;
+    const ctx = document.getElementById('dailyClicksChart').getContext('2d');
+    
+    const labels = dailyData.map(item => item.date).reverse();
+    const data = dailyData.map(item => item.clicks).reverse();
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Daily Clicks',
+          data: data,
+          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.1,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: true,
+            text: 'Click Activity Over Time'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+    function changeTimeframe(timeframe) {
+      window.location.href = `/admin/analytics?timeframe=${timeframe}`;
+    }
+
+    function exportData(format) {
+      // Implement export functionality
+      alert(`Export to ${format.toUpperCase()} - Feature coming soon!`);
+    }
+  </script>
+</body>
+</html>

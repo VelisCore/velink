@@ -1,188 +1,431 @@
 :root {
+    /* Enhanced Color System */
     --bg: #ffffff;
-    --text: #111111;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
     --accent: #4f46e5;
-    --muted: #6b7280;
-    --line-color: #ccc;
-    --dot-color: #4f46e5;
-    --text-color: #333;
+    --accent-light: #6366f1;
+    --accent-dark: #3b34c1;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --radius-sm: 0.375rem;
+    --radius: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
-  /* Retro-inspirierte Scrollbar */
-::-webkit-scrollbar {
-    width: 14px;
-    height: 14px;
-    background: var(--bg);
+
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --border-light: #1e293b;
+    }
+  }
+
+  /* Enhanced Scrollbar */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
   }
   
   ::-webkit-scrollbar-track {
-    background: repeating-linear-gradient(
-      45deg,
-      var(--bg),
-      var(--bg) 10px,
-      #e0e0e0 10px,
-      #e0e0e0 20px
-    );
-    border: 1px solid var(--line-color);
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
   }
   
   ::-webkit-scrollbar-thumb {
-    background-color: var(--accent);
-    border: 2px solid var(--line-color);
-    box-shadow: inset -1px -1px 0px #222222, inset 1px 1px 0px #ffffff;
-    border-radius: 0;
+    background: var(--accent);
+    border-radius: var(--radius);
+    border: 2px solid var(--bg-secondary);
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background-color: #3b34c1;
-    box-shadow: inset -1px -1px 0px #111, inset 1px 1px 0px #ddd;
-  }
-  
-  ::-webkit-scrollbar-corner {
-    background: var(--bg);
+    background: var(--accent-dark);
   }
   
   /* Firefox */
   * {
-    scrollbar-width: auto;
-    scrollbar-color: var(--accent) var(--bg);
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) var(--bg-secondary);
   }
-  
-  /* Reset */
-  * {
-    scroll-behavior: smooth;
+  /* Enhanced Reset & Base Styles */
+  *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
   }
-  
+
   html {
-   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-    -webkit-font-smoothing: antialiased; /* Für WebKit-Browser */
-    -moz-osx-font-smoothing: grayscale;  /* Für Firefox auf macOS */
-    text-rendering: optimizeLegibility;  /* Bessere Ligaturen & Kerning */
-    font-smooth: always;                 /* Nicht standardisiert, aber manche Browser interpretieren es */
-
-    /* Zusätzlich für klare, gestochen scharfe Kanten */
-    image-rendering: -webkit-optimize-contrast; /* Für WebKit – Scharfzeichnung */
-    image-rendering: crisp-edges;               /* Für andere Browser */
-    backface-visibility: hidden;                /* Verhindert Flackern bei 3D-Transform */
-    transform: translateZ(0);                   /* Trigger GPU-Rendering */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    height: 100%;
   }
-
-
-
-  .nav-avatar img {
-    width: 35px;
-    height: 35px;
-    display: block;
-    align-items: center;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 1px #ccc;
-    transition: box-shadow 0.3s ease;
-    z-index: 1000;
-  }
-  
-  .nav-avatar img:hover {
-    box-shadow: 0 0 0 2px var(--accent);
-  }
-  
-  .login-button {
-    position: relative;
-    padding: 0.7rem 1rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: white;
-    background-color: var(--accent);
-    border: none;
-    border-radius: 10px;
-    text-decoration: none;
-    overflow: hidden;
-    cursor: pointer;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
-  }
-  
-  .login-button:hover {
-    background-color: var(--accent-dark);  /* Beispiel für eine dunklere Farbe bei Hover */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  /* Schatten für 3D-Effekt */
-    transform: translateY(-2px);  /* Leichte Verschiebung nach oben für einen Klick-Effekt */
-  }
-  
 
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     background-color: var(--bg);
     color: var(--text);
     line-height: 1.6;
+    min-height: 100vh;
+    font-size: 16px;
+    font-weight: 400;
+    overflow-x: hidden;
   }
-  
-  /* Navigation */
-  nav {
-    position: sticky;
-    top: 0;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(20px);
-    padding: 1rem 2rem;
-    display: flex;
-    height: 63px;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #e5e7eb;
-    z-index: 100;
-  }
-  
-  nav .logo {
-    font-size: 1.2rem;
+
+  /* Enhanced Typography */
+  h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
-    color: var(--accent);
-    letter-spacing: -0.5px;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    color: var(--text);
   }
-  
-  nav ul {
-    display: flex;
-    gap: 1.5rem;
+
+  h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+  h2 { font-size: clamp(2rem, 4vw, 3rem); }
+  h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
+  h4 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); }
+
+  p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: var(--transition);
+  }
+
+  a:hover {
+    color: var(--accent-dark);
+  }
+
+  /* Enhanced Button System */
+  .btn {
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: var(--shadow);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+  }
+
+  .btn-secondary:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    background: var(--bg-secondary);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover {
+    background: var(--bg-tertiary);
+    color: var(--text);
+    transform: translateY(-1px);
+  }
+
+  .btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+    border-radius: var(--radius-xl);
+  }
+
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Enhanced Navigation */
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-light);
+    z-index: 1000;
+    transition: var(--transition);
+  }
+
+  .navbar.scrolled {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: var(--shadow-md);
+  }
+
+  .nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+  }
+
+  .nav-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.05em;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
     list-style: none;
   }
-  
-  nav ul li a {
-    text-decoration: none;
-    color: var(--text);
+
+  .nav-links a {
+    color: var(--text-secondary);
     font-weight: 500;
-    transition: color 0.3s;
+    transition: var(--transition);
+    position: relative;
   }
-  
-  nav ul li a:hover {
+
+  .nav-links a:hover {
     color: var(--accent);
   }
-  
-  /* Hero */
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: var(--transition);
+  }
+
+  .nav-links a:hover::after {
+    width: 100%;
+  }
+
+  .nav-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    transition: var(--transition);
+  }
+
+  .nav-avatar:hover {
+    border-color: var(--accent);
+    transform: scale(1.05);
+  }
+
+  .nav-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--radius);
+    transition: var(--transition);
+  }
+
+  .menu-toggle:hover {
+    background: var(--bg-secondary);
+  }
+  /* Enhanced Hero Section */
   .hero {
-    min-height: 60vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 2rem;
-    background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
+    padding: 2rem 1rem;
+    background: 
+      radial-gradient(circle at 25% 25%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+      linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    position: relative;
+    overflow: hidden;
   }
-  
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234f46e5' fill-opacity='0.05' fill-rule='nonzero'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.5;
+    animation: float 20s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .hero-content {
+    max-width: 800px;
+    z-index: 2;
+    position: relative;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    animation: slideInDown 0.8s ease-out;
+  }
+
   .hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    max-width: 700px;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: slideInUp 0.8s ease-out 0.2s both;
   }
-  
-  .hero p {
+
+  .hero-description {
     font-size: 1.25rem;
-    color: var(--muted);
-    margin: 1rem 0 2rem;
-    max-width: 600px;
+    color: var(--text-secondary);
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+    animation: slideInUp 0.8s ease-out 0.4s both;
+  }
+
+  .hero-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    animation: slideInUp 0.8s ease-out 0.6s both;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-light);
+    animation: slideInUp 0.8s ease-out 0.8s both;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Animations */
+  @keyframes slideInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   .cta-button {
@@ -295,21 +538,14 @@
     text-decoration: none;
   }
   
-  /* Mobile Navigation */
-  .menu-toggle {
-    display: none;
-    font-size: 1.5rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text);
-  }
+  /* Mobile Navigation - Removed duplicate */
   
+  /* Media Queries */
   @media (max-width: 768px) {
     .menu-toggle {
       display: block;
     }
-  
+
     .nav-links {
       display: none;
       flex-direction: column;
@@ -323,15 +559,27 @@
       padding: 1rem;
       z-index: 999;
     }
-  
+
     .nav-links.show {
       display: flex;
     }
-  
+
+    .hero h1 {
+      font-size: 2.5rem;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+    }
+
+    .hero-buttons {
+      flex-direction: column;
+    }
+
     nav ul li {
       margin-bottom: 0.5rem;
     }
-  
+
     nav ul li:last-child {
       margin-bottom: 0;
     }

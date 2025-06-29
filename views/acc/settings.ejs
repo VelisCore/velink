@@ -1,103 +1,661 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-  <link href="https://rsms.me/inter/inter.css" rel="stylesheet">  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Velink – Home</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Velink</title>
   <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
-  <meta name="description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
-  <meta name="keywords" content="Velink, Linktree alternative, customizable links, online presence, minimal design">
-  <meta name="author" content="Velyzo">
-  <meta name="robots" content="index, follow">
-  <meta property="og:title" content="Velink – Coming Soon">
-  <meta property="og:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
-  <meta property="og:image" content="/img/logo/fresh/white_purple_rounded.png">
-  <meta property="og:url" content="https://velink.me">
-  <meta property="og:type" content="website">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3166078894407448" crossorigin="anonymous"></script>
-  <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"></noscript>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-  <meta name="twitter:title" content="Velink – Coming Soon">
-  <meta name="twitter:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
-  <meta name="twitter:image" content="/img/logo/fresh/white_purple_rounded.png">
-  <meta name="twitter:card" content="/img/logo/fresh/white_purple_rounded.png">
-  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet"/>
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Velink",
-      "url": "https://velink.me",
-      "description": "Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.",
-      "publisher": {
-        "@type": "Organization",
-        "name": "Velyzo",
-        "logo": "/img/logo/fresh/white_purple_rounded.png"
+  <meta name="description" content="Manage your Velink account settings and preferences">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/base.css" rel="stylesheet">
+  <link href="/css/cookie-notice.css" rel="stylesheet">
+  
+  <style>
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+      background: var(--bg-secondary);
+    }
+
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border-color);
+      padding: 2rem 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 0 2rem 2rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .nav-section {
+      margin-bottom: 2rem;
+    }
+
+    .nav-section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0 2rem 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 2rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border-right: 3px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-secondary);
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .nav-item.active {
+      background: var(--primary-bg);
+      color: var(--primary);
+      border-right-color: var(--primary);
+      font-weight: 500;
+    }
+
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .main-content {
+      padding: 2rem;
+      overflow: auto;
+    }
+
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .settings-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .settings-header {
+      background: var(--bg-secondary);
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .settings-header h3 {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .settings-header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .settings-body {
+      padding: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-bg);
+    }
+
+    .form-control:read-only {
+      background: var(--bg-secondary);
+      color: var(--text-muted);
+    }
+
+    .form-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .row {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .row.cols-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .row.cols-3 {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .alert {
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .alert-success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .alert-danger {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .badge-admin {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .badge-moderator {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .badge-user {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .info-item {
+      margin-bottom: 1rem;
+    }
+
+    .info-label {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+      color: var(--text-secondary);
+    }
+
+    .divider {
+      border: none;
+      height: 1px;
+      background: var(--border-color);
+      margin: 2rem 0;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .row.cols-2,
+      .row.cols-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .form-actions {
+        flex-direction: column;
       }
     }
-  </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
-  <link href="/css/dashboard.css" rel="stylesheet" />
-  <link href="/css/dashboard_layout.css" rel="stylesheet" />
-  <link href="/css/dashboard_widgets.css" rel="stylesheet" />
+  </style>
 </head>
 <body>
-  <nav>
-    <a class="logo_link" href="/"><div class="logo">Velink</div></a>
-    <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
-    <ul class="nav-links">
-      <% if (user) { %>
-        <li><a href="/manage" class="nav-avatar">
-          <img src="<%= user.profileImage || '/img/not_signed_in/variant2.svg' %>" alt="Profile Picture" />
-        </a></li>
-      <% } else { %>
-        <li><a href="/login" class="login-button">Login</a></li>
-      <% } %>
-    </ul>
-  </nav>
-
-  <div class="page-wrapper">
+  <div class="dashboard-layout">
     <aside class="sidebar">
-      <div class="nav-section">
-        <div class="nav-section-title">General</div>
-        <a href="/manage" class="nav-item"><i class="bi bi-house"></i> Home</a>
-        <a href="/feed" class="nav-item"><i class="bi bi-rss"></i> News</a>
+      <div class="sidebar-header">
+        <a href="/" class="logo">Velink</a>
       </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Content</div>
+        <a href="/manage" class="nav-item">
+          <i class="bi bi-link-45deg"></i>
+          Links
+        </a>
+        <a href="/feed" class="nav-item">
+          <i class="bi bi-rss"></i>
+          News
+        </a>
+      </div>
+
       <div class="nav-section">
         <div class="nav-section-title">Account</div>
-        <a href="/profile/<%= username %>" class="nav-item"><i class="bi bi-person"></i> Profile</a>
-                <a href="/settings" class="nav-item"><i class="bi bi-gear"></i> Settings</a>
-        <a href="/logout" class="nav-item logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        <a href="/profile/<%= username %>" class="nav-item">
+          <i class="bi bi-person"></i>
+          Profile
+        </a>
+        <a href="/settings" class="nav-item active">
+          <i class="bi bi-gear"></i>
+          Settings
+        </a>
       </div>
+
       <div class="nav-section">
         <div class="nav-section-title">Customization</div>
-        <a href="/customize" class="nav-item"><i class="bi bi-sliders"></i> Customize</a>
-        <a href="/connections" class="nav-item"><i class="bi bi-people"></i> Connections</a>
-        <a href="/custom-domain" class="nav-item"><i class="bi bi-globe"></i> Custom Domain</a>
+        <a href="/customize" class="nav-item">
+          <i class="bi bi-sliders"></i>
+          Customize
+        </a>
+        <a href="/analytics" class="nav-item">
+          <i class="bi bi-bar-chart"></i>
+          Analytics
+        </a>
       </div>
+
+      <% if (user.role === 'admin') { %>
       <div class="nav-section">
-        <div class="nav-section-title">Analytics</div>
-        <a href="/analytics" class="nav-item"><i class="bi bi-bar-chart"></i> Analytics</a>
+        <div class="nav-section-title">Admin</div>
+        <a href="/admin" class="nav-item">
+          <i class="bi bi-shield-check"></i>
+          Dashboard
+        </a>
+      </div>
+      <% } %>
+
+      <div class="nav-section">
+        <a href="/logout" class="nav-item">
+          <i class="bi bi-box-arrow-right"></i>
+          Logout
+        </a>
       </div>
     </aside>
 
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">Account Settings</h1>
+        <p class="page-subtitle">Manage your account preferences and security settings</p>
+      </div>
 
+      <!-- Success/Error Messages -->
+      <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success">
+          <i class="bi bi-check-circle"></i>
+          <div>
+            <% if (success === 'profile_updated') { %>Profile updated successfully!<% } %>
+            <% if (success === 'account_updated') { %>Account settings updated successfully!<% } %>
+          </div>
+        </div>
+      <% } %>
 
-     <main class="content">
-    <h1>Settings</h1>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <% if (error === 'profile_update_failed') { %>Failed to update profile. Please try again.<% } %>
+            <% if (error === 'current_password_required') { %>Current password is required.<% } %>
+            <% if (error === 'invalid_password') { %>Current password is incorrect.<% } %>
+            <% if (error === 'account_update_failed') { %>Failed to update account. Please try again.<% } %>
+            <% if (error === 'user_not_found') { %>User not found.<% } %>
+          </div>
+        </div>
+      <% } %>
 
-      </main>
+      <!-- Profile Information -->
+      <div class="settings-card">
+        <div class="settings-header">
+          <h3>
+            <i class="bi bi-person-circle"></i>
+            Profile Information
+          </h3>
+          <div class="subtitle">Update your public profile information</div>
+        </div>
+        <div class="settings-body">
+          <form method="POST" action="/settings/profile">
+            <div class="row cols-2">
+              <div class="form-group">
+                <label class="form-label" for="display_name">Display Name</label>
+                <input type="text" class="form-control" id="display_name" name="display_name" 
+                       value="<%= profile.display_name || '' %>" placeholder="Enter your display name">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="location">Location</label>
+                <input type="text" class="form-control" id="location" name="location" 
+                       value="<%= profile.location || '' %>" placeholder="Enter your location">
+              </div>
+            </div>
 
+            <div class="form-group">
+              <label class="form-label" for="bio">Bio</label>
+              <textarea class="form-control" id="bio" name="bio" rows="4" 
+                        placeholder="Tell people about yourself..."><%= profile.bio || '' %></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="website">Website</label>
+              <input type="url" class="form-control" id="website" name="website" 
+                     value="<%= profile.website || '' %>" placeholder="https://example.com">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i>
+                Update Profile
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Account Security -->
+      <div class="settings-card">
+        <div class="settings-header">
+          <h3>
+            <i class="bi bi-shield-lock"></i>
+            Account Security
+          </h3>
+          <div class="subtitle">Manage your account credentials and security</div>
+        </div>
+        <div class="settings-body">
+          <form method="POST" action="/settings/account">
+            <div class="row cols-2">
+              <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" class="form-control" id="username" name="username" 
+                       value="<%= user.username %>" readonly>
+                <div class="form-text">Username cannot be changed</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="email">Email Address</label>
+                <input type="email" class="form-control" id="email" name="email" 
+                       value="<%= user.email %>" required>
+              </div>
+            </div>
+
+            <hr class="divider">
+
+            <h4 style="margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+              <i class="bi bi-key"></i>
+              Change Password
+            </h4>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+              Leave password fields empty to keep your current password
+            </p>
+
+            <div class="row cols-3">
+              <div class="form-group">
+                <label class="form-label" for="current_password">Current Password *</label>
+                <input type="password" class="form-control" id="current_password" name="current_password" 
+                       placeholder="Enter current password">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new_password">New Password</label>
+                <input type="password" class="form-control" id="new_password" name="new_password" 
+                       placeholder="Enter new password">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="confirm_password">Confirm New Password</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                       placeholder="Confirm new password">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-shield-check"></i>
+                Update Account
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Account Information -->
+      <div class="settings-card">
+        <div class="settings-header">
+          <h3>
+            <i class="bi bi-info-circle"></i>
+            Account Information
+          </h3>
+          <div class="subtitle">Your account details and statistics</div>
+        </div>
+        <div class="settings-body">
+          <div class="info-grid">
+            <div>
+              <div class="info-item">
+                <div class="info-label">Account ID</div>
+                <div class="info-value"><%= user.id %></div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Member Since</div>
+                <div class="info-value"><%= new Date().toLocaleDateString() %></div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Account Type</div>
+                <div class="info-value">
+                  <span class="badge badge-<%= user.role === 'admin' ? 'admin' : user.role === 'moderator' ? 'moderator' : 'user' %>">
+                    <%= user.role.toUpperCase() %>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="info-item">
+                <div class="info-label">Profile Views</div>
+                <div class="info-value"><%= profile.profile_views || 0 %></div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Public Profile</div>
+                <div class="info-value">
+                  <a href="/profile/<%= user.username %>" target="_blank" class="btn btn-outline btn-sm">
+                    <i class="bi bi-eye"></i>
+                    View Profile
+                  </a>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Profile URL</div>
+                <div class="info-value">
+                  <code style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
+                    velink.me/profile/<%= user.username %>
+                  </code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
 
-  <script>
-    const toggleButton = document.querySelector('.menu-toggle');
-    const navLinks = document.querySelector('.nav-links');
+  <!-- Cookie Notice -->
+  <div id="cookieNotice" class="cookie-notice">
+    <div class="cookie-content">
+      <div class="cookie-text">
+        <h4>We value your privacy</h4>
+        <p>We use cookies to enhance your experience and analyze site usage.</p>
+      </div>
+      <div class="cookie-actions">
+        <button id="acceptCookies" class="cookie-btn primary">Accept All</button>
+        <button id="manageCookies" class="cookie-btn secondary">Manage</button>
+      </div>
+    </div>
+  </div>
 
-    toggleButton.addEventListener('click', () => {
-      navLinks.classList.toggle('show');
+  <script src="/js/cookie-manager.js"></script>
+  <script>
+    // Password confirmation validation
+    const newPasswordField = document.getElementById('new_password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    
+    if (confirmPasswordField) {
+      confirmPasswordField.addEventListener('input', function() {
+        const newPassword = newPasswordField.value;
+        const confirmPassword = this.value;
+        
+        if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+          this.setCustomValidity('Passwords do not match');
+          this.style.borderColor = '#dc2626';
+        } else {
+          this.setCustomValidity('');
+          this.style.borderColor = '';
+        }
+      });
+    }
+
+    // Form validation feedback
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        const requiredFields = this.querySelectorAll('[required]');
+        let isValid = true;
+
+        requiredFields.forEach(field => {
+          if (!field.value.trim()) {
+            field.style.borderColor = '#dc2626';
+            isValid = false;
+          } else {
+            field.style.borderColor = '';
+          }
+        });
+
+        if (!isValid) {
+          e.preventDefault();
+        }
+      });
     });
   </script>
 </body>

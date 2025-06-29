@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+  <link href="https://rsms.me/inter/inter.css" rel="stylesheet">  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Velink – Nutzungsbedingungen</title>
+  <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
+  <meta name="robots" content="noindex, follow">
+  <link href="/css/styles.css" rel="stylesheet" />
+  <link href="/css/legal.css" rel="stylesheet" />
+</head>
+<body>
+  <nav>
+    <a class="logo_link" href="/"><div class="logo">Velink</div></a>
+    <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+    <ul class="nav-links">
+      <li>
+        <% if (user) { %>
+          <a href="/manage" class="nav-avatar">
+            <img src="<%= user.profileImage || '/img/not_signed_in/variant2.svg' %>" alt="Profile Picture" />
+          </a>
+        <% } else { %>
+          <a href="/login" class="login-button">Login</a>
+        <% } %>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="page-wrapper">
+    <section class="legal">
+      <h1>Nutzungsbedingungen</h1>
+      <p>Mit der Nutzung von Velink erklärst du dich mit den folgenden Bedingungen einverstanden:</p>
+
+      <h2>1. Nutzung</h2>
+      <p>Velink bietet die Möglichkeit, personalisierte Link-Seiten zu erstellen. Die Nutzung ist kostenfrei, kann jedoch eingeschränkt oder eingestellt werden.</p>
+
+      <h2>2. Konten</h2>
+      <p>Wir behalten uns das Recht vor, Konten jederzeit und ohne Angabe von Gründen zu löschen oder zu sperren, insbesondere bei Verstoß gegen diese Bedingungen.</p>
+
+      <h2>3. Inhalte</h2>
+      <p>Du bist für alle Inhalte verantwortlich, die du über dein Konto veröffentlichst. Es dürfen keine rechtswidrigen, anstößigen oder schädlichen Inhalte verbreitet werden.</p>
+
+      <h2>4. Haftungsausschluss</h2>
+      <p>Wir übernehmen keine Haftung für Datenverluste, Erreichbarkeit oder Schäden, die aus der Nutzung oder dem Ausfall des Dienstes entstehen. Insbesondere haften wir nicht für den Fall, dass sämtliche Datenbanken zurückgesetzt, gelöscht oder anderweitig unwiederbringlich verloren gehen, auch wenn dies durch technische Probleme oder Sicherheitsvorfälle verursacht wurde. Du akzeptierst, dass in solchen Fällen keinerlei Ersatzansprüche gegen uns bestehen und wir von jeglicher Verantwortung freigestellt sind.</p>
+      <p>Diese Haftungsbeschränkung gilt nicht bei Vorsatz, grober Fahrlässigkeit oder bei Verletzung von Leben, Körper oder Gesundheit.</p>
+
+      <h2>5. Datenschutz</h2>
+      <p>Der Schutz deiner personenbezogenen Daten ist uns wichtig. Unsere Datenschutzerklärung informiert dich darüber, wie wir deine Daten verarbeiten und welche Rechte du hast. Bitte lies sie sorgfältig durch.</p>
+
+      <h2>6. Geistiges Eigentum</h2>
+      <p>Alle Inhalte und Marken auf Velink, einschließlich Logos, Texte, Bilder und Software, sind durch Urheberrechte und andere Schutzrechte geschützt. Du darfst diese Inhalte ohne unsere ausdrückliche Zustimmung nicht verwenden oder vervielfältigen.</p>
+
+      <h2>7. Verhalten</h2>
+      <p>Du verpflichtest dich, Velink nicht für rechtswidrige Zwecke zu nutzen und keine Handlungen vorzunehmen, die den Betrieb oder die Sicherheit der Plattform beeinträchtigen.</p>
+
+      <h2>8. Änderungen</h2>
+      <p>Diese Nutzungsbedingungen können jederzeit geändert werden. Es gilt die jeweils aktuelle Version auf dieser Seite.</p>
+
+      <h2>9. Beendigung</h2>
+      <p>Wir können deine Nutzung der Plattform jederzeit mit oder ohne Grund einstellen. Nach Beendigung erlöschen alle Rechte an deinem Konto und dessen Inhalten, soweit nicht anders vereinbart.</p>
+
+      <h2>10. Schlussbestimmungen</h2>
+      <p>Es gilt das Recht der Bundesrepublik Deutschland. Gerichtsstand ist, soweit zulässig, München.</p>
+    </section>
+  </div>
+
+  <script>
+    const toggleButton = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+    toggleButton.addEventListener('click', () => {
+      navLinks.classList.toggle('show');
+    });
+  </script>
+</body>
+</html>

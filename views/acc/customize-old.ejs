@@ -7,7 +7,7 @@
   <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
   <meta name="description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
   <meta name="keywords" content="Velink, Linktree alternative, customizable links, online presence, minimal design">
-  <meta name="author" content="Velyzo">
+  <meta name="author" content="Velis">
   <meta name="robots" content="index, follow">
   <meta property="og:title" content="Velink – Coming Soon">
   <meta property="og:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
@@ -32,7 +32,7 @@
       "description": "Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.",
       "publisher": {
         "@type": "Organization",
-        "name": "Velyzo",
+        "name": "Velis",
         "logo": "/img/logo/fresh/white_purple_rounded.png"
       }
     }
@@ -85,79 +85,8 @@
 
 
 
-    
          <main class="content">
-            <h1>Analytics</h1>
-            
-            <div class="timeframe-selector">
-              <select id="timeframeSelect" onchange="location.href='?timeframe=' + this.value">
-                <option value="7days" <%= timeframe === '7days' ? 'selected' : '' %>>Last 7 days</option>
-                <option value="30days" <%= timeframe === '30days' ? 'selected' : '' %>>Last 30 days</option>
-                <option value="90days" <%= timeframe === '90days' ? 'selected' : '' %>>Last 90 days</option>
-              </select>
-            </div>
-
-            <div class="analytics-overview">
-              <div class="metric-card">
-                <h3>Total Clicks</h3>
-                <div class="metric-value"><%= analytics.totalClicks %></div>
-              </div>
-              <div class="metric-card">
-                <h3>Profile Views</h3>
-                <div class="metric-value"><%= analytics.profileViews %></div>
-              </div>
-            </div>
-
-            <div class="analytics-charts">
-              <div class="chart-section">
-                <h3>Daily Clicks</h3>
-                <div class="chart-container">
-                  <% if (analytics.dailyClicks && analytics.dailyClicks.length > 0) { %>
-                    <% analytics.dailyClicks.forEach(day => { %>
-                      <div class="chart-bar">
-                        <div class="bar-label"><%= day.date %></div>
-                        <div class="bar-value"><%= day.clicks %></div>
-                      </div>
-                    <% }); %>
-                  <% } else { %>
-                    <p>No click data available for this timeframe.</p>
-                  <% } %>
-                </div>
-              </div>
-
-              <div class="chart-section">
-                <h3>Top Links</h3>
-                <div class="top-items">
-                  <% if (analytics.topLinks && analytics.topLinks.length > 0) { %>
-                    <% analytics.topLinks.forEach(link => { %>
-                      <div class="top-item">
-                        <div class="item-title"><%= link.title %></div>
-                        <div class="item-url"><%= link.url %></div>
-                        <div class="item-clicks"><%= link.clicks %> clicks</div>
-                      </div>
-                    <% }); %>
-                  <% } else { %>
-                    <p>No link data available.</p>
-                  <% } %>
-                </div>
-              </div>
-
-              <div class="chart-section">
-                <h3>Top Countries</h3>
-                <div class="top-items">
-                  <% if (analytics.topCountries && analytics.topCountries.length > 0) { %>
-                    <% analytics.topCountries.forEach(country => { %>
-                      <div class="top-item">
-                        <div class="item-title"><%= country.country || 'Unknown' %></div>
-                        <div class="item-clicks"><%= country.clicks %> clicks</div>
-                      </div>
-                    <% }); %>
-                  <% } else { %>
-                    <p>No country data available.</p>
-                  <% } %>
-                </div>
-              </div>
-            </div>
+            <h1>Customize</h1>
 
         </main>
 

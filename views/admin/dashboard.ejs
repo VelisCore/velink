@@ -5,49 +5,560 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - Velink</title>
   <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="/css/dashboard.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/styles.css" rel="stylesheet">
+  
   <style>
-    .admin-sidebar {
+    body {
+      background: var(--bg-secondary);
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
+
+    .admin-sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border-color);
+      padding: 2rem 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .admin-header {
+      padding: 0 2rem 2rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 2rem;
+    }
+
+    .admin-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .admin-nav {
+      padding: 0 1rem;
+    }
+
+    .nav-section {
+      margin-bottom: 2rem;
+    }
+
+    .nav-section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0 1rem 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      margin-bottom: 0.25rem;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-secondary);
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .nav-item.active {
+      background: var(--primary-bg);
+      color: var(--primary);
+      border-left-color: var(--primary);
+      font-weight: 500;
+    }
+
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .admin-main {
+      padding: 2rem;
+      overflow: auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .status-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-online {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-border);
+    }
+
+    .status-offline {
+      background: var(--error-bg);
+      color: var(--error-text);
+      border: 1px solid var(--error-border);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
     .stat-card {
-      border: none;
-      border-radius: 15px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      transition: transform 0.3s ease;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: all 0.2s ease;
     }
+
     .stat-card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     }
+
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .stat-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
     .stat-icon {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
+      font-size: 1.2rem;
       color: white;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-change {
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .stat-change.positive {
+      color: var(--success-text);
+    }
+
+    .stat-change.negative {
+      color: var(--error-text);
+    }
+
+    .control-panel {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .control-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .control-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 60px;
+      height: 30px;
+      background: var(--border-color);
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-switch.active {
+      background: var(--primary);
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch.active .toggle-slider {
+      transform: translateX(30px);
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .action-btn {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+
+    .action-btn:hover {
+      background: var(--bg-secondary);
+      text-decoration: none;
+      color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .action-btn.danger {
+      border-color: var(--error-border);
+      color: var(--error-text);
+    }
+
+    .action-btn.danger:hover {
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+
+    .logout-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.5rem 1rem;
+      background: var(--error-bg);
+      color: var(--error-text);
+      border: 1px solid var(--error-border);
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .logout-btn:hover {
+      background: var(--error-text);
+      color: white;
+      text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+      .admin-layout {
+        grid-template-columns: 1fr;
+      }
+      
+      .admin-sidebar {
+        height: auto;
+        position: static;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container-fluid">
-    <div class="row">
-      <!-- Sidebar -->
-      <nav class="col-md-3 col-lg-2 d-md-block admin-sidebar sidebar collapse">
-        <div class="position-sticky pt-3">
-          <div class="text-center mb-4">
-            <h4 class="text-white">Admin Panel</h4>
-            <p class="text-white-50">Welcome, <%= user.username %></p>
+  <div class="admin-layout">
+    <div class="admin-sidebar">
+      <div class="admin-header">
+        <a href="/admin/dashboard" class="admin-logo">
+          <i class="bi bi-shield-check"></i>
+          Admin Panel
+        </a>
+      </div>
+      
+      <nav class="admin-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="/admin/dashboard" class="nav-item active">
+            <i class="bi bi-speedometer2"></i>
+            Dashboard
+          </a>
+          <a href="/admin/analytics" class="nav-item">
+            <i class="bi bi-graph-up"></i>
+            Analytics
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">Management</div>
+          <a href="/admin/users" class="nav-item">
+            <i class="bi bi-people"></i>
+            Users
+          </a>
+          <a href="/admin/logs" class="nav-item">
+            <i class="bi bi-file-text"></i>
+            System Logs
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">System</div>
+          <a href="/admin/settings" class="nav-item">
+            <i class="bi bi-gear"></i>
+            Settings
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="admin-main">
+      <a href="/admin/logout" class="logout-btn">
+        <i class="bi bi-box-arrow-right"></i>
+        Logout
+      </a>
+
+      <div class="page-header">
+        <h1 class="page-title">System Dashboard</h1>
+        <div class="header-actions">
+          <div class="status-badge <%= stats.websiteEnabled ? 'status-online' : 'status-offline' %>">
+            <i class="bi bi-<%= stats.websiteEnabled ? 'check-circle' : 'x-circle' %>"></i>
+            Website <%= stats.websiteEnabled ? 'Online' : 'Offline' %>
           </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-title">Total Users</div>
+            <div class="stat-icon" style="background: var(--primary)">
+              <i class="bi bi-people"></i>
+            </div>
+          </div>
+          <div class="stat-value"><%= stats.totalUsers %></div>
+          <div class="stat-change positive">
+            <i class="bi bi-arrow-up"></i>
+            Active registrations
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-title">Total Links</div>
+            <div class="stat-icon" style="background: var(--secondary)">
+              <i class="bi bi-link-45deg"></i>
+            </div>
+          </div>
+          <div class="stat-value"><%= stats.totalLinks %></div>
+          <div class="stat-change positive">
+            <i class="bi bi-arrow-up"></i>
+            Links created
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-title">Page Views</div>
+            <div class="stat-icon" style="background: var(--success)">
+              <i class="bi bi-eye"></i>
+            </div>
+          </div>
+          <div class="stat-value"><%= stats.pageViews %></div>
+          <div class="stat-change positive">
+            <i class="bi bi-arrow-up"></i>
+            Current session
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-title">System Uptime</div>
+            <div class="stat-icon" style="background: var(--warning)">
+              <i class="bi bi-clock"></i>
+            </div>
+          </div>
+          <div class="stat-value"><%= Math.floor(stats.uptime / 3600) %>h</div>
+          <div class="stat-change">
+            <i class="bi bi-info-circle"></i>
+            Hours online
+          </div>
+        </div>
+      </div>
+
+      <div class="control-panel">
+        <div class="control-header">
+          <i class="bi bi-sliders"></i>
+          <div class="control-title">Website Control</div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+          <span>Website Status:</span>
+          <div class="toggle-switch <%= stats.websiteEnabled ? 'active' : '' %>" onclick="toggleWebsite()">
+            <div class="toggle-slider"></div>
+          </div>
+          <span id="status-text"><%= stats.websiteEnabled ? 'Online' : 'Offline' %></span>
+        </div>
+        
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0;">
+          Toggle the website on/off for maintenance. When disabled, only admin panel remains accessible.
+        </p>
+      </div>
+
+      <div class="quick-actions">
+        <a href="/admin/users" class="action-btn">
+          <i class="bi bi-people"></i>
+          <div>
+            <div style="font-weight: 600;">Manage Users</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">View and edit user accounts</div>
+          </div>
+        </a>
+        
+        <a href="/admin/analytics" class="action-btn">
+          <i class="bi bi-graph-up"></i>
+          <div>
+            <div style="font-weight: 600;">View Analytics</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">Detailed usage statistics</div>
+          </div>
+        </a>
+        
+        <a href="/admin/logs" class="action-btn">
+          <i class="bi bi-file-text"></i>
+          <div>
+            <div style="font-weight: 600;">System Logs</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">Monitor system activity</div>
+          </div>
+        </a>
+        
+        <button class="action-btn danger" onclick="confirmRestart()">
+          <i class="bi bi-arrow-clockwise"></i>
+          <div>
+            <div style="font-weight: 600;">Restart System</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">Restart the application</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function toggleWebsite() {
+      try {
+        const response = await fetch('/admin/website/toggle', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          const toggle = document.querySelector('.toggle-switch');
+          const statusText = document.getElementById('status-text');
+          const statusBadge = document.querySelector('.status-badge');
           
-          <ul class="nav flex-column">
-            <li class="nav-item">
-              <a class="nav-link text-white active" href="/admin">
+          if (data.enabled) {
+            toggle.classList.add('active');
+            statusText.textContent = 'Online';
+            statusBadge.className = 'status-badge status-online';
+            statusBadge.innerHTML = '<i class="bi bi-check-circle"></i> Website Online';
+          } else {
+            toggle.classList.remove('active');
+            statusText.textContent = 'Offline';
+            statusBadge.className = 'status-badge status-offline';
+            statusBadge.innerHTML = '<i class="bi bi-x-circle"></i> Website Offline';
+          }
+        }
+      } catch (error) {
+        console.error('Failed to toggle website status:', error);
+      }
+    }
+    
+    function confirmRestart() {
+      if (confirm('Are you sure you want to restart the system? This will temporarily disconnect all users.')) {
+        // Implement restart functionality
+        alert('Restart functionality would be implemented here');
+      }
+    }
+  </script>
+</body>
+</html>
                 <i class="bi bi-speedometer2"></i> Dashboard
               </a>
             </li>

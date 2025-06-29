@@ -5,747 +5,391 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Customize Profile - Velink</title>
   <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
-  <link href="https://rsms.me/inter/inter.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="/css/dashboard.css" rel="stylesheet" />
-  <link href="/css/dashboard_layout.css" rel="stylesheet" />
-  <link href="/css/dashboard_widgets.css" rel="stylesheet" />
-  
-  <style>
-    .color-preview {
-      width: 50px;
-      height: 30px;
-      border-radius: 6px;
-      border: 1px solid #dee2e6;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .color-preview:hover {
-      transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    .theme-card {
-      border: 2px solid transparent;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-    .theme-card:hover {
-      border-color: #6366f1;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15);
-    }
-    .theme-card.active {
-      border-color: #6366f1;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
-    }
-    .avatar-upload {
-      position: relative;
-      display: inline-block;
-    }
-    .avatar-preview {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 4px solid #e5e7eb;
-      transition: all 0.3s ease;
-    }
-    .avatar-upload:hover .avatar-preview {
-      border-color: #6366f1;
-    }
-    .upload-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.7);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      cursor: pointer;
-    }
-    .avatar-upload:hover .upload-overlay {
-      opacity: 1;
-    }
-    .social-input-group {
-      margin-bottom: 1rem;
-    }
-    .social-icon {
-      background: #6366f1;
-      color: white;
-      border: none;
-      width: 40px;
-    }
-    .preview-section {
-      background: #f8fafc;
-      border-radius: 12px;
-      padding: 2rem;
-      border: 1px solid #e2e8f0;
-    }
-    .custom-css-editor {
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 14px;
-      background: #1e1e1e;
-      color: #d4d4d4;
-      border: none;
-      border-radius: 8px;
-      padding: 1rem;
-      min-height: 300px;
-    }
-    .settings-section {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .section-icon {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 1rem;
-    }
-    .tab-content {
-      min-height: 600px;
-    }
-    .gradient-picker {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    .gradient-option {
-      height: 60px;
-      border-radius: 8px;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-    .gradient-option:hover {
-      border-color: #6366f1;
-      transform: translateY(-2px);
-    }
-    .gradient-option.active {
-      border-color: #6366f1;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-    }
-  </style>
+  <meta name="description" content="Customize your Velink profile appearance and settings">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/styles.css" rel="stylesheet">
+  <link href="/css/cookie-notice.css" rel="stylesheet">
 </head>
 <body>
-  <nav>
-    <a class="logo_link" href="/"><div class="logo">Velink</div></a>
-    <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
-    <ul class="nav-links">
-      <% if (user) { %>
-        <li><a href="/manage" class="nav-avatar">
-          <img src="<%= user.profileImage || '/img/not_signed_in/variant2.svg' %>" alt="Profile Picture" />
-        </a></li>
-      <% } else { %>
-        <li><a href="/login" class="login-button">Login</a></li>
-      <% } %>
-    </ul>
-  </nav>
-
-  <div class="page-wrapper">
-    <aside class="sidebar">
-      <div class="nav-section">
-        <div class="nav-section-title">General</div>
-        <a href="/manage" class="nav-item"><i class="bi bi-house"></i> Home</a>
-        <a href="/feed" class="nav-item"><i class="bi bi-rss"></i> News</a>
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="sidebar-logo">Velink</a>
       </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Content</div>
+        <a href="/manage" class="nav-item">
+          <i class="bi bi-link-45deg"></i>
+          Links
+        </a>
+        <a href="/feed" class="nav-item">
+          <i class="bi bi-rss"></i>
+          News
+        </a>
+      </div>
+
       <div class="nav-section">
         <div class="nav-section-title">Account</div>
-        <a href="/profile/<%= username %>" class="nav-item"><i class="bi bi-person"></i> Profile</a>
-        <a href="/settings" class="nav-item"><i class="bi bi-gear"></i> Settings</a>
-        <a href="/logout" class="nav-item logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        <a href="/profile/<%= username %>" class="nav-item">
+          <i class="bi bi-person"></i>
+          Profile
+        </a>
+        <a href="/settings" class="nav-item">
+          <i class="bi bi-gear"></i>
+          Settings
+        </a>
       </div>
+
       <div class="nav-section">
         <div class="nav-section-title">Customization</div>
-        <a href="/customize" class="nav-item active"><i class="bi bi-palette"></i> Customize</a>
-        <a href="/connections" class="nav-item"><i class="bi bi-people"></i> Connections</a>
-        <a href="/custom-domain" class="nav-item"><i class="bi bi-globe"></i> Custom Domain</a>
+        <a href="/customize" class="nav-item active">
+          <i class="bi bi-palette"></i>
+          Customize
+        </a>
+        <a href="/analytics" class="nav-item">
+          <i class="bi bi-bar-chart"></i>
+          Analytics
+        </a>
       </div>
+
+      <% if (user.role === 'admin') { %>
       <div class="nav-section">
-        <div class="nav-section-title">Analytics</div>
-        <a href="/analytics" class="nav-item"><i class="bi bi-bar-chart"></i> Analytics</a>
+        <div class="nav-section-title">Admin</div>
+        <a href="/admin" class="nav-item">
+          <i class="bi bi-shield-check"></i>
+          Dashboard
+        </a>
+      </div>
+      <% } %>
+
+      <div class="nav-section">
+        <a href="/logout" class="nav-item">
+          <i class="bi bi-box-arrow-right"></i>
+          Logout
+        </a>
       </div>
     </aside>
 
-    <main class="content">
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-md-8">
-            <div class="d-flex align-items-center mb-4">
-              <div class="section-icon">
-                <i class="bi bi-palette"></i>
-              </div>
-              <div>
-                <h1 class="mb-0">Customize Your Profile</h1>
-                <p class="text-muted mb-0">Make your profile unique and stand out</p>
-              </div>
+    <main class="dashboard-main">
+      <div class="page-header">
+        <h1 class="page-title">Customize Profile</h1>
+        <p class="page-subtitle">Make your profile unique and stand out</p>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success">
+          <i class="bi bi-check-circle"></i>
+          <div>
+            <% if (success === 'profile_updated') { %>Profile updated successfully!<% } %>
+            <% if (success === 'theme_updated') { %>Theme updated successfully!<% } %>
+            <% if (success === 'avatar_uploaded') { %>Avatar uploaded successfully!<% } %>
+          </div>
+        </div>
+      <% } %>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <% if (error === 'upload_failed') { %>Failed to upload file. Please try again.<% } %>
+            <% if (error === 'invalid_file') { %>Invalid file type. Please upload an image.<% } %>
+            <% if (error === 'update_failed') { %>Failed to update profile. Please try again.<% } %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="customize-layout">
+        <!-- Customization Forms -->
+        <div class="customize-content">
+          <!-- Profile Information Section -->
+          <div class="settings-card">
+            <div class="settings-header">
+              <h3>
+                <i class="bi bi-person-circle"></i>
+                Profile Information
+              </h3>
+              <div class="subtitle">Update your public profile details</div>
             </div>
-
-            <!-- Success/Error Messages -->
-            <% if (success || error) { %>
-              <div class="alert alert-<%= success ? 'success' : 'danger' %> alert-dismissible fade show" role="alert">
-                <% if (success === 'profile_updated') { %>Profile updated successfully!<% } %>
-                <% if (success === 'theme_updated') { %>Theme updated successfully!<% } %>
-                <% if (success === 'avatar_uploaded') { %>Avatar uploaded successfully!<% } %>
-                <% if (error === 'upload_failed') { %>Failed to upload file. Please try again.<% } %>
-                <% if (error === 'invalid_file') { %>Invalid file type. Please upload an image.<% } %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-              </div>
-            <% } %>
-
-            <!-- Tabs Navigation -->
-            <ul class="nav nav-pills mb-4" id="customizeTabs" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="profile-tab" data-bs-toggle="pill" data-bs-target="#profile" type="button" role="tab">
-                  <i class="bi bi-person-circle me-2"></i>Profile Info
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="appearance-tab" data-bs-toggle="pill" data-bs-target="#appearance" type="button" role="tab">
-                  <i class="bi bi-palette me-2"></i>Appearance
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="social-tab" data-bs-toggle="pill" data-bs-target="#social" type="button" role="tab">
-                  <i class="bi bi-share me-2"></i>Social Links
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="advanced-tab" data-bs-toggle="pill" data-bs-target="#advanced" type="button" role="tab">
-                  <i class="bi bi-code-slash me-2"></i>Advanced
-                </button>
-              </li>
-            </ul>
-
-            <!-- Tab Content -->
-            <div class="tab-content" id="customizeTabContent">
-              <!-- Profile Info Tab -->
-              <div class="tab-pane fade show active" id="profile" role="tabpanel">
-                <form action="/customize/profile" method="POST" enctype="multipart/form-data">
-                  <div class="settings-section">
-                    <h4 class="mb-3"><i class="bi bi-person-circle me-2"></i>Basic Information</h4>
-                    
-                    <!-- Avatar Upload -->
-                    <div class="row mb-4">
-                      <div class="col-md-4">
-                        <label class="form-label">Profile Picture</label>
-                        <div class="avatar-upload">
-                          <img src="<%= profile.avatar || '/img/not_signed_in/variant2.svg' %>" alt="Avatar" class="avatar-preview" id="avatarPreview">
-                          <div class="upload-overlay">
-                            <i class="bi bi-camera text-white" style="font-size: 1.5rem;"></i>
-                          </div>
-                          <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;">
-                        </div>
-                      </div>
-                      <div class="col-md-8">
-                        <div class="mb-3">
-                          <label for="displayName" class="form-label">Display Name</label>
-                          <input type="text" class="form-control" id="displayName" name="display_name" 
-                                 value="<%= profile.display_name || '' %>" placeholder="Your display name">
-                        </div>
-                        <div class="mb-3">
-                          <label for="bio" class="form-label">Bio</label>
-                          <textarea class="form-control" id="bio" name="bio" rows="3" 
-                                    placeholder="Tell people about yourself..."><%= profile.bio || '' %></textarea>
-                        </div>
-                      </div>
+            <div class="settings-body">
+              <form method="POST" action="/customize/profile" enctype="multipart/form-data">
+                <div class="profile-upload-section">
+                  <div class="avatar-upload">
+                    <img src="<%= profile.avatar || '/img/not_signed_in/variant2.svg' %>" 
+                         alt="Avatar" class="avatar-preview" id="avatarPreview">
+                    <div class="upload-overlay">
+                      <i class="bi bi-camera"></i>
                     </div>
-
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="mb-3">
-                          <label for="location" class="form-label">Location</label>
-                          <input type="text" class="form-control" id="location" name="location" 
-                                 value="<%= profile.location || '' %>" placeholder="Your location">
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="mb-3">
-                          <label for="website" class="form-label">Website</label>
-                          <input type="url" class="form-control" id="website" name="website" 
-                                 value="<%= profile.website || '' %>" placeholder="https://yourwebsite.com">
-                        </div>
-                      </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                      <i class="bi bi-save me-2"></i>Save Profile Info
+                    <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;">
+                  </div>
+                  <div class="avatar-info">
+                    <h4>Profile Picture</h4>
+                    <p class="text-muted">Upload a new avatar. Recommended size: 400x400px</p>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('avatarInput').click()">
+                      <i class="bi bi-upload"></i>
+                      Choose File
                     </button>
                   </div>
-                </form>
-              </div>
+                </div>
 
-              <!-- Appearance Tab -->
-              <div class="tab-pane fade" id="appearance" role="tabpanel">
-                <form action="/customize/theme" method="POST">
-                  <div class="settings-section">
-                    <h4 class="mb-3"><i class="bi bi-palette me-2"></i>Theme Selection</h4>
-                    
-                    <div class="row">
-                      <div class="col-md-4 mb-3">
-                        <div class="theme-card <%= profile.theme === 'default' || !profile.theme ? 'active' : '' %>" 
-                             onclick="selectTheme('default')">
-                          <input type="radio" name="theme" value="default" style="display: none;" 
-                                 <%= profile.theme === 'default' || !profile.theme ? 'checked' : '' %>>
-                          <div class="card-body text-center">
-                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 60px; border-radius: 8px; margin-bottom: 1rem;"></div>
-                            <h6>Default</h6>
-                            <small class="text-muted">Clean and professional</small>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="col-md-4 mb-3">
-                        <div class="theme-card <%= profile.theme === 'dark' ? 'active' : '' %>" 
-                             onclick="selectTheme('dark')">
-                          <input type="radio" name="theme" value="dark" style="display: none;" 
-                                 <%= profile.theme === 'dark' ? 'checked' : '' %>>
-                          <div class="card-body text-center">
-                            <div style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%); height: 60px; border-radius: 8px; margin-bottom: 1rem;"></div>
-                            <h6>Dark Mode</h6>
-                            <small class="text-muted">Easy on the eyes</small>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="col-md-4 mb-3">
-                        <div class="theme-card <%= profile.theme === 'minimal' ? 'active' : '' %>" 
-                             onclick="selectTheme('minimal')">
-                          <input type="radio" name="theme" value="minimal" style="display: none;" 
-                                 <%= profile.theme === 'minimal' ? 'checked' : '' %>>
-                          <div class="card-body text-center">
-                            <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); height: 60px; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #e2e8f0;"></div>
-                            <h6>Minimal</h6>
-                            <small class="text-muted">Simple and clean</small>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-4 mb-3">
-                        <div class="theme-card <%= profile.theme === 'neon' ? 'active' : '' %>" 
-                             onclick="selectTheme('neon')">
-                          <input type="radio" name="theme" value="neon" style="display: none;" 
-                                 <%= profile.theme === 'neon' ? 'checked' : '' %>>
-                          <div class="card-body text-center">
-                            <div style="background: linear-gradient(135deg, #06ffa5 0%, #1d4ed8 100%); height: 60px; border-radius: 8px; margin-bottom: 1rem;"></div>
-                            <h6>Neon</h6>
-                            <small class="text-muted">Vibrant and modern</small>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="col-md-4 mb-3">
-                        <div class="theme-card <%= profile.theme === 'sunset' ? 'active' : '' %>" 
-                             onclick="selectTheme('sunset')">
-                          <input type="radio" name="theme" value="sunset" style="display: none;" 
-                                 <%= profile.theme === 'sunset' ? 'checked' : '' %>>
-                          <div class="card-body text-center">
-                            <div style="background: linear-gradient(135deg, #ff7b7b 0%, #ffa500 100%); height: 60px; border-radius: 8px; margin-bottom: 1rem;"></div>
-                            <h6>Sunset</h6>
-                            <small class="text-muted">Warm and inviting</small>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="col-md-4 mb-3">
-                        <div class="theme-card <%= profile.theme === 'ocean' ? 'active' : '' %>" 
-                             onclick="selectTheme('ocean')">
-                          <input type="radio" name="theme" value="ocean" style="display: none;" 
-                                 <%= profile.theme === 'ocean' ? 'checked' : '' %>>
-                          <div class="card-body text-center">
-                            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); height: 60px; border-radius: 8px; margin-bottom: 1rem;"></div>
-                            <h6>Ocean</h6>
-                            <small class="text-muted">Cool and calming</small>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <div class="row cols-2">
+                  <div class="form-group">
+                    <label class="form-label" for="display_name">Display Name</label>
+                    <input type="text" class="form-control" id="display_name" name="display_name" 
+                           value="<%= profile.display_name || '' %>" placeholder="Your display name">
                   </div>
-
-                  <div class="settings-section">
-                    <h4 class="mb-3"><i class="bi bi-brush me-2"></i>Color Customization</h4>
-                    
-                    <div class="row">
-                      <div class="col-md-6">
-                        <label for="primaryColor" class="form-label">Primary Color</label>
-                        <div class="input-group">
-                          <input type="color" class="form-control form-control-color" id="primaryColor" name="primary_color" 
-                                 value="<%= profile.primary_color || '#6366f1' %>">
-                          <input type="text" class="form-control" value="<%= profile.primary_color || '#6366f1' %>" readonly>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <label for="accentColor" class="form-label">Accent Color</label>
-                        <div class="input-group">
-                          <input type="color" class="form-control form-control-color" id="accentColor" name="accent_color" 
-                                 value="<%= profile.accent_color || '#8b5cf6' %>">
-                          <input type="text" class="form-control" value="<%= profile.accent_color || '#8b5cf6' %>" readonly>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="row mt-3">
-                      <div class="col-md-6">
-                        <label for="backgroundColor" class="form-label">Background Color</label>
-                        <div class="input-group">
-                          <input type="color" class="form-control form-control-color" id="backgroundColor" name="background_color" 
-                                 value="<%= profile.background_color || '#ffffff' %>">
-                          <input type="text" class="form-control" value="<%= profile.background_color || '#ffffff' %>" readonly>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <label for="textColor" class="form-label">Text Color</label>
-                        <div class="input-group">
-                          <input type="color" class="form-control form-control-color" id="textColor" name="text_color" 
-                                 value="<%= profile.text_color || '#1f2937' %>">
-                          <input type="text" class="form-control" value="<%= profile.text_color || '#1f2937' %>" readonly>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="mt-4">
-                      <label class="form-label">Background Pattern</label>
-                      <div class="row">
-                        <div class="col-md-3">
-                          <div class="form-check">
-                            <input class="form-check-input" type="radio" name="background_pattern" value="none" 
-                                   <%= !profile.background_pattern || profile.background_pattern === 'none' ? 'checked' : '' %>>
-                            <label class="form-check-label">None</label>
-                          </div>
-                        </div>
-                        <div class="col-md-3">
-                          <div class="form-check">
-                            <input class="form-check-input" type="radio" name="background_pattern" value="dots" 
-                                   <%= profile.background_pattern === 'dots' ? 'checked' : '' %>>
-                            <label class="form-check-label">Dots</label>
-                          </div>
-                        </div>
-                        <div class="col-md-3">
-                          <div class="form-check">
-                            <input class="form-check-input" type="radio" name="background_pattern" value="grid" 
-                                   <%= profile.background_pattern === 'grid' ? 'checked' : '' %>>
-                            <label class="form-check-label">Grid</label>
-                          </div>
-                        </div>
-                        <div class="col-md-3">
-                          <div class="form-check">
-                            <input class="form-check-input" type="radio" name="background_pattern" value="waves" 
-                                   <%= profile.background_pattern === 'waves' ? 'checked' : '' %>>
-                            <label class="form-check-label">Waves</label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary mt-3">
-                      <i class="bi bi-save me-2"></i>Save Appearance
-                    </button>
+                  <div class="form-group">
+                    <label class="form-label" for="location">Location</label>
+                    <input type="text" class="form-control" id="location" name="location" 
+                           value="<%= profile.location || '' %>" placeholder="Your location">
                   </div>
-                </form>
-              </div>
+                </div>
 
-              <!-- Social Links Tab -->
-              <div class="tab-pane fade" id="social" role="tabpanel">
-                <form action="/customize/social" method="POST">
-                  <div class="settings-section">
-                    <h4 class="mb-3"><i class="bi bi-share me-2"></i>Social Media Links</h4>
-                    
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="social-input-group">
-                          <label class="form-label">Instagram</label>
-                          <div class="input-group">
-                            <span class="input-group-text social-icon"><i class="bi bi-instagram"></i></span>
-                            <input type="text" class="form-control" name="instagram" 
-                                   value="<%= profile.social_instagram || '' %>" placeholder="username">
-                          </div>
-                        </div>
+                <div class="form-group">
+                  <label class="form-label" for="bio">Bio</label>
+                  <textarea class="form-control" id="bio" name="bio" rows="4" 
+                            placeholder="Tell people about yourself..."><%= profile.bio || '' %></textarea>
+                </div>
 
-                        <div class="social-input-group">
-                          <label class="form-label">Twitter/X</label>
-                          <div class="input-group">
-                            <span class="input-group-text social-icon"><i class="bi bi-twitter-x"></i></span>
-                            <input type="text" class="form-control" name="twitter" 
-                                   value="<%= profile.social_twitter || '' %>" placeholder="username">
-                          </div>
-                        </div>
+                <div class="form-group">
+                  <label class="form-label" for="website">Website</label>
+                  <input type="url" class="form-control" id="website" name="website" 
+                         value="<%= profile.website || '' %>" placeholder="https://yourwebsite.com">
+                </div>
 
-                        <div class="social-input-group">
-                          <label class="form-label">Facebook</label>
-                          <div class="input-group">
-                            <span class="input-group-text social-icon"><i class="bi bi-facebook"></i></span>
-                            <input type="text" class="form-control" name="facebook" 
-                                   value="<%= profile.social_facebook || '' %>" placeholder="username">
-                          </div>
-                        </div>
-
-                        <div class="social-input-group">
-                          <label class="form-label">LinkedIn</label>
-                          <div class="input-group">
-                            <span class="input-group-text social-icon"><i class="bi bi-linkedin"></i></span>
-                            <input type="text" class="form-control" name="linkedin" 
-                                   value="<%= profile.social_linkedin || '' %>" placeholder="username">
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="col-md-6">
-                        <div class="social-input-group">
-                          <label class="form-label">YouTube</label>
-                          <div class="input-group">
-                            <span class="input-group-text social-icon"><i class="bi bi-youtube"></i></span>
-                            <input type="text" class="form-control" name="youtube" 
-                                   value="<%= profile.social_youtube || '' %>" placeholder="channel">
-                          </div>
-                        </div>
-
-                        <div class="social-input-group">
-                          <label class="form-label">TikTok</label>
-                          <div class="input-group">
-                            <span class="input-group-text social-icon"><i class="bi bi-tiktok"></i></span>
-                            <input type="text" class="form-control" name="tiktok" 
-                                   value="<%= profile.social_tiktok || '' %>" placeholder="username">
-                          </div>
-                        </div>
-
-                        <div class="social-input-group">
-                          <label class="form-label">GitHub</label>
-                          <div class="input-group">
-                            <span class="input-group-text social-icon"><i class="bi bi-github"></i></span>
-                            <input type="text" class="form-control" name="github" 
-                                   value="<%= profile.social_github || '' %>" placeholder="username">
-                          </div>
-                        </div>
-
-                        <div class="social-input-group">
-                          <label class="form-label">Discord</label>
-                          <div class="input-group">
-                            <span class="input-group-text social-icon"><i class="bi bi-discord"></i></span>
-                            <input type="text" class="form-control" name="discord" 
-                                   value="<%= profile.social_discord || '' %>" placeholder="username#1234">
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                      <i class="bi bi-save me-2"></i>Save Social Links
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              <!-- Advanced Tab -->
-              <div class="tab-pane fade" id="advanced" role="tabpanel">
-                <form action="/customize/advanced" method="POST">
-                  <div class="settings-section">
-                    <h4 class="mb-3"><i class="bi bi-code-slash me-2"></i>Custom CSS</h4>
-                    <p class="text-muted">Add your own CSS to completely customize your profile appearance.</p>
-                    
-                    <div class="mb-3">
-                      <label for="customCss" class="form-label">Custom CSS Code</label>
-                      <textarea class="form-control custom-css-editor" id="customCss" name="custom_css" rows="12" 
-                                placeholder="/* Add your custom CSS here */"><%= profile.custom_css || '' %></textarea>
-                    </div>
-
-                    <div class="alert alert-info">
-                      <i class="bi bi-info-circle me-2"></i>
-                      <strong>Pro Tip:</strong> You can use CSS to modify colors, fonts, spacing, and layout. 
-                      Changes will be applied to your public profile page.
-                    </div>
-                  </div>
-
-                  <div class="settings-section">
-                    <h4 class="mb-3"><i class="bi bi-code me-2"></i>Custom HTML</h4>
-                    <p class="text-muted">Add custom HTML elements like embed codes, widgets, or tracking scripts.</p>
-                    
-                    <div class="mb-3">
-                      <label for="customHtml" class="form-label">Custom HTML</label>
-                      <textarea class="form-control" id="customHtml" name="custom_html" rows="6" 
-                                placeholder="<!-- Add your custom HTML here -->"><%= profile.custom_html || '' %></textarea>
-                    </div>
-
-                    <div class="alert alert-warning">
-                      <i class="bi bi-exclamation-triangle me-2"></i>
-                      <strong>Warning:</strong> Only add trusted HTML code. Malicious code could break your profile.
-                    </div>
-                  </div>
-
-                  <div class="settings-section">
-                    <h4 class="mb-3"><i class="bi bi-gear me-2"></i>Advanced Settings</h4>
-                    
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="form-check form-switch mb-3">
-                          <input class="form-check-input" type="checkbox" id="showBranding" name="show_branding" 
-                                 <%= profile.show_branding !== false ? 'checked' : '' %>>
-                          <label class="form-check-label" for="showBranding">
-                            Show VeLink Branding
-                          </label>
-                        </div>
-
-                        <div class="form-check form-switch mb-3">
-                          <input class="form-check-input" type="checkbox" id="enableAnimations" name="enable_animations" 
-                                 <%= profile.enable_animations !== false ? 'checked' : '' %>>
-                          <label class="form-check-label" for="enableAnimations">
-                            Enable Animations
-                          </label>
-                        </div>
-
-                        <div class="form-check form-switch mb-3">
-                          <input class="form-check-input" type="checkbox" id="showVisitorCount" name="show_visitor_count" 
-                                 <%= profile.show_visitor_count !== false ? 'checked' : '' %>>
-                          <label class="form-check-label" for="showVisitorCount">
-                            Show Visitor Count
-                          </label>
-                        </div>
-                      </div>
-
-                      <div class="col-md-6">
-                        <div class="mb-3">
-                          <label for="metaTitle" class="form-label">SEO Meta Title</label>
-                          <input type="text" class="form-control" id="metaTitle" name="meta_title" 
-                                 value="<%= profile.meta_title || '' %>" placeholder="Custom page title">
-                        </div>
-
-                        <div class="mb-3">
-                          <label for="metaDescription" class="form-label">SEO Meta Description</label>
-                          <textarea class="form-control" id="metaDescription" name="meta_description" rows="3" 
-                                    placeholder="Custom page description for search engines"><%= profile.meta_description || '' %></textarea>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                      <i class="bi bi-save me-2"></i>Save Advanced Settings
-                    </button>
-                  </div>
-                </form>
-              </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i>
+                    Save Profile
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
 
-          <!-- Live Preview -->
-          <div class="col-md-4">
-            <div class="preview-section sticky-top">
-              <h5 class="mb-3"><i class="bi bi-eye me-2"></i>Live Preview</h5>
-              <div id="profilePreview" class="border rounded p-3" style="min-height: 400px; background: white;">
-                <!-- Preview content will be generated by JavaScript -->
-                <div class="text-center">
-                  <div class="mb-3">
-                    <img src="<%= profile.avatar || '/img/not_signed_in/variant2.svg' %>" alt="Avatar" 
-                         class="rounded-circle" width="80" height="80" id="previewAvatar">
+          <!-- Theme Selection Section -->
+          <div class="settings-card">
+            <div class="settings-header">
+              <h3>
+                <i class="bi bi-palette"></i>
+                Theme & Appearance
+              </h3>
+              <div class="subtitle">Choose a theme for your profile page</div>
+            </div>
+            <div class="settings-body">
+              <form method="POST" action="/customize/theme">
+                <div class="theme-grid">
+                  <div class="theme-option <%= profile.theme === 'dark' || !profile.theme ? 'active' : '' %>" 
+                       data-theme="dark">
+                    <div class="theme-preview theme-dark">
+                      <div class="theme-header"></div>
+                      <div class="theme-content">
+                        <div class="theme-avatar"></div>
+                        <div class="theme-text"></div>
+                        <div class="theme-links">
+                          <div class="theme-link"></div>
+                          <div class="theme-link"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <h4>Dark</h4>
+                      <p>Classic dark theme</p>
+                    </div>
+                    <input type="radio" name="theme" value="dark" <%= profile.theme === 'dark' || !profile.theme ? 'checked' : '' %>>
                   </div>
-                  <h4 id="previewDisplayName"><%= profile.display_name || user.username %></h4>
-                  <p class="text-muted" id="previewBio"><%= profile.bio || 'No bio added yet' %></p>
-                  <div class="d-flex justify-content-center gap-2 mb-3" id="previewSocial">
-                    <!-- Social links will be populated by JavaScript -->
+
+                  <div class="theme-option <%= profile.theme === 'light' ? 'active' : '' %>" 
+                       data-theme="light">
+                    <div class="theme-preview theme-light">
+                      <div class="theme-header"></div>
+                      <div class="theme-content">
+                        <div class="theme-avatar"></div>
+                        <div class="theme-text"></div>
+                        <div class="theme-links">
+                          <div class="theme-link"></div>
+                          <div class="theme-link"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <h4>Light</h4>
+                      <p>Clean light theme</p>
+                    </div>
+                    <input type="radio" name="theme" value="light" <%= profile.theme === 'light' ? 'checked' : '' %>>
                   </div>
-                  <div class="d-grid gap-2">
-                    <div class="btn btn-primary">Sample Link 1</div>
-                    <div class="btn btn-outline-primary">Sample Link 2</div>
+
+                  <div class="theme-option <%= profile.theme === 'ocean' ? 'active' : '' %>" 
+                       data-theme="ocean">
+                    <div class="theme-preview theme-ocean">
+                      <div class="theme-header"></div>
+                      <div class="theme-content">
+                        <div class="theme-avatar"></div>
+                        <div class="theme-text"></div>
+                        <div class="theme-links">
+                          <div class="theme-link"></div>
+                          <div class="theme-link"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <h4>Ocean</h4>
+                      <p>Cool blue theme</p>
+                    </div>
+                    <input type="radio" name="theme" value="ocean" <%= profile.theme === 'ocean' ? 'checked' : '' %>>
+                  </div>
+
+                  <div class="theme-option <%= profile.theme === 'sunset' ? 'active' : '' %>" 
+                       data-theme="sunset">
+                    <div class="theme-preview theme-sunset">
+                      <div class="theme-header"></div>
+                      <div class="theme-content">
+                        <div class="theme-avatar"></div>
+                        <div class="theme-text"></div>
+                        <div class="theme-links">
+                          <div class="theme-link"></div>
+                          <div class="theme-link"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <h4>Sunset</h4>
+                      <p>Warm gradient theme</p>
+                    </div>
+                    <input type="radio" name="theme" value="sunset" <%= profile.theme === 'sunset' ? 'checked' : '' %>>
                   </div>
                 </div>
-              </div>
-              <div class="mt-3">
-                <a href="/profile/<%= username %>" target="_blank" class="btn btn-outline-primary w-100">
-                  <i class="bi bi-eye me-2"></i>View Full Profile
-                </a>
-              </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-palette"></i>
+                    Apply Theme
+                  </button>
+                </div>
+              </form>
             </div>
+          </div>
+
+          <!-- Custom CSS Section -->
+          <div class="settings-card">
+            <div class="settings-header">
+              <h3>
+                <i class="bi bi-code-slash"></i>
+                Custom CSS
+              </h3>
+              <div class="subtitle">Add custom styles to your profile (advanced users only)</div>
+            </div>
+            <div class="settings-body">
+              <form method="POST" action="/customize/css">
+                <div class="form-group">
+                  <label class="form-label" for="custom_css">Custom CSS Code</label>
+                  <textarea class="form-control code-editor" id="custom_css" name="custom_css" rows="12" 
+                            placeholder="/* Add your custom CSS here */"
+                            spellcheck="false"><%= profile.custom_css || '' %></textarea>
+                  <div class="form-text">
+                    <i class="bi bi-info-circle"></i>
+                    Custom CSS will be applied to your profile page. Use with caution as invalid CSS may break your profile appearance.
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-code-slash"></i>
+                    Save Custom CSS
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="preview-panel">
+          <div class="preview-header">
+            <h3>Live Preview</h3>
+            <a href="/profile/<%= username %>" target="_blank" class="btn btn-outline btn-sm">
+              <i class="bi bi-eye"></i>
+              View Live
+            </a>
+          </div>
+          <div class="preview-content">
+            <iframe src="/profile/<%= username %>" class="profile-preview-frame"></iframe>
           </div>
         </div>
       </div>
     </main>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Theme selection
-    function selectTheme(theme) {
-      document.querySelectorAll('.theme-card').forEach(card => card.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      event.currentTarget.querySelector('input[type="radio"]').checked = true;
-      updatePreview();
-    }
+  <!-- Cookie Notice -->
+  <div id="cookieNotice" class="cookie-notice">
+    <div class="cookie-content">
+      <div class="cookie-text">
+        <h4>We value your privacy</h4>
+        <p>We use cookies to enhance your experience and analyze site usage.</p>
+      </div>
+      <div class="cookie-actions">
+        <button id="acceptCookies" class="cookie-btn primary">Accept All</button>
+        <button id="manageCookies" class="cookie-btn secondary">Manage</button>
+      </div>
+    </div>
+  </div>
 
-    // Avatar upload
+  <script src="/js/cookie-manager.js"></script>
+  <script>
+    // Avatar upload preview
     document.getElementById('avatarInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById('avatarPreview').src = e.target.result;
-          document.getElementById('previewAvatar').src = e.target.result;
         };
         reader.readAsDataURL(file);
       }
     });
 
-    // Avatar upload click handler
-    document.querySelector('.avatar-upload').addEventListener('click', function() {
-      document.getElementById('avatarInput').click();
-    });
-
-    // Color picker sync
-    document.querySelectorAll('input[type="color"]').forEach(input => {
-      input.addEventListener('change', function() {
-        this.nextElementSibling.value = this.value;
-        updatePreview();
+    // Theme selection
+    document.querySelectorAll('.theme-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+        this.classList.add('active');
+        this.querySelector('input[type="radio"]').checked = true;
       });
     });
 
-    // Real-time preview updates
-    document.getElementById('displayName').addEventListener('input', function() {
-      document.getElementById('previewDisplayName').textContent = this.value || '<%= user.username %>';
-    });
-
-    document.getElementById('bio').addEventListener('input', function() {
-      document.getElementById('previewBio').textContent = this.value || 'No bio added yet';
-    });
-
-    // Update preview function
-    function updatePreview() {
-      const preview = document.getElementById('profilePreview');
-      const theme = document.querySelector('input[name="theme"]:checked')?.value || 'default';
-      const primaryColor = document.getElementById('primaryColor').value;
-      const backgroundColor = document.getElementById('backgroundColor').value;
-      
-      // Apply theme colors to preview
-      preview.style.background = backgroundColor;
-      preview.querySelectorAll('.btn-primary').forEach(btn => {
-        btn.style.backgroundColor = primaryColor;
-        btn.style.borderColor = primaryColor;
+    // Code editor improvements
+    const codeEditor = document.getElementById('custom_css');
+    if (codeEditor) {
+      codeEditor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = this.selectionStart;
+          const end = this.selectionEnd;
+          this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+          this.selectionStart = this.selectionEnd = start + 2;
+        }
       });
     }
 
-    // Initialize preview
-    updatePreview();
+    // Auto-refresh preview on changes (debounced)
+    let previewTimeout;
+    function refreshPreview() {
+      clearTimeout(previewTimeout);
+      previewTimeout = setTimeout(() => {
+        const iframe = document.querySelector('.profile-preview-frame');
+        if (iframe) {
+          iframe.src = iframe.src;
+        }
+      }, 1000);
+    }
 
-    // Menu toggle functionality
-    const toggleButton = document.querySelector('.menu-toggle');
-    const navLinks = document.querySelector('.nav-links');
-
-    toggleButton.addEventListener('click', () => {
-      navLinks.classList.toggle('show');
+    // Listen for form changes
+    document.querySelectorAll('input, textarea, select').forEach(input => {
+      input.addEventListener('input', refreshPreview);
     });
   </script>
 </body>

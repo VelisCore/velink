@@ -52,6 +52,21 @@ const DOMPurify = createDOMPurify(window);
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
 const CSRF_SECRET = process.env.CSRF_SECRET || crypto.randomBytes(32).toString('hex');
 
+// Super secure admin hash - This will be displayed once on startup and then hidden
+const ADMIN_HASH = '2370b043fe84abbb875476c6ab6bcf65466d45599dcf6cbdf9b09d334d6d9bbb77042a80437bff36c3477a1f65d304bda6395a9f4d4a77e70e2427431ce4090a';
+let adminHashDisplayed = false;
+
+// Website control settings
+let websiteEnabled = true;
+const websiteStats = {
+  visitors: 0,
+  pageViews: 0,
+  registrations: 0,
+  logins: 0,
+  linksCreated: 0,
+  startTime: new Date()
+};
+
 // Password validation schema
 const passwordSchema = new PasswordValidator();
 passwordSchema
@@ -302,6 +317,35 @@ app.use(session({
   name: 'velink_session'
 }));
 
+// Website control middleware - Check if website is enabled
+app.use((req, res, next) => {
+  // Allow admin routes even if website is disabled
+  if (!websiteEnabled && !req.path.startsWith('/admin') && !req.path.startsWith('/api/admin')) {
+    return res.status(503).render('error', {
+      errorCode: 503,
+      errorMessage: 'Website is temporarily disabled for maintenance',
+      errorDescription: 'The website is currently offline. Please try again later.'
+    });
+  }
+  
+  // Track visitor stats
+  if (!req.session.counted) {
+    websiteStats.visitors++;
+    req.session.counted = true;
+  }
+  websiteStats.pageViews++;
+  
+  next();
+});
+
+// Admin authentication middleware
+function requireAdminAuth(req, res, next) {
+  if (req.session.adminAuthenticated) {
+    return next();
+  }
+  res.redirect('/admin/login');
+}
+
 // Cookie consent tracking
 app.use((req, res, next) => {
   if (!req.cookies.cookie_consent) {
@@ -447,12 +491,28 @@ if (certificatesExist()) {
 
   https.createServer(options, app).listen(443, '0.0.0.0', () => {
     console.log('HTTPS-Server läuft auf Port 443');
+    displayAdminHash();
   });
 } else {
   console.log('Keine Zertifikate gefunden, starte HTTP-Server auf Port 8000...');
   http.createServer(app).listen(8000, '0.0.0.0', () => {
     console.log('HTTP-Server läuft auf Port 8000');
+    displayAdminHash();
   });
+}
+
+// Display admin hash once on startup
+function displayAdminHash() {
+  if (!adminHashDisplayed) {
+    console.log('\n' + '='.repeat(80));
+    console.log('🔐 SUPER SECURE ADMIN HASH (SAVE THIS IMMEDIATELY!)');
+    console.log('='.repeat(80));
+    console.log(`Admin Hash: ${ADMIN_HASH}`);
+    console.log('Access: http://localhost:8000/admin/login');
+    console.log('⚠️  This hash will only be displayed ONCE! Save it now!');
+    console.log('='.repeat(80) + '\n');
+    adminHashDisplayed = true;
+  }
 }
 
 const whitelist = ["88.45.1.255"];
@@ -767,10 +827,114 @@ const createTables = () => {
     FOREIGN KEY(variant_b_link_id) REFERENCES links(id)
   )`);
 
+  // Custom analytics tracking
+  db.run(`CREATE TABLE IF NOT EXISTS analytics_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    event_type TEXT NOT NULL,
+    event_name TEXT NOT NULL,
+    page_path TEXT,
+    referrer TEXT,
+    visitor_ip TEXT,
+    user_agent TEXT,
+    country TEXT,
+    city TEXT,
+    device_type TEXT,
+    browser TEXT,
+    os TEXT,
+    session_id TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  // System-wide analytics
+  db.run(`CREATE TABLE IF NOT EXISTS system_analytics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    metric_type TEXT NOT NULL,
+    metric_value INTEGER NOT NULL,
+    date DATE NOT NULL,
+    hour INTEGER,
+    additional_data TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   logger.info('📊 All database tables created successfully');
 };
 
 createTables();
+
+// Analytics tracking functions
+function trackEvent(eventType, eventName, userId = null, req = null, additionalData = {}) {
+  const data = {
+    user_id: userId,
+    event_type: eventType,
+    event_name: eventName,
+    page_path: req?.path || null,
+    referrer: req?.get('Referrer') || null,
+    visitor_ip: req?.ip || null,
+    user_agent: req?.get('User-Agent') || null,
+    session_id: req?.session?.id || null,
+    timestamp: new Date().toISOString(),
+    ...additionalData
+  };
+
+  // Extract additional info from user agent
+  if (req?.useragent) {
+    data.device_type = req.useragent.isMobile ? 'mobile' : (req.useragent.isTablet ? 'tablet' : 'desktop');
+    data.browser = req.useragent.browser;
+    data.os = req.useragent.os;
+  }
+
+  // Get geo location
+  if (req?.ip) {
+    const geo = geoip.lookup(req.ip);
+    if (geo) {
+      data.country = geo.country;
+      data.city = geo.city;
+    }
+  }
+
+  db.run(`INSERT INTO analytics_events (
+    user_id, event_type, event_name, page_path, referrer, visitor_ip, 
+    user_agent, country, city, device_type, browser, os, session_id
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+    data.user_id, data.event_type, data.event_name, data.page_path,
+    data.referrer, data.visitor_ip, data.user_agent, data.country,
+    data.city, data.device_type, data.browser, data.os, data.session_id
+  ]);
+}
+
+function trackSystemMetric(metricType, value, additionalData = {}) {
+  const date = new Date();
+  const dateStr = date.toISOString().split('T')[0];
+  const hour = date.getHours();
+
+  db.run(`INSERT INTO system_analytics (metric_type, metric_value, date, hour, additional_data) 
+          VALUES (?, ?, ?, ?, ?)`, [
+    metricType, value, dateStr, hour, JSON.stringify(additionalData)
+  ]);
+}
+
+// Cookie notice routes
+app.post('/api/cookie-consent', (req, res) => {
+  const { accepted } = req.body;
+  if (accepted) {
+    res.cookie('cookie_consent', 'accepted', { 
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+      httpOnly: false,
+      sameSite: 'lax'
+    });
+    trackEvent('user_action', 'cookie_consent_accepted', null, req);
+  } else {
+    res.cookie('cookie_consent', 'declined', { 
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+      httpOnly: false,
+      sameSite: 'lax'
+    });
+    trackEvent('user_action', 'cookie_consent_declined', null, req);
+  }
+  res.json({ success: true });
+});
 
 const profileDB = new sqlite3.Database('./profiles.db', (err) => {
   if (err) console.error('Profil-DB-Fehler:', err.message);
@@ -855,6 +1019,120 @@ function logAdminAction(adminId, action, targetUserId = null, details = null, ip
     }
   );
 }
+
+// Admin Routes - Super Secure Admin Panel
+app.get('/admin/login', (req, res) => {
+  res.render('admin/login', { error: null });
+});
+
+app.post('/admin/login', loginLimiter, async (req, res) => {
+  const { adminHash } = req.body;
+  
+  if (!adminHash || adminHash !== ADMIN_HASH) {
+    logger.warn(`Failed admin login attempt from IP: ${req.ip}`);
+    return res.render('admin/login', { error: 'Invalid admin credentials' });
+  }
+  
+  req.session.adminAuthenticated = true;
+  logger.info(`Admin logged in from IP: ${req.ip}`);
+  res.redirect('/admin/dashboard');
+});
+
+app.get('/admin/logout', (req, res) => {
+  req.session.adminAuthenticated = false;
+  res.redirect('/admin/login');
+});
+
+app.get('/admin/dashboard', requireAdminAuth, (req, res) => {
+  // Get system stats
+  db.get(`SELECT COUNT(*) as total_users FROM users`, (err, userCount) => {
+    db.get(`SELECT COUNT(*) as total_links FROM links`, (err2, linkCount) => {
+      db.get(`SELECT COUNT(*) as total_views FROM link_clicks`, (err3, viewCount) => {
+        const uptime = Date.now() - websiteStats.startTime.getTime();
+        const stats = {
+          ...websiteStats,
+          totalUsers: userCount?.total_users || 0,
+          totalLinks: linkCount?.total_links || 0,
+          totalViews: viewCount?.total_views || 0,
+          uptime: Math.floor(uptime / 1000),
+          websiteEnabled
+        };
+        res.render('admin/dashboard', { stats });
+      });
+    });
+  });
+});
+
+app.post('/admin/website/toggle', requireAdminAuth, (req, res) => {
+  websiteEnabled = !websiteEnabled;
+  logger.info(`Website ${websiteEnabled ? 'enabled' : 'disabled'} by admin`);
+  res.json({ success: true, enabled: websiteEnabled });
+});
+
+app.get('/admin/users', requireAdminAuth, (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 50;
+  const offset = (page - 1) * limit;
+  
+  db.all(`SELECT id, username, email, role, created_at, last_login, is_active, is_banned 
+          FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`, [limit, offset], (err, users) => {
+    if (err) {
+      return res.status(500).render('error', { errorCode: 500, errorMessage: 'Database error' });
+    }
+    
+    db.get(`SELECT COUNT(*) as total FROM users`, (err2, count) => {
+      const totalPages = Math.ceil((count?.total || 0) / limit);
+      res.render('admin/users', { users, currentPage: page, totalPages });
+    });
+  });
+});
+
+app.get('/admin/analytics', requireAdminAuth, (req, res) => {
+  // Get analytics data for charts
+  const queries = [
+    db.all.bind(db, `SELECT DATE(timestamp) as date, COUNT(*) as count 
+                     FROM analytics_events 
+                     WHERE timestamp >= date('now', '-30 days') 
+                     GROUP BY DATE(timestamp) ORDER BY date`),
+    db.all.bind(db, `SELECT event_type, COUNT(*) as count 
+                     FROM analytics_events 
+                     WHERE timestamp >= date('now', '-7 days') 
+                     GROUP BY event_type`),
+    db.all.bind(db, `SELECT browser, COUNT(*) as count 
+                     FROM analytics_events 
+                     WHERE timestamp >= date('now', '-7 days') 
+                     GROUP BY browser ORDER BY count DESC LIMIT 10`)
+  ];
+  
+  Promise.all(queries.map(q => new Promise(resolve => q((err, data) => resolve(data || [])))))
+    .then(([dailyStats, eventTypes, browsers]) => {
+      res.render('admin/analytics', { dailyStats, eventTypes, browsers });
+    });
+});
+
+app.get('/admin/logs', requireAdminAuth, (req, res) => {
+  const logFile = req.query.type === 'error' ? 'logs/error.log' : 'logs/combined.log';
+  
+  fs.readFile(logFile, 'utf8', (err, data) => {
+    if (err) {
+      return res.render('admin/logs', { logs: [], error: 'Could not read log file' });
+    }
+    
+    const logs = data.split('\n')
+      .filter(line => line.trim())
+      .slice(-200) // Last 200 lines
+      .reverse()
+      .map(line => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return { message: line, timestamp: new Date().toISOString() };
+        }
+      });
+    
+    res.render('admin/logs', { logs, error: null });
+  });
+});
 
 app.get('/', (req, res) => {
   const username = req.session.user ? req.session.user.username : null;
@@ -997,6 +1275,11 @@ app.post('/register', ipWhitelist, registrationLimiter, speedLimiter, async (req
 
             // Log registration
             logger.info(`New user registered: ${sanitizedUsername} from IP: ${req.ip}`);
+
+            // Track registration
+            websiteStats.registrations++;
+            trackEvent('user_action', 'user_registered', userId, req);
+            trackSystemMetric('registrations', 1);
 
             req.session.user = { 
               id: userId, 
@@ -1148,6 +1431,11 @@ app.post('/login', ipWhitelist, loginLimiter, bruteForce.prevent, speedLimiter, 
     };
     
     logger.info(`Successful login for ${user.username} from IP ${clientIP}`);
+    
+    // Track login
+    websiteStats.logins++;
+    trackEvent('user_action', 'user_login', user.id, req);
+    trackSystemMetric('logins', 1);
     
     // Redirect admins to admin dashboard
     if (user.role === 'admin') {

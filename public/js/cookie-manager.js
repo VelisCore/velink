@@ -1,18 +1,14 @@
-// Cookie Notice and Analytics Management
+// Enhanced Cookie Notice and Analytics Management
 class CookieManager {
   constructor() {
-    this.cookieName = 'velink_cookies_accepted';
-    this.cookieValue = 'true';
-    this.cookieExpiry = 365; // days
     this.init();
   }
 
   init() {
-    // Check if cookies are already accepted
-    if (!this.getCookie(this.cookieName)) {
+    // Check if cookie consent has been given
+    if (!this.getCookie('cookie_consent')) {
       this.showCookieNotice();
-    } else {
-      // Load analytics if cookies are accepted
+    } else if (this.getCookie('cookie_consent') === 'accepted') {
       this.loadAnalytics();
     }
   }
@@ -23,13 +19,13 @@ class CookieManager {
       this.createCookieNotice();
     }
     
-    // Show the notice
+    // Show the notice with animation
     setTimeout(() => {
       const notice = document.getElementById('cookie-notice');
       if (notice) {
-        notice.classList.add('show');
+        notice.classList.add('show', 'animate-in');
       }
-    }, 1000); // Show after 1 second
+    }, 1500); // Show after 1.5 seconds
   }
 
   createCookieNotice() {
@@ -38,16 +34,183 @@ class CookieManager {
     notice.className = 'cookie-notice';
     notice.innerHTML = `
       <div class="cookie-notice-content">
+        <div class="cookie-notice-icon">
+          <i class="bi bi-cookie"></i>
+        </div>
         <div class="cookie-notice-text">
-          We use cookies to enhance your experience and analyze our traffic. 
-          By continuing to use our site, you consent to our use of cookies. 
-          <a href="/datenschutz" target="_blank">Learn more</a>
+          <strong>Cookie Notice:</strong> We use cookies to enhance your experience, analyze traffic, and provide personalized content. 
+          By continuing to use Velink, you consent to our use of cookies. 
+          <a href="/datenschutz" target="_blank">Privacy Policy</a>
         </div>
         <div class="cookie-notice-actions">
-          <button class="btn btn-ghost btn-sm" onclick="cookieManager.rejectCookies()">
+          <button class="cookie-notice-btn cookie-notice-btn-decline" onclick="cookieManager.declineCookies()">
+            <i class="bi bi-x-circle"></i>
             Decline
           </button>
-          <button class="btn btn-primary btn-sm" onclick="cookieManager.acceptCookies()">
+          <button class="cookie-notice-btn cookie-notice-btn-accept" onclick="cookieManager.acceptCookies()">
+            <i class="bi bi-check-circle"></i>
+            Accept All
+          </button>
+          <button class="cookie-notice-close" onclick="cookieManager.hideCookieNotice()">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(notice);
+  }
+
+  async acceptCookies() {
+    try {
+      const response = await fetch('/api/cookie-consent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accepted: true })
+      });
+
+      if (response.ok) {
+        this.hideCookieNotice();
+        this.loadAnalytics();
+        this.showToast('Cookie preferences saved. Analytics enabled.', 'success');
+      }
+    } catch (error) {
+      console.error('Error saving cookie preferences:', error);
+      this.showToast('Error saving preferences. Please try again.', 'error');
+    }
+  }
+
+  async declineCookies() {
+    try {
+      const response = await fetch('/api/cookie-consent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accepted: false })
+      });
+
+      if (response.ok) {
+        this.hideCookieNotice();
+        this.showToast('Cookie preferences saved. Only essential cookies will be used.', 'info');
+      }
+    } catch (error) {
+      console.error('Error saving cookie preferences:', error);
+      this.showToast('Error saving preferences. Please try again.', 'error');
+    }
+  }
+
+  hideCookieNotice() {
+    const notice = document.getElementById('cookie-notice');
+    if (notice) {
+      notice.classList.remove('show');
+      setTimeout(() => {
+        notice.remove();
+      }, 300);
+    }
+  }
+
+  loadAnalytics() {
+    // Only load analytics if user has consented
+    if (this.getCookie('cookie_consent') === 'accepted') {
+      // Load Google Analytics or other tracking scripts here
+      this.trackPageView();
+    }
+  }
+
+  trackPageView() {
+    // Simple page view tracking
+    if (typeof gtag !== 'undefined') {
+      gtag('config', 'GA_MEASUREMENT_ID', {
+        page_title: document.title,
+        page_location: window.location.href
+      });
+    }
+    
+    // Custom analytics tracking
+    this.trackEvent('page_view', window.location.pathname);
+  }
+
+  trackEvent(eventName, eventData = {}) {
+    // Only track if user has consented
+    if (this.getCookie('cookie_consent') !== 'accepted') {
+      return;
+    }
+
+    // Send custom event to our analytics
+    fetch('/api/track-event', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        event: eventName,
+        data: eventData,
+        timestamp: new Date().toISOString(),
+        page: window.location.pathname,
+        referrer: document.referrer
+      })
+    }).catch(error => {
+      console.error('Analytics tracking error:', error);
+    });
+  }
+
+  getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  }
+
+  showToast(message, type = 'info') {
+    // Create a simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.cssText = `
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: var(--${type === 'success' ? 'success' : type === 'error' ? 'error' : 'primary'});
+      color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 10000;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      max-width: 300px;
+      font-size: 0.875rem;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+      toast.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      toast.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        toast.remove();
+      }, 300);
+    }, 3000);
+  }
+}
+
+// Initialize cookie manager when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  window.cookieManager = new CookieManager();
+});
+
+// Export for use in other scripts
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = CookieManager;
+}
             Accept All
           </button>
         </div>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenschutzerklärung - Velink</title>
+    <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
+    <meta name="description" content="Datenschutzerklärung für Velink - Informationen über den Schutz Ihrer persönlichen Daten">
+    <meta name="robots" content="noindex, follow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/base.css" rel="stylesheet">
+    <link href="/css/cookie-notice.css" rel="stylesheet">
+    
+    <style>
+        .legal-layout {
+            min-height: 100vh;
+            background: var(--bg-secondary);
+        }
+
+        .navbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-secondary);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .login-button {
+            background: var(--primary);
+            color: white;
+        }
+
+        .login-button:hover {
+            background: var(--primary-hover);
+            color: white;
+        }
+
+        .legal-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 1rem;
+        }
+
+        .legal-content {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 3rem;
+            line-height: 1.7;
+        }
+
+        .legal-content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .legal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .legal-content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 2rem 0 1rem;
+        }
+
+        .legal-content p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .legal-content ul {
+            color: var(--text-secondary);
+            padding-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .legal-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .legal-content a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .legal-content a:hover {
+            text-decoration: underline;
+        }
+
+        .intro-text {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 3rem;
+            font-style: italic;
+        }
+
+        .contact-card {
+            background: var(--primary-bg);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .contact-card h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        .last-updated {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .legal-content {
+                padding: 2rem 1.5rem;
+            }
+
+            .legal-content h1 {
+                font-size: 2rem;
+            }
+
+            .legal-content h2 {
+                font-size: 1.25rem;
+            }
+
+            .navbar-container {
+                padding: 0 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .legal-container {
+                padding: 2rem 0.5rem;
+            }
+
+            .legal-content {
+                padding: 1.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-layout">
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="/" class="logo">Velink</a>
+                <div>
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <a href="/manage" class="nav-link">
+                            <i class="bi bi-person-circle"></i>
+                            Dashboard
+                        </a>
+                    <% } else { %>
+                        <a href="/login" class="nav-link login-button">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Login
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </nav>
+
+        <div class="legal-container">
+            <div class="legal-content">
+                <h1>Datenschutzerklärung</h1>
+                <p class="intro-text">
+                    Wir nehmen den Schutz deiner persönlichen Daten sehr ernst und behandeln sie vertraulich 
+                    entsprechend den gesetzlichen Datenschutzvorschriften.
+                </p>
+
+                <div class="contact-card">
+                    <h3><i class="bi bi-building"></i> Verantwortliche Stelle</h3>
+                    <p><strong>Velyzo</strong><br>
+                    Website: velyzo.de<br>
+                    E-Mail: <a href="mailto:info@velyzo.de">info@velyzo.de</a></p>
+                </div>
+
+                <h2>1. Erhebung und Verarbeitung personenbezogener Daten</h2>
+                
+                <h3>Server-Logfiles</h3>
+                <p>Beim Besuch unserer Website werden automatisch bestimmte Zugriffsdaten in Server-Logfiles gespeichert:</p>
+                <ul>
+                    <li>IP-Adresse des anfragenden Rechners</li>
+                    <li>Browsertyp und Browserversion</li>
+                    <li>Verwendetes Betriebssystem</li>
+                    <li>Referrer URL (zuvor besuchte Seite)</li>
+                    <li>Datum und Uhrzeit der Serveranfrage</li>
+                </ul>
+                <p>Diese Daten dienen der technischen Sicherheit, Fehleranalyse und statistischen Auswertung. Die Logfiles werden für maximal 6 Monate aufbewahrt und anschließend automatisch gelöscht.</p>
+
+                <h3>Registrierung und Kontoverwaltung</h3>
+                <p>Bei der Registrierung speichern wir folgende Daten:</p>
+                <ul>
+                    <li>Benutzername (öffentlich sichtbar)</li>
+                    <li>E-Mail-Adresse (wird nicht öffentlich angezeigt)</li>
+                    <li>Passwort (verschlüsselt gespeichert)</li>
+                    <li>Registrierungsdatum</li>
+                </ul>
+
+                <h3>Profildaten</h3>
+                <p>Beim Erstellen oder Bearbeiten deines Profils werden optional weitere Daten gespeichert:</p>
+                <ul>
+                    <li>Anzeigename</li>
+                    <li>Biografietext</li>
+                    <li>Standort</li>
+                    <li>Website-URL</li>
+                    <li>Profilbild-URL</li>
+                    <li>Links und deren Beschreibungen</li>
+                </ul>
+                <p>Diese Daten sind freiwillig und können jederzeit bearbeitet oder gelöscht werden.</p>
+
+                <h2>2. Datenauskunft und -löschung</h2>
+                <p>Du kannst jederzeit über unsere Seite <a href="/datenauskunft">/datenauskunft</a> Auskunft über deine gespeicherten Daten anfordern.</p>
+                <p>Eine vollständige Löschung deiner Daten ist jederzeit möglich, indem du dein Konto über das Dashboard unter <a href="/manage">/manage</a> deaktivierst oder löschst.</p>
+
+                <h2>3. SSL-Verschlüsselung</h2>
+                <p>Unsere Website verwendet SSL-/TLS-Verschlüsselung (HTTPS) zum Schutz der Übertragung vertraulicher Inhalte. Du erkennst eine verschlüsselte Verbindung an:</p>
+                <ul>
+                    <li>Der Adresszeile des Browsers („https://")</li>
+                    <li>Dem Schloss-Symbol in der Adressleiste</li>
+                </ul>
+
+                <h2>4. Hosting und Auftragsverarbeitung</h2>
+                <p>Unsere Server werden auf einem virtuellen Server („Droplet") bei <strong>DigitalOcean</strong> betrieben. Es besteht ein Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO. Die Datenverarbeitung erfolgt in zertifizierten Rechenzentren.</p>
+                <p>Weitere Informationen: <a href="https://www.digitalocean.com/legal/data-processing-agreement" target="_blank" rel="noopener noreferrer">DigitalOcean Data Processing Agreement</a></p>
+
+                <h2>5. Cookies und Tracking</h2>
+                <p>Unsere Website verwendet Cookies für:</p>
+                <ul>
+                    <li><strong>Technische Funktionalität:</strong> Session-Management, Anmeldestatus</li>
+                    <li><strong>Analytics:</strong> Anonymisierte Nutzungsstatistiken (Plausible Analytics)</li>
+                    <li><strong>Präferenzen:</strong> Cookie-Einstellungen merken</li>
+                </ul>
+                <p>Du kannst Cookies in deinem Browser einschränken oder blockieren. Je nach Einstellung kann die Funktionalität eingeschränkt sein.</p>
+
+                <h2>6. Internationale Verfügbarkeit</h2>
+                <p>Velink ist weltweit erreichbar. Die Verarbeitung personenbezogener Daten erfolgt ausschließlich im Rahmen der gesetzlichen Datenschutzbestimmungen der Europäischen Union (DSGVO).</p>
+
+                <h2>7. Rechte der betroffenen Personen</h2>
+                <p>Nach der DSGVO stehen dir folgende Rechte zu:</p>
+                <ul>
+                    <li><strong>Auskunft:</strong> Informationen über gespeicherte Daten (Art. 15 DSGVO)</li>
+                    <li><strong>Berichtigung:</strong> Korrektur unrichtiger Daten (Art. 16 DSGVO)</li>
+                    <li><strong>Löschung:</strong> Entfernung der Daten, soweit gesetzlich zulässig (Art. 17 DSGVO)</li>
+                    <li><strong>Einschränkung:</strong> Beschränkung der Verarbeitung (Art. 18 DSGVO)</li>
+                    <li><strong>Datenportabilität:</strong> Übertragung deiner Daten (Art. 20 DSGVO)</li>
+                    <li><strong>Widerspruch:</strong> Widerspruch gegen die Verarbeitung (Art. 21 DSGVO)</li>
+                </ul>
+
+                <div class="contact-card">
+                    <h3><i class="bi bi-envelope"></i> Kontakt bei Datenschutzfragen</h3>
+                    <p>Bei Fragen zum Datenschutz oder zur Ausübung deiner Rechte kontaktiere uns unter:</p>
+                    <p><strong>E-Mail:</strong> <a href="mailto:info@velyzo.de">info@velyzo.de</a></p>
+                </div>
+
+                <div class="last-updated">
+                    <i class="bi bi-calendar-check"></i>
+                    Letzte Aktualisierung: <%= new Date().toLocaleDateString('de-DE', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Notice -->
+    <div id="cookieNotice" class="cookie-notice">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <h4>Wir respektieren deine Privatsphäre</h4>
+                <p>Wir verwenden Cookies zur Verbesserung deiner Nutzererfahrung und für Analysen.</p>
+            </div>
+            <div class="cookie-actions">
+                <button id="acceptCookies" class="cookie-btn primary">Alle akzeptieren</button>
+                <button id="manageCookies" class="cookie-btn secondary">Verwalten</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/cookie-manager.js"></script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Meta -->
+    <meta charset="UTF-8" />
+  <link href="https://rsms.me/inter/inter.css" rel="stylesheet">  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Velink – Home</title>
+  <meta name="description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
+  <meta name="keywords" content="Velink, Linktree alternative, customizable links, online presence, minimal design">
+  <meta name="author" content="Velyzo">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Velink – Coming Soon">
+  <meta property="og:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
+  <meta property="og:image" content="/img/logo/fresh/white_purple_rounded.png">
+  <meta property="og:url" content="https://velink.me">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:title" content="Velink – Coming Soon">
+  <meta name="twitter:description" content="Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.">
+  <meta name="twitter:image" content="/img/logo/fresh/white_purple_rounded.png">
+  <meta name="twitter:card" content="/img/logo/fresh/white_purple_rounded.png">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
+
+  <!-- JSON-LD Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Velink",
+      "url": "https://velink.me",
+      "description": "Velink is a minimalist, customizable alternative to Linktree. Claim your link and manage your online presence with ease.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Velyzo",
+        "logo": "/img/logo/fresh/white_purple_rounded.png"
+      }
+    }
+  </script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+
+  <!-- Icons -->
+  <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"></noscript>
+
+  <!-- Styles -->
+  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet"/>
+  <link href="/css/dashboard.css" rel="stylesheet" />
+  <link href="/css/dashboard_layout.css" rel="stylesheet" />
+  <link href="/css/dashboard_widgets.css" rel="stylesheet" />
+  <link href="/css/feed.css" rel="stylesheet" />
+
+  <!-- Scripts -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3166078894407448" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav>
+    <a class="logo_link" href="/"><div class="logo">Velink</div></a>
+    <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+    <ul class="nav-links">
+      <% if (user) { %>
+        <li><a href="/manage" class="nav-avatar">
+          <img src="<%= user.profileImage || '/img/not_signed_in/variant2.svg' %>" alt="Profile Picture" />
+        </a></li>
+      <% } else { %>
+        <li><a href="/login" class="login-button">Login</a></li>
+      <% } %>
+    </ul>
+  </nav>
+
+  <!-- Seite -->
+  <div class="page-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="nav-section">
+        <div class="nav-section-title">General</div>
+        <a href="/manage" class="nav-item"><i class="bi bi-house"></i> Home</a>
+        <a href="/feed" class="nav-item"><i class="bi bi-rss"></i> News</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Account</div>
+        <a href="/profile/<%= username %>" class="nav-item"><i class="bi bi-person"></i> Profile</a>
+                <a href="/settings" class="nav-item"><i class="bi bi-gear"></i> Settings</a>
+        <a href="/logout" class="nav-item logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Customization</div>
+        <a href="/customize" class="nav-item"><i class="bi bi-sliders"></i> Customize</a>
+        <a href="/connections" class="nav-item"><i class="bi bi-people"></i> Connections</a>
+        <a href="/custom-domain" class="nav-item"><i class="bi bi-globe"></i> Custom Domain</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Analytics</div>
+        <a href="/analytics" class="nav-item"><i class="bi bi-bar-chart"></i> Analytics</a>
+      </div>
+    </aside>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+      <h1>News</h1>
+
+      <section class="feed">
+        <article class="post-card">
+          <header class="post-header">
+            <img class="post-avatar" src="https://avatars.githubusercontent.com/u/105444012?v=4" alt="Velyzo Profilbild" />
+            <div class="post-userinfo">
+              <span class="post-author">Velyzo</span>
+              <time class="post-date" datetime="2025-05-20">20. Mai 2025</time>
+            </div>
+          </header>
+
+          <div class="post-body">
+            <p class="post-text">Ich arbeite gerade an einem neuen Open-Source-Projekt – stay tuned! 🚀</p>
+            <div class="post-media">
+              <img src="https://images.unsplash.com/photo-1747629382443-4176ca83b5de?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Beitragsbild" />
+            </div>
+          </div>
+
+          <footer class="post-actions">
+            <button class="action-btn"><i class="bi bi-heart"></i> Gefällt mir</button>
+            <button class="action-btn"><i class="bi bi-share"></i> Teilen</button>
+          </footer>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <!-- Script -->
+  <script>
+    const toggleButton = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+
+    toggleButton.addEventListener('click', () => {
+      navLinks.classList.toggle('show');
+    });
+  </script>
+</body>
+</html>

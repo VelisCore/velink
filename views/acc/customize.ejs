@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customize Profile - Velink</title>
+  <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
+  <meta name="description" content="Customize your Velink profile appearance and settings">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/styles.css" rel="stylesheet">
+  <link href="/css/cookie-notice.css" rel="stylesheet">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="sidebar-logo">Velink</a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Content</div>
+        <a href="/manage" class="nav-item">
+          <i class="bi bi-link-45deg"></i>
+          Links
+        </a>
+        <a href="/feed" class="nav-item">
+          <i class="bi bi-rss"></i>
+          News
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Account</div>
+        <a href="/profile/<%= username %>" class="nav-item">
+          <i class="bi bi-person"></i>
+          Profile
+        </a>
+        <a href="/settings" class="nav-item">
+          <i class="bi bi-gear"></i>
+          Settings
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Customization</div>
+        <a href="/customize" class="nav-item active">
+          <i class="bi bi-palette"></i>
+          Customize
+        </a>
+        <a href="/analytics" class="nav-item">
+          <i class="bi bi-bar-chart"></i>
+          Analytics
+        </a>
+      </div>
+
+      <% if (user.role === 'admin') { %>
+      <div class="nav-section">
+        <div class="nav-section-title">Admin</div>
+        <a href="/admin" class="nav-item">
+          <i class="bi bi-shield-check"></i>
+          Dashboard
+        </a>
+      </div>
+      <% } %>
+
+      <div class="nav-section">
+        <a href="/logout" class="nav-item">
+          <i class="bi bi-box-arrow-right"></i>
+          Logout
+        </a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <div class="page-header">
+        <h1 class="page-title">Customize Profile</h1>
+        <p class="page-subtitle">Make your profile unique and stand out</p>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success">
+          <i class="bi bi-check-circle"></i>
+          <div>
+            <% if (success === 'profile_updated') { %>Profile updated successfully!<% } %>
+            <% if (success === 'theme_updated') { %>Theme updated successfully!<% } %>
+            <% if (success === 'avatar_uploaded') { %>Avatar uploaded successfully!<% } %>
+          </div>
+        </div>
+      <% } %>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <% if (error === 'upload_failed') { %>Failed to upload file. Please try again.<% } %>
+            <% if (error === 'invalid_file') { %>Invalid file type. Please upload an image.<% } %>
+            <% if (error === 'update_failed') { %>Failed to update profile. Please try again.<% } %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="customize-layout">
+        <!-- Customization Forms -->
+        <div class="customize-content">
+          <!-- Profile Information Section -->
+          <div class="settings-card">
+            <div class="settings-header">
+              <h3>
+                <i class="bi bi-person-circle"></i>
+                Profile Information
+              </h3>
+              <div class="subtitle">Update your public profile details</div>
+            </div>
+            <div class="settings-body">
+              <form method="POST" action="/customize/profile" enctype="multipart/form-data">
+                <div class="profile-upload-section">
+                  <div class="avatar-upload">
+                    <img src="<%= profile.avatar || '/img/not_signed_in/variant2.svg' %>" 
+                         alt="Avatar" class="avatar-preview" id="avatarPreview">
+                    <div class="upload-overlay">
+                      <i class="bi bi-camera"></i>
+                    </div>
+                    <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;">
+                  </div>
+                  <div class="avatar-info">
+                    <h4>Profile Picture</h4>
+                    <p class="text-muted">Upload a new avatar. Recommended size: 400x400px</p>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('avatarInput').click()">
+                      <i class="bi bi-upload"></i>
+                      Choose File
+                    </button>
+                  </div>
+                </div>
+
+                <div class="row cols-2">
+                  <div class="form-group">
+                    <label class="form-label" for="display_name">Display Name</label>
+                    <input type="text" class="form-control" id="display_name" name="display_name" 
+                           value="<%= profile.display_name || '' %>" placeholder="Your display name">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="location">Location</label>
+                    <input type="text" class="form-control" id="location" name="location" 
+                           value="<%= profile.location || '' %>" placeholder="Your location">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="bio">Bio</label>
+                  <textarea class="form-control" id="bio" name="bio" rows="4" 
+                            placeholder="Tell people about yourself..."><%= profile.bio || '' %></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="website">Website</label>
+                  <input type="url" class="form-control" id="website" name="website" 
+                         value="<%= profile.website || '' %>" placeholder="https://yourwebsite.com">
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i>
+                    Save Profile
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Theme Selection Section -->
+          <div class="settings-card">
+            <div class="settings-header">
+              <h3>
+                <i class="bi bi-palette"></i>
+                Theme & Appearance
+              </h3>
+              <div class="subtitle">Choose a theme for your profile page</div>
+            </div>
+            <div class="settings-body">
+              <form method="POST" action="/customize/theme">
+                <div class="theme-grid">
+                  <div class="theme-option <%= profile.theme === 'dark' || !profile.theme ? 'active' : '' %>" 
+                       data-theme="dark">
+                    <div class="theme-preview theme-dark">
+                      <div class="theme-header"></div>
+                      <div class="theme-content">
+                        <div class="theme-avatar"></div>
+                        <div class="theme-text"></div>
+                        <div class="theme-links">
+                          <div class="theme-link"></div>
+                          <div class="theme-link"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <h4>Dark</h4>
+                      <p>Classic dark theme</p>
+                    </div>
+                    <input type="radio" name="theme" value="dark" <%= profile.theme === 'dark' || !profile.theme ? 'checked' : '' %>>
+                  </div>
+
+                  <div class="theme-option <%= profile.theme === 'light' ? 'active' : '' %>" 
+                       data-theme="light">
+                    <div class="theme-preview theme-light">
+                      <div class="theme-header"></div>
+                      <div class="theme-content">
+                        <div class="theme-avatar"></div>
+                        <div class="theme-text"></div>
+                        <div class="theme-links">
+                          <div class="theme-link"></div>
+                          <div class="theme-link"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <h4>Light</h4>
+                      <p>Clean light theme</p>
+                    </div>
+                    <input type="radio" name="theme" value="light" <%= profile.theme === 'light' ? 'checked' : '' %>>
+                  </div>
+
+                  <div class="theme-option <%= profile.theme === 'ocean' ? 'active' : '' %>" 
+                       data-theme="ocean">
+                    <div class="theme-preview theme-ocean">
+                      <div class="theme-header"></div>
+                      <div class="theme-content">
+                        <div class="theme-avatar"></div>
+                        <div class="theme-text"></div>
+                        <div class="theme-links">
+                          <div class="theme-link"></div>
+                          <div class="theme-link"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <h4>Ocean</h4>
+                      <p>Cool blue theme</p>
+                    </div>
+                    <input type="radio" name="theme" value="ocean" <%= profile.theme === 'ocean' ? 'checked' : '' %>>
+                  </div>
+
+                  <div class="theme-option <%= profile.theme === 'sunset' ? 'active' : '' %>" 
+                       data-theme="sunset">
+                    <div class="theme-preview theme-sunset">
+                      <div class="theme-header"></div>
+                      <div class="theme-content">
+                        <div class="theme-avatar"></div>
+                        <div class="theme-text"></div>
+                        <div class="theme-links">
+                          <div class="theme-link"></div>
+                          <div class="theme-link"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <h4>Sunset</h4>
+                      <p>Warm gradient theme</p>
+                    </div>
+                    <input type="radio" name="theme" value="sunset" <%= profile.theme === 'sunset' ? 'checked' : '' %>>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-palette"></i>
+                    Apply Theme
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Custom CSS Section -->
+          <div class="settings-card">
+            <div class="settings-header">
+              <h3>
+                <i class="bi bi-code-slash"></i>
+                Custom CSS
+              </h3>
+              <div class="subtitle">Add custom styles to your profile (advanced users only)</div>
+            </div>
+            <div class="settings-body">
+              <form method="POST" action="/customize/css">
+                <div class="form-group">
+                  <label class="form-label" for="custom_css">Custom CSS Code</label>
+                  <textarea class="form-control code-editor" id="custom_css" name="custom_css" rows="12" 
+                            placeholder="/* Add your custom CSS here */"
+                            spellcheck="false"><%= profile.custom_css || '' %></textarea>
+                  <div class="form-text">
+                    <i class="bi bi-info-circle"></i>
+                    Custom CSS will be applied to your profile page. Use with caution as invalid CSS may break your profile appearance.
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-code-slash"></i>
+                    Save Custom CSS
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="preview-panel">
+          <div class="preview-header">
+            <h3>Live Preview</h3>
+            <a href="/profile/<%= username %>" target="_blank" class="btn btn-outline btn-sm">
+              <i class="bi bi-eye"></i>
+              View Live
+            </a>
+          </div>
+          <div class="preview-content">
+            <iframe src="/profile/<%= username %>" class="profile-preview-frame"></iframe>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Cookie Notice -->
+  <div id="cookieNotice" class="cookie-notice">
+    <div class="cookie-content">
+      <div class="cookie-text">
+        <h4>We value your privacy</h4>
+        <p>We use cookies to enhance your experience and analyze site usage.</p>
+      </div>
+      <div class="cookie-actions">
+        <button id="acceptCookies" class="cookie-btn primary">Accept All</button>
+        <button id="manageCookies" class="cookie-btn secondary">Manage</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/cookie-manager.js"></script>
+  <script>
+    // Avatar upload preview
+    document.getElementById('avatarInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('avatarPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Theme selection
+    document.querySelectorAll('.theme-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+        this.classList.add('active');
+        this.querySelector('input[type="radio"]').checked = true;
+      });
+    });
+
+    // Code editor improvements
+    const codeEditor = document.getElementById('custom_css');
+    if (codeEditor) {
+      codeEditor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = this.selectionStart;
+          const end = this.selectionEnd;
+          this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+          this.selectionStart = this.selectionEnd = start + 2;
+        }
+      });
+    }
+
+    // Auto-refresh preview on changes (debounced)
+    let previewTimeout;
+    function refreshPreview() {
+      clearTimeout(previewTimeout);
+      previewTimeout = setTimeout(() => {
+        const iframe = document.querySelector('.profile-preview-frame');
+        if (iframe) {
+          iframe.src = iframe.src;
+        }
+      }, 1000);
+    }
+
+    // Listen for form changes
+    document.querySelectorAll('input, textarea, select').forEach(input => {
+      input.addEventListener('input', refreshPreview);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutzungsbedingungen - Velink</title>
+    <link rel="icon" href="/img/logo/fresh/white_purple_rounded.png" type="image/png">
+    <meta name="description" content="Nutzungsbedingungen für Velink - Rechtliche Bestimmungen für die Nutzung unserer Plattform">
+    <meta name="robots" content="noindex, follow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/base.css" rel="stylesheet">
+    <link href="/css/cookie-notice.css" rel="stylesheet">
+    
+    <style>
+        .legal-layout {
+            min-height: 100vh;
+            background: var(--bg-secondary);
+        }
+
+        .navbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-secondary);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .login-button {
+            background: var(--primary);
+            color: white;
+        }
+
+        .login-button:hover {
+            background: var(--primary-hover);
+            color: white;
+        }
+
+        .legal-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 1rem;
+        }
+
+        .legal-content {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 3rem;
+            line-height: 1.7;
+        }
+
+        .legal-content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .legal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .legal-content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 2rem 0 1rem;
+        }
+
+        .legal-content p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .legal-content ul {
+            color: var(--text-secondary);
+            padding-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .legal-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .legal-content a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .legal-content a:hover {
+            text-decoration: underline;
+        }
+
+        .intro-text {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 3rem;
+            font-style: italic;
+        }
+
+        .important-notice {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .important-notice h3 {
+            color: #92400e;
+            margin-top: 0;
+        }
+
+        .important-notice p {
+            color: #92400e;
+            margin-bottom: 0;
+        }
+
+        .contact-card {
+            background: var(--primary-bg);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .contact-card h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        .last-updated {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .legal-content {
+                padding: 2rem 1.5rem;
+            }
+
+            .legal-content h1 {
+                font-size: 2rem;
+            }
+
+            .legal-content h2 {
+                font-size: 1.25rem;
+            }
+
+            .navbar-container {
+                padding: 0 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .legal-container {
+                padding: 2rem 0.5rem;
+            }
+
+            .legal-content {
+                padding: 1.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-layout">
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="/" class="logo">Velink</a>
+                <div>
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <a href="/manage" class="nav-link">
+                            <i class="bi bi-person-circle"></i>
+                            Dashboard
+                        </a>
+                    <% } else { %>
+                        <a href="/login" class="nav-link login-button">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Login
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </nav>
+
+        <div class="legal-container">
+            <div class="legal-content">
+                <h1>Nutzungsbedingungen</h1>
+                <p class="intro-text">
+                    Mit der Nutzung von Velink erklärst du dich mit den folgenden Bedingungen einverstanden. 
+                    Bitte lies sie sorgfältig durch.
+                </p>
+
+                <h2>1. Überblick und Geltungsbereich</h2>
+                <p>Velink ist eine Plattform zur Erstellung personalisierter Link-Seiten, ähnlich wie Linktree. Diese Nutzungsbedingungen regeln die Beziehung zwischen dir als Nutzer und uns als Anbieter der Plattform.</p>
+
+                <h2>2. Bereitstellung des Dienstes</h2>
+                <p>Velink bietet die Möglichkeit, kostenlos personalisierte Link-Seiten zu erstellen und zu verwalten. Der Service umfasst:</p>
+                <ul>
+                    <li>Erstellung und Verwaltung von Profilen</li>
+                    <li>Hinzufügung und Organisation von Links</li>
+                    <li>Anpassung des Erscheinungsbilds</li>
+                    <li>Grundlegende Analytik-Funktionen</li>
+                </ul>
+                <p>Die Nutzung ist kostenfrei, kann jedoch jederzeit eingeschränkt oder eingestellt werden. Wir behalten uns vor, den Service zu erweitern oder zu verändern.</p>
+
+                <h2>3. Benutzerkonten</h2>
+                <p>Für die Nutzung von Velink ist eine Registrierung erforderlich. Du verpflichtest dich:</p>
+                <ul>
+                    <li>Wahrheitsgemäße Angaben bei der Registrierung zu machen</li>
+                    <li>Deine Zugangsdaten sicher zu verwahren</li>
+                    <li>Uns bei unbefugter Nutzung deines Kontos zu informieren</li>
+                    <li>Nur ein Konto zu erstellen</li>
+                </ul>
+                <p>Wir behalten uns das Recht vor, Konten ohne Angabe von Gründen zu sperren oder zu löschen, insbesondere bei Verstoß gegen diese Bedingungen.</p>
+
+                <h2>4. Nutzerinhalte und Verantwortlichkeit</h2>
+                <p>Du bist vollständig verantwortlich für alle Inhalte, die du über dein Konto veröffentlichst. Dies umfasst:</p>
+                <ul>
+                    <li>Profilbeschreibungen und biografische Angaben</li>
+                    <li>Links zu externen Websites</li>
+                    <li>Titel und Beschreibungen von Links</li>
+                    <li>Profilbilder und andere Medien</li>
+                </ul>
+
+                <div class="important-notice">
+                    <h3><i class="bi bi-exclamation-triangle"></i> Verbotene Inhalte</h3>
+                    <p>Es ist strengstens untersagt, Inhalte zu veröffentlichen, die rechtswidrig, anstößig, diskriminierend, gewaltverherrlichend, pornografisch oder anderweitig schädlich sind. Dies gilt auch für verlinkte externe Inhalte.</p>
+                </div>
+
+                <h2>5. Haftungsausschluss</h2>
+                <p>Wir übernehmen keine Haftung für:</p>
+                <ul>
+                    <li>Datenverluste oder Beschädigung von Inhalten</li>
+                    <li>Verfügbarkeit oder Ausfallzeiten des Services</li>
+                    <li>Inhalte verlinkter externer Websites</li>
+                    <li>Schäden, die aus der Nutzung oder dem Ausfall des Dienstes entstehen</li>
+                </ul>
+
+                <div class="important-notice">
+                    <h3><i class="bi bi-database-exclamation"></i> Besonderer Hinweis zu Datenverlust</h3>
+                    <p>Insbesondere haften wir nicht für den Fall, dass sämtliche Datenbanken zurückgesetzt, gelöscht oder anderweitig unwiederbringlich verloren gehen, auch wenn dies durch technische Probleme oder Sicherheitsvorfälle verursacht wurde. Du akzeptierst, dass in solchen Fällen keinerlei Ersatzansprüche bestehen.</p>
+                </div>
+
+                <p>Diese Haftungsbeschränkung gilt nicht bei Vorsatz, grober Fahrlässigkeit oder bei Verletzung von Leben, Körper oder Gesundheit.</p>
+
+                <h2>6. Datenschutz</h2>
+                <p>Der Schutz deiner personenbezogenen Daten ist uns wichtig. Unsere <a href="/datenschutz">Datenschutzerklärung</a> informiert dich ausführlich darüber, wie wir deine Daten verarbeiten und welche Rechte du hast.</p>
+
+                <h2>7. Geistiges Eigentum</h2>
+                <p>Alle Inhalte und Marken auf Velink, einschließlich Logos, Texte, Bilder, Design und Software, sind durch Urheberrechte und andere Schutzrechte geschützt. Du darfst diese Inhalte ohne unsere ausdrückliche schriftliche Zustimmung nicht verwenden, kopieren oder vervielfältigen.</p>
+
+                <h2>8. Nutzerverhalten</h2>
+                <p>Du verpflichtest dich, Velink verantwortungsvoll zu nutzen und insbesondere:</p>
+                <ul>
+                    <li>Keine automatisierten Systeme (Bots) zu verwenden</li>
+                    <li>Keine Schadsoftware zu verbreiten</li>
+                    <li>Nicht zu versuchen, unbefugt auf fremde Konten zuzugreifen</li>
+                    <li>Den Service nicht für Spam oder andere unerwünschte Aktivitäten zu nutzen</li>
+                    <li>Keine Handlungen vorzunehmen, die den Betrieb oder die Sicherheit beeinträchtigen</li>
+                </ul>
+
+                <h2>9. Änderungen der Nutzungsbedingungen</h2>
+                <p>Diese Nutzungsbedingungen können jederzeit geändert werden. Wesentliche Änderungen werden wir dir per E-Mail oder über die Plattform mitteilen. Die weitere Nutzung nach Inkrafttreten der Änderungen gilt als Zustimmung zu den neuen Bedingungen.</p>
+
+                <h2>10. Beendigung</h2>
+                <p>Du kannst dein Konto jederzeit über die Kontoeinstellungen löschen. Wir können deine Nutzung der Plattform jederzeit mit oder ohne Grund einstellen. Nach Beendigung erlöschen alle Rechte an deinem Konto und dessen Inhalten, soweit nicht anders vereinbart.</p>
+
+                <h2>11. Schlussbestimmungen</h2>
+                <p>Es gilt das Recht der Bundesrepublik Deutschland. Gerichtsstand ist, soweit gesetzlich zulässig, München. Sollten einzelne Bestimmungen dieser Nutzungsbedingungen unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.</p>
+
+                <div class="contact-card">
+                    <h3><i class="bi bi-envelope"></i> Fragen zu den Nutzungsbedingungen</h3>
+                    <p>Bei Fragen zu diesen Nutzungsbedingungen kontaktiere uns unter:</p>
+                    <p><strong>E-Mail:</strong> <a href="mailto:info@velyzo.de">info@velyzo.de</a></p>
+                </div>
+
+                <div class="last-updated">
+                    <i class="bi bi-calendar-check"></i>
+                    Letzte Aktualisierung: <%= new Date().toLocaleDateString('de-DE', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Notice -->
+    <div id="cookieNotice" class="cookie-notice">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <h4>Wir respektieren deine Privatsphäre</h4>
+                <p>Wir verwenden Cookies zur Verbesserung deiner Nutzererfahrung und für Analysen.</p>
+            </div>
+            <div class="cookie-actions">
+                <button id="acceptCookies" class="cookie-btn primary">Alle akzeptieren</button>
+                <button id="manageCookies" class="cookie-btn secondary">Verwalten</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/cookie-manager.js"></script>
+</body>
+</html>

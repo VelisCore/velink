@@ -351,6 +351,7 @@
       <p class="bio"><%= profile.bio %></p>
     <% } %>
 
+<<<<<<< HEAD
     <% if (profile.location || profile.website) { %>
       <div class="location-website">
         <% if (profile.location) { %>
@@ -360,6 +361,29 @@
           <div><i class="bi bi-link-45deg"></i> <a href="<%= profile.website %>" target="_blank" rel="noopener"><%= profile.website %></a></div>
         <% } %>
       </div>
+=======
+    <nav class="links" aria-label="Hauptlinks">
+      <a class="link" href="https://github.com/wfxey" target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-github"></i><span>GitHub Projects</span>
+      </a>
+      <a class="link" href="https://velis.me" target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-globe"></i><span>Personal Website</span>
+      </a>
+      <a class="link" href="https://x.com/velis_core" target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-twitter-x"></i><span>X / Twitter</span>
+      </a>
+      <a class="link" href="mailto:wfxey@velis.me">
+        <i class="bi bi-envelope"></i><span>Contact via Mail</span>
+      </a>
+      <a class="link" href="https://discord.gg/AjtY2fNCpS?event=1368257511681163285"
+         target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-discord"></i><span>Join the Discord Event</span>
+      </a>
+          <% if (isOwnProfile) { %>
+      <a class="edit-button" href="/manage">
+        <i class="bi bi-pencil-square"></i><span>Edit Profile</span>
+      </a>
+>>>>>>> parent of bc4fa63 (Rename)
     <% } %>
 
     <nav class="links">

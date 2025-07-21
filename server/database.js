@@ -16,8 +16,21 @@ class Database {
         original_url TEXT NOT NULL,
         clicks INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME DEFAULT NULL,
         ip_address TEXT,
-        user_agent TEXT
+        user_agent TEXT,
+        custom_options TEXT
+      )
+    `;
+
+    const createClicksTableSQL = `
+      CREATE TABLE IF NOT EXISTS clicks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        short_code TEXT NOT NULL,
+        clicked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        ip_address TEXT,
+        user_agent TEXT,
+        FOREIGN KEY (short_code) REFERENCES short_urls(short_code)
       )
     `;
 
@@ -25,10 +38,13 @@ class Database {
       CREATE INDEX IF NOT EXISTS idx_short_code ON short_urls(short_code);
       CREATE INDEX IF NOT EXISTS idx_original_url ON short_urls(original_url);
       CREATE INDEX IF NOT EXISTS idx_created_at ON short_urls(created_at);
+      CREATE INDEX IF NOT EXISTS idx_clicks_short_code ON clicks(short_code);
+      CREATE INDEX IF NOT EXISTS idx_clicks_clicked_at ON clicks(clicked_at);
     `;
 
     this.db.serialize(() => {
       this.db.run(createTableSQL);
+      this.db.run(createClicksTableSQL);
       this.db.run(createIndexSQL);
     });
   }
@@ -36,11 +52,18 @@ class Database {
   createShortUrl(data) {
     return new Promise((resolve, reject) => {
       const sql = `
-        INSERT INTO short_urls (short_code, original_url, ip_address, user_agent)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO short_urls (short_code, original_url, expires_at, ip_address, user_agent, custom_options)
+        VALUES (?, ?, ?, ?, ?, ?)
       `;
       
-      this.db.run(sql, [data.shortCode, data.originalUrl, data.ip, data.userAgent], function(err) {
+      this.db.run(sql, [
+        data.shortCode, 
+        data.originalUrl, 
+        data.expiresAt || null, 
+        data.ip, 
+        data.userAgent, 
+        data.customOptions ? JSON.stringify(data.customOptions) : null
+      ], function(err) {
         if (err) {
           reject(err);
         } else {
@@ -81,13 +104,35 @@ class Database {
 
   incrementClicks(shortCode) {
     return new Promise((resolve, reject) => {
-      const sql = 'UPDATE short_urls SET clicks = clicks + 1 WHERE short_code = ?';
-      this.db.run(sql, [shortCode], function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this.changes);
-        }
+      // Start a transaction
+      this.db.serialize(() => {
+        this.db.run('BEGIN TRANSACTION');
+        
+        // Update click count in short_urls
+        this.db.run('UPDATE short_urls SET clicks = clicks + 1 WHERE short_code = ?', [shortCode], function(err) {
+          if (err) {
+            this.db.run('ROLLBACK');
+            reject(err);
+            return;
+          }
+          
+          // Insert click record
+          const clickSql = `
+            INSERT INTO clicks (short_code, ip_address, user_agent)
+            VALUES (?, ?, ?)
+          `;
+          
+          this.db.run(clickSql, [shortCode, '', ''], (err) => {
+            if (err) {
+              this.db.run('ROLLBACK');
+              reject(err);
+              return;
+            }
+            
+            this.db.run('COMMIT');
+            resolve(true);
+          });
+        }.bind(this));
       });
     });
   }
@@ -132,6 +177,50 @@ class Database {
           resolve(this.changes);
         }
       });
+    });
+  }
+
+  getLinkAnalytics(shortCode) {
+    return new Promise((resolve, reject) => {
+      // First get the basic link info
+      this.findByShortCode(shortCode)
+        .then(link => {
+          if (!link) {
+            reject(new Error('Link not found'));
+            return;
+          }
+
+          // Get click data by date
+          const clickSql = `
+            SELECT 
+              date(clicked_at) as date,
+              COUNT(*) as clicks
+            FROM clicks
+            WHERE short_code = ?
+            GROUP BY date(clicked_at)
+            ORDER BY date(clicked_at) DESC
+            LIMIT 30
+          `;
+
+          this.db.all(clickSql, [shortCode], (err, rows) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+
+            resolve({
+              shortCode: link.short_code,
+              originalUrl: link.original_url,
+              totalClicks: link.clicks,
+              createdAt: link.created_at,
+              clickData: rows.map(row => ({
+                date: row.date,
+                clicks: row.clicks
+              }))
+            });
+          });
+        })
+        .catch(err => reject(err));
     });
   }
 }

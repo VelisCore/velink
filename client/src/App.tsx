@@ -1,4 +1,5 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -6,45 +7,64 @@ import LinkShortener from './components/LinkShortener';
 import Features from './components/Features';
 import Stats from './components/Stats';
 import Footer from './components/Footer';
+import PrivacyPolicy from './components/legal/PrivacyPolicy';
+import TermsOfService from './components/legal/TermsOfService';
+import Impressum from './components/legal/Impressum';
+import ApiDocumentation from './components/documentation/ApiDocumentation';
+import LinkAnalytics from './components/analytics/LinkAnalytics';
 import './App.css';
+
+// HomePage component to keep the main page structure
+const HomePage = () => (
+  <>
+    <Header />
+    <main>
+      <Hero />
+      <LinkShortener />
+      <Features />
+      <Stats />
+    </main>
+    <Footer />
+  </>
+);
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <Toaster 
-        position="top-center"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-          },
-          success: {
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
+    <Router>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <Toaster 
+          position="top-center"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
             },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
             },
-          },
-        }}
-      />
-      
-      <Header />
-      
-      <main>
-        <Hero />
-        <LinkShortener />
-        <Features />
-        <Stats />
-      </main>
-      
-      <Footer />
-    </div>
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
+        
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/impressum" element={<Impressum />} />
+          <Route path="/api-docs" element={<ApiDocumentation />} />
+          <Route path="/analytics/:shortCode" element={<LinkAnalytics />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

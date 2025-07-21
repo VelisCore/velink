@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, Copy, Check, ExternalLink, BarChart3, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Link2, Copy, Check, ExternalLink, BarChart3, AlertCircle, Clock, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -10,6 +11,10 @@ interface ShortenedLink {
   originalUrl: string;
   clicks: number;
   createdAt: string;
+  expiresAt?: string;
+  customOptions?: {
+    [key: string]: any;
+  };
 }
 
 const LinkShortener: React.FC = () => {
@@ -18,6 +23,11 @@ const LinkShortener: React.FC = () => {
   const [shortenedLink, setShortenedLink] = useState<ShortenedLink | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+  const [expiresIn, setExpiresIn] = useState<string>('never');
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [customPassword, setCustomPassword] = useState('');
+  const [customAlias, setCustomAlias] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
 
   const isValidUrl = (string: string) => {
     try {
@@ -45,7 +55,26 @@ const LinkShortener: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('/api/shorten', { url });
+      // Prepare custom options if any are set
+      const customOptions = {} as any;
+      
+      if (customPassword) {
+        customOptions.password = customPassword;
+      }
+      
+      if (isPrivate) {
+        customOptions.isPrivate = true;
+      }
+
+      // Prepare the request payload
+      const payload = { 
+        url,
+        expiresIn,
+        ...(Object.keys(customOptions).length > 0 ? { customOptions } : {}),
+        ...(customAlias ? { customAlias } : {})
+      };
+
+      const response = await axios.post('/api/shorten', payload);
       setShortenedLink(response.data);
       toast.success('Link shortened successfully!');
     } catch (err: any) {
@@ -75,6 +104,11 @@ const LinkShortener: React.FC = () => {
     setShortenedLink(null);
     setError('');
     setCopied(false);
+    setExpiresIn('never');
+    setCustomPassword('');
+    setCustomAlias('');
+    setIsPrivate(false);
+    setShowAdvancedOptions(false);
   };
 
   return (
@@ -133,6 +167,91 @@ const LinkShortener: React.FC = () => {
                   </motion.div>
                 )}
               </div>
+              
+              <div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="expires" className="block text-sm font-medium text-gray-700">
+                    Link expiration
+                  </label>
+                  <button 
+                    type="button"
+                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    className="text-sm text-primary-600 hover:text-primary-700 flex items-center"
+                  >
+                    <Settings className="h-4 w-4 mr-1" />
+                    {showAdvancedOptions ? 'Hide' : 'Show'} advanced options
+                  </button>
+                </div>
+                <select
+                  id="expires"
+                  value={expiresIn}
+                  onChange={(e) => setExpiresIn(e.target.value)}
+                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  disabled={isLoading}
+                >
+                  <option value="never">Never expire</option>
+                  <option value="1d">1 day</option>
+                  <option value="7d">7 days</option>
+                  <option value="30d">30 days</option>
+                  <option value="365d">1 year</option>
+                </select>
+              </div>
+              
+              {showAdvancedOptions && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-4 bg-gray-50 p-4 rounded-lg"
+                >
+                  <div>
+                    <label htmlFor="customAlias" className="block text-sm font-medium text-gray-700 mb-1">
+                      Custom alias (optional)
+                    </label>
+                    <input
+                      type="text"
+                      id="customAlias"
+                      value={customAlias}
+                      onChange={(e) => setCustomAlias(e.target.value)}
+                      placeholder="my-custom-link"
+                      className="input-primary"
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave empty to generate a random code
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                      Password protection (optional)
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      value={customPassword}
+                      onChange={(e) => setCustomPassword(e.target.value)}
+                      placeholder="Enter a password"
+                      className="input-primary"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="private"
+                      checked={isPrivate}
+                      onChange={(e) => setIsPrivate(e.target.checked)}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      disabled={isLoading}
+                    />
+                    <label htmlFor="private" className="ml-2 block text-sm text-gray-700">
+                      Make this link private (not shown in public stats)
+                    </label>
+                  </div>
+                </motion.div>
+              )}
 
               <button
                 type="submit"
@@ -217,21 +336,46 @@ const LinkShortener: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-gray-50 rounded-lg p-4 text-center">
                     <div className="flex items-center justify-center mb-2">
                       <BarChart3 className="h-5 w-5 text-primary-600" />
                     </div>
                     <div className="text-2xl font-bold text-gray-900">{shortenedLink.clicks}</div>
                     <div className="text-sm text-gray-600">Clicks</div>
+                    <Link 
+                      to={`/analytics/${shortenedLink.shortCode}`}
+                      className="mt-2 text-xs text-primary-600 hover:text-primary-700 inline-block"
+                    >
+                      View Analytics
+                    </Link>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-gray-900">
                       {new Date(shortenedLink.createdAt).toLocaleDateString()}
                     </div>
                     <div className="text-sm text-gray-600">Created</div>
+                    {shortenedLink.expiresAt && (
+                      <div className="mt-1 text-xs text-amber-600">
+                        Expires: {new Date(shortenedLink.expiresAt).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
                 </div>
+                
+                {shortenedLink.customOptions && Object.keys(shortenedLink.customOptions).length > 0 && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg text-sm">
+                    <div className="font-medium mb-1">Additional options:</div>
+                    <ul className="text-gray-600">
+                      {shortenedLink.customOptions.password && (
+                        <li>🔒 Password protected</li>
+                      )}
+                      {shortenedLink.customOptions.isPrivate && (
+                        <li>🔏 Private link (not shown in public stats)</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <button

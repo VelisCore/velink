@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link2, Github, Twitter, Heart } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Link2, Github, Twitter, Heart, FileText, Shield, Code, Info } from 'lucide-react';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -15,7 +16,7 @@ const Footer: React.FC = () => {
                 <Link2 className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
-                VeLink
+                Velink
               </h3>
             </div>
             <p className="text-gray-300 mb-6 max-w-md">
@@ -24,7 +25,7 @@ const Footer: React.FC = () => {
             </p>
             <div className="flex space-x-4">
               <a
-                href="https://github.com"
+                href="https://github.com/velyzo/velink"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
@@ -33,7 +34,7 @@ const Footer: React.FC = () => {
                 <Github className="h-5 w-5" />
               </a>
               <a
-                href="https://twitter.com"
+                href="https://twitter.com/velyzo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
@@ -76,9 +77,9 @@ const Footer: React.FC = () => {
             <h4 className="text-lg font-semibold mb-4">Resources</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#features" className="text-gray-300 hover:text-white transition-colors duration-200">
-                  Documentation
-                </a>
+                <Link to="/api-docs" className="text-gray-300 hover:text-white transition-colors duration-200">
+                  API Documentation
+                </Link>
               </li>
               <li>
                 <a href="#stats" className="text-gray-300 hover:text-white transition-colors duration-200">
@@ -86,20 +87,14 @@ const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <button 
-                  onClick={() => window.alert('API documentation coming soon!')}
-                  className="text-gray-300 hover:text-white transition-colors duration-200"
-                >
-                  API
-                </button>
+                <a href="#features" className="text-gray-300 hover:text-white transition-colors duration-200">
+                  Features
+                </a>
               </li>
               <li>
-                <button 
-                  onClick={() => window.alert('Support available via GitHub Issues')}
-                  className="text-gray-300 hover:text-white transition-colors duration-200"
-                >
+                <a href="mailto:mail@velyzo.de" className="text-gray-300 hover:text-white transition-colors duration-200">
                   Support
-                </button>
+                </a>
               </li>
             </ul>
           </div>
@@ -111,24 +106,21 @@ const Footer: React.FC = () => {
             <div className="flex items-center space-x-2 text-gray-300 mb-4 md:mb-0">
               <span>Made with</span>
               <Heart className="h-4 w-4 text-red-500" />
-              <span>by VeLink Team</span>
+              <span>by <a href="https://velyzo.de" target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:text-primary-300">Velyzo</a></span>
             </div>
             
             <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6 text-sm text-gray-400">
-              <span>&copy; {currentYear} VeLink. All rights reserved.</span>
+              <span>&copy; {currentYear} Velyzo. All rights reserved.</span>
               <div className="flex space-x-4">
-                <button 
-                  onClick={() => window.alert('Privacy Policy coming soon!')}
-                  className="hover:text-white transition-colors duration-200"
-                >
+                <Link to="/privacy" className="hover:text-white transition-colors duration-200">
                   Privacy Policy
-                </button>
-                <button 
-                  onClick={() => window.alert('Terms of Service coming soon!')}
-                  className="hover:text-white transition-colors duration-200"
-                >
+                </Link>
+                <Link to="/terms" className="hover:text-white transition-colors duration-200">
                   Terms of Service
-                </button>
+                </Link>
+                <Link to="/impressum" className="hover:text-white transition-colors duration-200">
+                  Impressum
+                </Link>
               </div>
             </div>
           </div>

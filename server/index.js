@@ -5,6 +5,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const path = require('path');
+const fs = require('fs');
 const Database = require('./database');
 const { generateShortCode, isValidUrl } = require('./utils');
 
@@ -82,7 +83,11 @@ app.post('/api/shorten',
       .isURL({ protocols: ['http', 'https'], require_protocol: true })
       .withMessage('Please provide a valid URL with http:// or https://')
       .isLength({ max: 2048 })
-      .withMessage('URL is too long (max 2048 characters)')
+      .withMessage('URL is too long (max 2048 characters)'),
+    body('expiresIn')
+      .optional()
+      .isIn(['1d', '7d', '30d', '365d', 'never'])
+      .withMessage('Invalid expiration option')
   ],
   async (req, res) => {
     try {
@@ -93,19 +98,42 @@ app.post('/api/shorten',
         });
       }
 
-      const { url } = req.body;
+      const { url, expiresIn, customOptions } = req.body;
       const ip = req.ip || req.connection.remoteAddress;
+      
+      // Calculate expiration date if provided
+      let expiresAt = null;
+      if (expiresIn && expiresIn !== 'never') {
+        const days = {
+          '1d': 1,
+          '7d': 7,
+          '30d': 30,
+          '365d': 365
+        };
+        
+        const expireDate = new Date();
+        expireDate.setDate(expireDate.getDate() + days[expiresIn]);
+        expiresAt = expireDate.toISOString();
+      }
 
       // Check if URL already exists (optimization)
       const existing = await db.findByUrl(url);
       if (existing) {
-        return res.json({
-          shortUrl: `${req.protocol}://${req.get('host')}/${existing.short_code}`,
-          shortCode: existing.short_code,
-          originalUrl: existing.original_url,
-          clicks: existing.clicks,
-          createdAt: existing.created_at
-        });
+        // If the URL exists but we want a different expiration, create a new one
+        if ((expiresAt && !existing.expires_at) || 
+            (expiresAt && existing.expires_at && new Date(expiresAt).getTime() !== new Date(existing.expires_at).getTime())) {
+          // Continue to create a new short URL with the new expiration
+        } else {
+          return res.json({
+            shortUrl: `${req.protocol}://${req.get('host')}/${existing.short_code}`,
+            shortCode: existing.short_code,
+            originalUrl: existing.original_url,
+            clicks: existing.clicks,
+            expiresAt: existing.expires_at,
+            createdAt: existing.created_at,
+            customOptions: existing.custom_options ? JSON.parse(existing.custom_options) : null
+          });
+        }
       }
 
       // Generate unique short code
@@ -123,16 +151,20 @@ app.post('/api/shorten',
       const result = await db.createShortUrl({
         shortCode,
         originalUrl: url,
+        expiresAt,
         ip,
-        userAgent: req.get('User-Agent') || ''
+        userAgent: req.get('User-Agent') || '',
+        customOptions
       });
 
       res.status(201).json({
         shortUrl: `${req.protocol}://${req.get('host')}/${shortCode}`,
         shortCode,
         originalUrl: url,
+        expiresAt,
         clicks: 0,
-        createdAt: result.created_at
+        createdAt: result.created_at,
+        customOptions
       });
 
     } catch (error) {
@@ -164,6 +196,21 @@ app.get('/api/info/:shortCode', async (req, res) => {
   }
 });
 
+// Get analytics for a specific link
+app.get('/api/analytics/:shortCode', async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+    const analytics = await db.getLinkAnalytics(shortCode);
+    res.json(analytics);
+  } catch (error) {
+    console.error('Error fetching link analytics:', error);
+    if (error.message === 'Link not found') {
+      return res.status(404).json({ error: 'Link not found' });
+    }
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Redirect short URL
 app.get('/:shortCode', async (req, res) => {
   try {
@@ -183,7 +230,7 @@ app.get('/:shortCode', async (req, res) => {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Link Not Found - VeLink</title>
+          <title>Link Not Found - Velink</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
                    text-align: center; padding: 50px; background: #f8fafc; }
@@ -199,7 +246,38 @@ app.get('/:shortCode', async (req, res) => {
           <div class="container">
             <h1>🔗 Link Not Found</h1>
             <p>The short link you're looking for doesn't exist or has expired.</p>
-            <a href="/">← Back to VeLink</a>
+            <a href="/">← Back to Velink</a>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // Check if the link has expired
+    if (urlData.expires_at && new Date(urlData.expires_at) < new Date()) {
+      return res.status(410).send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Link Expired - Velink</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+                   text-align: center; padding: 50px; background: #f8fafc; }
+            .container { max-width: 500px; margin: 0 auto; background: white; 
+                        border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            h1 { color: #e11d48; margin-bottom: 20px; }
+            p { color: #64748b; margin-bottom: 30px; }
+            a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
+            a:hover { text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🔗 Link Expired</h1>
+            <p>This short link has expired and is no longer available.</p>
+            <a href="/">← Back to Velink</a>
           </div>
         </body>
         </html>
@@ -263,9 +341,28 @@ app.get('/:shortCode', async (req, res) => {
 
 // Serve static files from React app in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static('../client/build'));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
+  // Check both potential build locations
+  let clientBuildPath;
+  
+  if (fs.existsSync(path.resolve(__dirname, '../client/build'))) {
+    clientBuildPath = path.resolve(__dirname, '../client/build');
+  } else if (fs.existsSync(path.resolve(__dirname, 'public'))) {
+    clientBuildPath = path.resolve(__dirname, 'public');
+  } else {
+    console.warn('Warning: Could not find client build directory');
+    clientBuildPath = path.resolve(__dirname, '../client/build'); // Default fallback
+  }
+  
+  // Serve static files
+  app.use(express.static(clientBuildPath));
+  
+  // For all routes except API and short URLs, serve the React app
+  app.get('*', (req, res, next) => {
+    // Skip API routes and short URLs (which are handled by the redirect logic)
+    if (req.path.startsWith('/api/') || req.path.length <= 8) {
+      return next();
+    }
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
 }
 

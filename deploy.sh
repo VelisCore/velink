@@ -16,6 +16,7 @@ cp -r client/build/* server/public/
 echo "Installing server dependencies..."
 cd server
 npm ci --only=production
+cd ..
 
 echo "Deployment preparation complete!"
-echo "Ready for DigitalOcean App Platform deployment"
+echo "Ready for DigitalOcean App Platform or Heroku deployment"

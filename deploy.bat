@@ -12,7 +12,8 @@ xcopy "client\build\*" "server\public\" /E /Y
 echo Installing server dependencies...
 cd server
 call npm ci --only=production
+cd ..
 
 echo Deployment preparation complete!
-echo Ready for DigitalOcean App Platform deployment
+echo Ready for DigitalOcean App Platform or Heroku deployment
 pause

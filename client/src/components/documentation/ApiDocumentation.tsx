@@ -129,24 +129,19 @@ const ApiDocumentation: React.FC = () => {
       name: 'Delete Link',
       method: 'DELETE',
       endpoint: '/api/links/{shortCode}',
-      description: 'Delete a shortened URL (requires API key)',
-      headers: {
-        'X-API-Key': 'your-api-key'
-      },
+      description: 'Delete a shortened URL',
       response: {
         success: true,
         message: 'Link successfully deleted'
       },
-      icon: <AlertTriangle className="h-6 w-6 text-red-600" />
+      icon: <AlertTriangle className="h-6 w-6 text-red-600" />,
+      limits: 'Rate limited to 1 request per 0.5 seconds'
     },
     {
-      name: 'New API - Get Detailed Stats',
+      name: 'Get Detailed Stats',
       method: 'GET',
       endpoint: '/api/v1/stats',
-      description: 'Get detailed statistics about all shortened URLs (requires API key)',
-      headers: {
-        'X-API-Key': 'your-api-key'
-      },
+      description: 'Get detailed statistics about all shortened URLs',
       response: {
         totalLinks: 1234,
         totalClicks: 56789,
@@ -160,16 +155,14 @@ const ApiDocumentation: React.FC = () => {
           { date: '2023-07-25', clicks: 145 }
         ]
       },
-      icon: <Settings className="h-6 w-6 text-purple-600" />
+      icon: <Settings className="h-6 w-6 text-purple-600" />,
+      limits: 'Rate limited to 1 request per 0.5 seconds'
     },
     {
-      name: 'New API - Batch Shorten URLs',
+      name: 'Batch Shorten URLs',
       method: 'POST',
       endpoint: '/api/v1/shorten-batch',
-      description: 'Shorten multiple URLs in a single request (requires API key)',
-      headers: {
-        'X-API-Key': 'your-api-key'
-      },
+      description: 'Shorten multiple URLs in a single request',
       requestBody: {
         urls: [
           'https://example.com/page1',
@@ -194,16 +187,14 @@ const ApiDocumentation: React.FC = () => {
           }
         ]
       },
-      icon: <Server className="h-6 w-6 text-indigo-600" />
+      icon: <Server className="h-6 w-6 text-indigo-600" />,
+      limits: 'Rate limited to 1 request per 0.5 seconds, suspended after 500 links per day'
     },
     {
-      name: 'New API - Get All Links',
+      name: 'Get All Links',
       method: 'GET',
       endpoint: '/api/v1/links',
-      description: 'Get all links with pagination (requires API key)',
-      headers: {
-        'X-API-Key': 'your-api-key'
-      },
+      description: 'Get all links with pagination',
       params: {
         page: '1', // Optional, default: 1
         limit: '100' // Optional, default: 100, max: 500
@@ -227,7 +218,8 @@ const ApiDocumentation: React.FC = () => {
           pages: 13
         }
       },
-      icon: <Check className="h-6 w-6 text-teal-600" />
+      icon: <Check className="h-6 w-6 text-teal-600" />,
+      limits: 'Rate limited to 1 request per 0.5 seconds'
     }
   ];
 

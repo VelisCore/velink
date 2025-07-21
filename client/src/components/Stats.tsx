@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, MousePointer, Clock, TrendingUp, Globe, BarChart2, Activity } from 'lucide-react';
+import { Link2, MousePointer, Clock, TrendingUp, Globe, Activity } from 'lucide-react';
 import axios from 'axios';
 
 interface StatsData {
   totalLinks: number;
   totalClicks: number;
   latestCreated: string | null;
-  topDomains?: Array<{domain: string, count: number}>;
-  clicksByDay?: Array<{date: string, clicks: number}>;
+  activeLinks?: number;
+  linksToday?: number;
+  avgClicksPerLink?: number;
+  topDomains?: Array<{domain: string, count: number, total_clicks: number}>;
+  clicksByDay?: Array<{date: string, links_created: number, total_clicks: number}>;
+  hourlyStats?: Array<{hour: string, links_created: number}>;
+  recentActivity?: Array<{short_code: string, original_url: string, clicks: number, created_at: string, description: string}>;
   dailyAverage?: number;
 }
 
@@ -17,54 +22,60 @@ const Stats: React.FC = () => {
     totalLinks: 0,
     totalClicks: 0,
     latestCreated: null,
+    activeLinks: 0,
+    linksToday: 0,
+    avgClicksPerLink: 0,
     dailyAverage: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [useDetailedStats, setUseDetailedStats] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
+        
         // First try to get detailed stats from v1 API
         try {
           const response = await axios.get('/api/v1/stats');
           const detailedData = response.data;
           
-          // Calculate daily average clicks from the last 7 days if we have the data
-          let dailyAverage = 0;
-          if (detailedData.clicksByDay && detailedData.clicksByDay.length > 0) {
-            const last7Days = detailedData.clicksByDay.slice(0, 7);
-            const total = last7Days.reduce((sum: number, day: {date: string, clicks: number}) => sum + day.clicks, 0);
-            dailyAverage = Math.round(total / last7Days.length);
-          }
-          
           setStats({
             totalLinks: detailedData.totalLinks || 0,
             totalClicks: detailedData.totalClicks || 0,
+            activeLinks: detailedData.activeLinks || 0,
+            linksToday: detailedData.linksToday || 0,
+            avgClicksPerLink: detailedData.avgClicksPerLink || 0,
             latestCreated: detailedData.latestCreated,
-            topDomains: detailedData.topDomains,
-            clicksByDay: detailedData.clicksByDay,
-            dailyAverage
+            topDomains: detailedData.topDomains || [],
+            clicksByDay: detailedData.clicksByDay || [],
+            hourlyStats: detailedData.hourlyStats || [],
+            recentActivity: detailedData.recentActivity || [],
+            dailyAverage: detailedData.dailyAverage || 0
           });
           setUseDetailedStats(true);
           setError(null);
-        } catch (err) {
+          setLastUpdate(new Date());
+        } catch (detailedErr) {
+          console.log('Detailed stats not available, falling back to basic stats');
+          
           // Fallback to basic stats if detailed stats aren't available
           const response = await axios.get('/api/stats');
-          setStats({
+          setStats(prevStats => ({
+            ...prevStats,
             totalLinks: response.data.totalLinks || 0,
             totalClicks: response.data.totalClicks || 0,
-            latestCreated: response.data.latestCreated,
-            dailyAverage: 0
-          });
+            latestCreated: response.data.latestCreated
+          }));
           setUseDetailedStats(false);
           setError(null);
+          setLastUpdate(new Date());
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch stats:', error);
-        setError('Unable to load statistics. Please try again later.');
+        setError(`Unable to load statistics: ${error.response?.data?.error || error.message || 'Network error'}`);
       } finally {
         setIsLoading(false);
       }
@@ -72,8 +83,8 @@ const Stats: React.FC = () => {
 
     fetchStats();
     
-    // Refresh stats every 30 seconds
-    const interval = setInterval(fetchStats, 30000);
+    // Refresh stats every 10 seconds for live updates
+    const interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -90,18 +101,38 @@ const Stats: React.FC = () => {
   const getTimeAgo = (dateString: string | null) => {
     if (!dateString) return 'Never';
     
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+    try {
+      const now = new Date();
+      const date = new Date(dateString);
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
+      
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 30) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+      // Format the time with timezone
+      const timeOptions: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short'
+      };
+      
+      const localTimeString = date.toLocaleTimeString(undefined, timeOptions);
+
+      if (diffMins < 1) return `Just now (${localTimeString})`;
+      if (diffMins < 60) return `${diffMins}m ago (${localTimeString})`;
+      if (diffHours < 24) return `${diffHours}h ago (${localTimeString})`;
+      if (diffDays < 30) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   const statItems = [
@@ -109,6 +140,7 @@ const Stats: React.FC = () => {
       icon: Link2,
       label: 'Total Links',
       value: formatNumber(stats.totalLinks),
+      subValue: useDetailedStats ? `${stats.activeLinks || 0} active` : undefined,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
       iconColor: 'text-blue-600'
@@ -117,14 +149,17 @@ const Stats: React.FC = () => {
       icon: MousePointer,
       label: 'Total Clicks',
       value: formatNumber(stats.totalClicks),
+      subValue: useDetailedStats && stats.dailyAverage ? `${stats.dailyAverage}/day avg` : undefined,
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-green-50',
       iconColor: 'text-green-600'
     },
     {
       icon: TrendingUp,
-      label: 'Avg. Clicks/Link',
-      value: stats.totalLinks > 0 ? (stats.totalClicks / stats.totalLinks).toFixed(1) : '0',
+      label: useDetailedStats ? 'Avg Clicks/Link' : 'Avg. Clicks/Link',
+      value: useDetailedStats ? formatNumber(stats.avgClicksPerLink || 0) : 
+             (stats.totalLinks > 0 ? (stats.totalClicks / stats.totalLinks).toFixed(1) : '0'),
+      subValue: useDetailedStats ? `${stats.linksToday || 0} created today` : undefined,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-50',
       iconColor: 'text-purple-600'
@@ -133,6 +168,7 @@ const Stats: React.FC = () => {
       icon: Clock,
       label: 'Latest Link',
       value: getTimeAgo(stats.latestCreated),
+      subValue: lastUpdate ? `Updated ${lastUpdate.toLocaleTimeString()}` : undefined,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-50',
       iconColor: 'text-orange-600'
@@ -191,6 +227,11 @@ const Stats: React.FC = () => {
                 <div className={`text-3xl font-bold bg-gradient-to-r ${item.color} bg-clip-text text-transparent`}>
                   {item.value}
                 </div>
+                {item.subValue && (
+                  <div className="text-sm text-gray-500 mt-1">
+                    {item.subValue}
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
@@ -231,7 +272,7 @@ const Stats: React.FC = () => {
                 Recent Activity
               </h3>
               <div className="space-y-4">
-                {stats.clicksByDay.slice(0, 5).map((day) => (
+                {stats.clicksByDay && stats.clicksByDay.slice(0, 5).map((day) => (
                   <div key={day.date} className="flex items-center">
                     <div className="w-24 text-gray-500 text-sm">
                       {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -241,12 +282,12 @@ const Stats: React.FC = () => {
                         <div 
                           className="bg-primary-600 h-2 rounded-full" 
                           style={{ 
-                            width: `${Math.min(100, (day.clicks / ((stats.dailyAverage || 1) * 2) * 100))}%`
+                            width: `${Math.min(100, (day.total_clicks / ((stats.dailyAverage || 1) * 2) * 100))}%`
                           }}
                         />
                       </div>
                     </div>
-                    <div className="w-12 text-right font-semibold text-primary-600">{day.clicks}</div>
+                    <div className="w-12 text-right font-semibold text-primary-600">{day.total_clicks}</div>
                   </div>
                 ))}
               </div>

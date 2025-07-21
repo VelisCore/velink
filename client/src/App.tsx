@@ -10,8 +10,11 @@ import Footer from './components/Footer';
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
 import TermsOfService from './components/legal/TermsOfService';
 import Impressum from './components/legal/Impressum';
-import ApiDocumentation from './components/documentation/ApiDocumentation';
+import ApiDocumentation from './components/documentation/NewApiDocumentation';
 import LinkAnalytics from './components/analytics/LinkAnalytics';
+import CookieNotice from './components/CookieNotice';
+import AdminPanel from './components/AdminPanel';
+import GDPRDataAccess from './components/GDPRDataAccess';
 import './App.css';
 
 // HomePage component to keep the main page structure
@@ -57,12 +60,21 @@ function App() {
         
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/impressum" element={<Impressum />} />
+          <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+          <Route path="/legal/terms" element={<TermsOfService />} />
+          <Route path="/legal/impressum" element={<Impressum />} />
+          <Route path="/gdpr" element={<GDPRDataAccess />} />
+          <Route path="/privacy-rights" element={<GDPRDataAccess />} />
+          <Route path="/my-data" element={<GDPRDataAccess />} />
           <Route path="/api-docs" element={<ApiDocumentation />} />
           <Route path="/analytics/:shortCode" element={<LinkAnalytics />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
+        
+        <CookieNotice />
       </div>
     </Router>
   );

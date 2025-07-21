@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Link2, Copy, Check, ExternalLink, BarChart3, AlertCircle, Clock, Settings } from 'lucide-react';
+import { Link2, Copy, Check, ExternalLink, BarChart3, AlertCircle, Settings, Key } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -12,6 +12,7 @@ interface ShortenedLink {
   clicks: number;
   createdAt: string;
   expiresAt?: string;
+  creationSecret?: string;
   customOptions?: {
     [key: string]: any;
   };
@@ -253,6 +254,26 @@ const LinkShortener: React.FC = () => {
                 </motion.div>
               )}
 
+              {/* Privacy and Data Deletion Notice */}
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium mb-2">Privacy & Data Notice</p>
+                    <p className="mb-2">
+                      We collect anonymous analytics (timestamps, referrer URLs, general location, device type) 
+                      to improve our service. <strong>No personal information is stored.</strong>
+                    </p>
+                    <p className="font-medium text-blue-900">
+                      ⚠️ The creation secret shown after shortening is the <strong>ONLY way</strong> to delete your data. 
+                      Save it securely!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={isLoading || !url.trim()}
@@ -335,6 +356,49 @@ const LinkShortener: React.FC = () => {
                     className="input-primary bg-gray-50 text-gray-600"
                   />
                 </div>
+
+                {/* Creation Secret */}
+                {shortenedLink.creationSecret && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Key className="w-4 h-4 inline mr-1" />
+                      Creation Secret (Required for Data Deletion)
+                    </label>
+                    <div className="bg-gradient-to-r from-red-50 to-yellow-50 border-2 border-red-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <input
+                          type="text"
+                          value={shortenedLink.creationSecret}
+                          readOnly
+                          className="input-primary bg-white text-gray-800 font-mono text-sm flex-1 border-2 border-red-300"
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(shortenedLink.creationSecret!);
+                            toast.success('Creation secret copied!');
+                          }}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                          title="Copy creation secret"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="bg-red-100 border border-red-300 rounded-lg p-3 mb-2">
+                        <p className="text-sm text-red-800 font-semibold">
+                          🚨 <strong>CRITICAL - SAVE THIS SECRET NOW!</strong>
+                        </p>
+                        <p className="text-xs text-red-700 mt-1">
+                          This is the <strong>ONLY way</strong> to delete your link and associated data later. 
+                          Without this secret, you cannot prove ownership for GDPR data deletion requests.
+                        </p>
+                      </div>
+                      <p className="text-xs text-gray-700">
+                        💾 <strong>Recommended:</strong> Save this secret in a password manager or secure note. 
+                        You'll need it to exercise your GDPR rights via our <a href="/gdpr" className="text-blue-600 underline">Data Access page</a>.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-gray-50 rounded-lg p-4 text-center">

@@ -1,4 +1,4 @@
-# VeLink Deployment
+# Velink Deployment
 
 # Build client
 echo "Building React client..."

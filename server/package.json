@@ -1,7 +1,7 @@
 {
   "name": "velink-server",
   "version": "1.0.0",
-  "description": "VeLink backend server",
+  "description": "Velink backend server",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",

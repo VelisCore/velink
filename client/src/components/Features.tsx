@@ -119,7 +119,7 @@ const Features: React.FC = () => {
               Ready to start shortening?
             </h3>
             <p className="text-primary-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of users who trust VeLink for their URL shortening needs. 
+              Join thousands of users who trust Velink for their URL shortening needs. 
               No signup required, start using it right away.
             </p>
             <a

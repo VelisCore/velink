@@ -1,6 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 class Database {
   constructor() {
@@ -30,7 +31,12 @@ class Database {
         expires_at DATETIME DEFAULT NULL,
         ip_address TEXT,
         user_agent TEXT,
-        custom_options TEXT
+        custom_options TEXT,
+        description TEXT,
+        is_active BOOLEAN DEFAULT 1,
+        last_accessed DATETIME,
+        updated_at DATETIME,
+        creation_secret TEXT
       )
     `;
 
@@ -41,6 +47,10 @@ class Database {
         clicked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         ip_address TEXT,
         user_agent TEXT,
+        referrer TEXT,
+        country TEXT,
+        device_type TEXT,
+        browser TEXT,
         FOREIGN KEY (short_code) REFERENCES short_urls(short_code)
       )
     `;
@@ -53,18 +63,45 @@ class Database {
       CREATE INDEX IF NOT EXISTS idx_clicks_clicked_at ON clicks(clicked_at);
     `;
 
+    // Add new columns to existing tables if they don't exist
+    const addColumnsSQL = `
+      ALTER TABLE short_urls ADD COLUMN description TEXT;
+      ALTER TABLE short_urls ADD COLUMN is_active BOOLEAN DEFAULT 1;
+      ALTER TABLE short_urls ADD COLUMN last_accessed DATETIME;
+      ALTER TABLE short_urls ADD COLUMN updated_at DATETIME;
+      ALTER TABLE short_urls ADD COLUMN creation_secret TEXT;
+      ALTER TABLE clicks ADD COLUMN referrer TEXT;
+      ALTER TABLE clicks ADD COLUMN country TEXT;
+      ALTER TABLE clicks ADD COLUMN device_type TEXT;
+      ALTER TABLE clicks ADD COLUMN browser TEXT;
+    `;
+
     this.db.serialize(() => {
       this.db.run(createTableSQL);
       this.db.run(createClicksTableSQL);
       this.db.run(createIndexSQL);
+      
+      // Add new columns if they don't exist (ignore errors for existing columns)
+      const statements = addColumnsSQL.split(';').filter(stmt => stmt.trim());
+      statements.forEach(stmt => {
+        this.db.run(stmt.trim(), (err) => {
+          // Ignore errors for existing columns
+          if (err && !err.message.includes('duplicate column name')) {
+            console.log('Database update note:', err.message);
+          }
+        });
+      });
     });
   }
 
   createShortUrl(data) {
     return new Promise((resolve, reject) => {
+      // Generate a random creation secret for verification
+      const creationSecret = crypto.randomBytes(32).toString('hex');
+      
       const sql = `
-        INSERT INTO short_urls (short_code, original_url, expires_at, ip_address, user_agent, custom_options)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO short_urls (short_code, original_url, expires_at, ip_address, user_agent, custom_options, creation_secret, description)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
       this.db.run(sql, [
@@ -73,14 +110,17 @@ class Database {
         data.expiresAt || null, 
         data.ip, 
         data.userAgent, 
-        data.customOptions ? JSON.stringify(data.customOptions) : null
+        data.customOptions ? JSON.stringify(data.customOptions) : null,
+        creationSecret,
+        data.description || null
       ], function(err) {
         if (err) {
           reject(err);
         } else {
           resolve({
             id: this.lastID,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            creation_secret: creationSecret
           });
         }
       });
@@ -168,6 +208,130 @@ class Database {
             latestCreated: row.latest_created
           });
         }
+      });
+    });
+  }
+
+  // Get detailed statistics with enhanced analytics
+  getDetailedStats() {
+    return new Promise((resolve, reject) => {
+      // Get basic stats first
+      const basicStatsSQL = `
+        SELECT 
+          COUNT(*) as total_links,
+          SUM(clicks) as total_clicks,
+          MAX(created_at) as latest_created,
+          COUNT(CASE WHEN is_active = 1 THEN 1 END) as active_links,
+          COUNT(CASE WHEN created_at >= date('now', '-24 hours') THEN 1 END) as links_today,
+          AVG(clicks) as avg_clicks_per_link
+        FROM short_urls
+      `;
+
+      this.db.get(basicStatsSQL, [], (err, basicStats) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        // Get top domains
+        const topDomainsSQL = `
+          SELECT 
+            CASE 
+              WHEN instr(substr(original_url, instr(original_url, '://') + 3), '/') > 0 
+              THEN substr(substr(original_url, instr(original_url, '://') + 3), 1, instr(substr(original_url, instr(original_url, '://') + 3), '/') - 1)
+              ELSE substr(original_url, instr(original_url, '://') + 3)
+            END as domain,
+            COUNT(*) as count,
+            SUM(clicks) as total_clicks
+          FROM short_urls 
+          WHERE domain != ''
+          GROUP BY domain 
+          ORDER BY count DESC 
+          LIMIT 10
+        `;
+
+        this.db.all(topDomainsSQL, [], (err, topDomains) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          // Get clicks by day for the last 30 days
+          const clicksByDaySQL = `
+            SELECT 
+              date(created_at) as date,
+              COUNT(*) as links_created,
+              SUM(clicks) as total_clicks
+            FROM short_urls 
+            WHERE created_at >= date('now', '-30 days')
+            GROUP BY date(created_at)
+            ORDER BY date DESC
+          `;
+
+          this.db.all(clicksByDaySQL, [], (err, clicksByDay) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+
+            // Get hourly stats for today
+            const hourlyStatsSQL = `
+              SELECT 
+                strftime('%H', created_at) as hour,
+                COUNT(*) as links_created
+              FROM short_urls 
+              WHERE date(created_at) = date('now')
+              GROUP BY strftime('%H', created_at)
+              ORDER BY hour
+            `;
+
+            this.db.all(hourlyStatsSQL, [], (err, hourlyStats) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+
+              // Get recent activity (last 10 links)
+              const recentActivitySQL = `
+                SELECT 
+                  short_code,
+                  original_url,
+                  clicks,
+                  created_at,
+                  description
+                FROM short_urls 
+                ORDER BY created_at DESC 
+                LIMIT 10
+              `;
+
+              this.db.all(recentActivitySQL, [], (err, recentActivity) => {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+
+                // Calculate daily average
+                const dailyAverage = clicksByDay.length > 0 
+                  ? Math.round(clicksByDay.slice(0, 7).reduce((sum, day) => sum + (day.total_clicks || 0), 0) / Math.min(7, clicksByDay.length))
+                  : 0;
+
+                resolve({
+                  totalLinks: basicStats.total_links || 0,
+                  totalClicks: basicStats.total_clicks || 0,
+                  activeLinks: basicStats.active_links || 0,
+                  linksToday: basicStats.links_today || 0,
+                  avgClicksPerLink: Math.round(basicStats.avg_clicks_per_link || 0),
+                  latestCreated: basicStats.latest_created,
+                  dailyAverage,
+                  topDomains: topDomains || [],
+                  clicksByDay: clicksByDay || [],
+                  hourlyStats: hourlyStats || [],
+                  recentActivity: recentActivity || []
+                });
+              });
+            });
+          });
+        });
       });
     });
   }
@@ -468,6 +632,245 @@ class Database {
           reject(err);
         } else {
           resolve(row.count);
+        }
+      });
+    });
+  }
+
+  // ==========================================
+  // GDPR DATA ACCESS METHODS
+  // ==========================================
+
+  // Get user data by short codes they created
+  getUserDataByShortCodes(shortCodes) {
+    return new Promise((resolve, reject) => {
+      const placeholders = shortCodes.map(() => '?').join(',');
+      
+      // Get links data
+      const linksSQL = `
+        SELECT id, short_code, original_url, clicks, created_at, expires_at, 
+               description, is_active, last_accessed
+        FROM short_urls 
+        WHERE short_code IN (${placeholders})
+        ORDER BY created_at DESC
+      `;
+      
+      this.db.all(linksSQL, shortCodes, (err, links) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        // Get analytics data for these short codes
+        const analyticsSQL = `
+          SELECT short_code, clicked_at, ip_address, referrer, country, 
+                 device_type, browser
+          FROM clicks 
+          WHERE short_code IN (${placeholders})
+          ORDER BY clicked_at DESC
+        `;
+        
+        this.db.all(analyticsSQL, shortCodes, (err, analytics) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          // Calculate total clicks
+          const totalClicks = analytics.length;
+
+          resolve({
+            links: links || [],
+            analytics: analytics || [],
+            totalClicks
+          });
+        });
+      });
+    });
+  }
+
+  // Delete user data by short codes (GDPR Right to Erasure)
+  deleteUserDataByShortCodes(shortCodes) {
+    return new Promise((resolve, reject) => {
+      const placeholders = shortCodes.map(() => '?').join(',');
+      const db = this.db; // Store reference to avoid scope issues
+      
+      db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+        
+        let linksDeleted = 0;
+        let analyticsDeleted = 0;
+        
+        // Delete analytics data first (foreign key constraint)
+        const deleteAnalyticsSQL = `DELETE FROM clicks WHERE short_code IN (${placeholders})`;
+        
+        db.run(deleteAnalyticsSQL, shortCodes, function(err) {
+          if (err) {
+            db.run('ROLLBACK');
+            reject(err);
+            return;
+          }
+          
+          analyticsDeleted = this.changes;
+          
+          // Delete links
+          const deleteLinksSQL = `DELETE FROM short_urls WHERE short_code IN (${placeholders})`;
+          
+          db.run(deleteLinksSQL, shortCodes, function(err) {
+            if (err) {
+              db.run('ROLLBACK');
+              reject(err);
+              return;
+            }
+            
+            linksDeleted = this.changes;
+            
+            db.run('COMMIT', (err) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve({
+                  linksDeleted,
+                  analyticsDeleted
+                });
+              }
+            });
+          });
+        });
+      });
+    });
+  }
+
+  // Rectify user data (GDPR Right to Rectification)
+  rectifyUserData(shortCode, updateData) {
+    return new Promise((resolve, reject) => {
+      // Build dynamic SQL for allowed fields
+      const allowedFields = ['description'];
+      const updates = [];
+      const values = [];
+      
+      for (const field of allowedFields) {
+        if (updateData[field] !== undefined) {
+          updates.push(`${field} = ?`);
+          values.push(updateData[field]);
+        }
+      }
+      
+      if (updates.length === 0) {
+        resolve(false);
+        return;
+      }
+      
+      values.push(shortCode); // Add shortCode for WHERE clause
+      
+      const sql = `
+        UPDATE short_urls 
+        SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
+        WHERE short_code = ?
+      `;
+      
+      this.db.run(sql, values, function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this.changes > 0);
+        }
+      });
+    });
+  }
+
+  // Check if user owns a short code (for verification)
+  verifyShortCodeOwnership(shortCode, ipAddress) {
+    return new Promise((resolve, reject) => {
+      // Since we don't have user accounts, we'll use IP address and creation time
+      // as a basic verification method (not foolproof but reasonable for anonymous system)
+      const sql = `
+        SELECT COUNT(*) as count 
+        FROM short_urls 
+        WHERE short_code = ? AND ip_address = ?
+        AND created_at > datetime('now', '-7 days')
+      `;
+      
+      this.db.get(sql, [shortCode, ipAddress], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row.count > 0);
+        }
+      });
+    });
+  }
+
+  // Get GDPR compliance summary
+  getGDPRComplianceSummary() {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT 
+          COUNT(*) as totalLinks,
+          COUNT(CASE WHEN created_at < datetime('now', '-12 months') THEN 1 END) as linksToDelete,
+          COUNT(CASE WHEN created_at > datetime('now', '-30 days') THEN 1 END) as recentLinks,
+          MAX(created_at) as newestLink,
+          MIN(created_at) as oldestLink
+        FROM short_urls
+      `;
+      
+      this.db.get(sql, [], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({
+            totalLinks: row.totalLinks || 0,
+            linksToDelete: row.linksToDelete || 0,
+            recentLinks: row.recentLinks || 0,
+            newestLink: row.newestLink,
+            oldestLink: row.oldestLink,
+            dataRetentionPolicy: '12 months',
+            ipAnonymizationPolicy: '30 days',
+            lastChecked: new Date().toISOString()
+          });
+        }
+      });
+    });
+  }
+
+  // Verify ownership of short codes using creation secrets
+  verifyShortCodeOwnership(shortCodes, creationSecrets) {
+    return new Promise((resolve, reject) => {
+      if (!Array.isArray(shortCodes) || !Array.isArray(creationSecrets)) {
+        reject(new Error('Short codes and creation secrets must be arrays'));
+        return;
+      }
+
+      if (shortCodes.length !== creationSecrets.length) {
+        reject(new Error('Number of short codes must match number of creation secrets'));
+        return;
+      }
+
+      const placeholders = shortCodes.map(() => '(?, ?)').join(',');
+      const params = [];
+      
+      for (let i = 0; i < shortCodes.length; i++) {
+        params.push(shortCodes[i], creationSecrets[i]);
+      }
+
+      const sql = `
+        SELECT short_code, creation_secret
+        FROM short_urls 
+        WHERE (short_code, creation_secret) IN (VALUES ${placeholders})
+      `;
+
+      this.db.all(sql, params, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          const verifiedCodes = rows.map(row => row.short_code);
+          const unverifiedCodes = shortCodes.filter(code => !verifiedCodes.includes(code));
+          
+          resolve({
+            verified: verifiedCodes,
+            unverified: unverifiedCodes,
+            isFullyVerified: unverifiedCodes.length === 0
+          });
         }
       });
     });

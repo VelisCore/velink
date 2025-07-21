@@ -1,18 +1,44 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 
 // Create API router
 function setupApiRoutes(db) {
   const router = express.Router();
 
-  // API Authentication middleware for protected routes
-  const apiKeyAuth = (req, res, next) => {
-    const apiKey = req.header('X-API-Key');
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-      return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
-    }
-    next();
-  };
+  // Enhanced rate limiting for API endpoints
+  const apiRateLimit = rateLimit({
+    windowMs: 500, // 0.5 seconds
+    max: 1, // 1 request per 0.5 seconds
+    message: { 
+      error: 'Too many requests',
+      message: 'Please wait 0.5 seconds before making another request'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      return req.ip || req.connection.remoteAddress || 'unknown';
+    },
+  });
+
+  // Daily limit for link creation
+  const dailyLinkLimit = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 500, // 500 links per day
+    message: { 
+      error: 'Daily limit exceeded',
+      message: 'You have exceeded the daily limit of 500 links. Please try again tomorrow.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      return req.ip || req.connection.remoteAddress || 'unknown';
+    },
+    skipSuccessfulRequests: false
+  });
+
+  // Apply rate limiting to all API routes
+  router.use(apiRateLimit);
 
   // Verify password for password-protected links
   router.post('/verify-password/:shortCode', [
@@ -61,8 +87,8 @@ function setupApiRoutes(db) {
     }
   });
 
-  // Delete link (requires API key)
-  router.delete('/links/:shortCode', apiKeyAuth, async (req, res) => {
+  // Delete link
+  router.delete('/links/:shortCode', async (req, res) => {
     try {
       const { shortCode } = req.params;
       
@@ -94,8 +120,8 @@ function setupApiRoutes(db) {
     }
   });
 
-  // Batch shorten URLs (requires API key)
-  router.post('/batch-shorten', apiKeyAuth, [
+  // Batch shorten URLs
+  router.post('/batch-shorten', dailyLinkLimit, [
     body('urls').isArray().withMessage('URLs must be an array'),
     body('urls.*').isURL({ protocols: ['http', 'https'], require_protocol: true })
       .withMessage('Each URL must be valid and include http:// or https://'),
@@ -191,7 +217,7 @@ function setupApiRoutes(db) {
   });
 
   // GET /api/stats - Get detailed statistics
-  router.get('/stats', apiKeyAuth, async (req, res) => {
+  router.get('/stats', async (req, res) => {
     try {
       const stats = await db.getDetailedStats();
       res.json(stats);
@@ -202,7 +228,7 @@ function setupApiRoutes(db) {
   });
 
   // DELETE /api/links/:shortCode - Delete a link
-  router.delete('/links/:shortCode', apiKeyAuth, async (req, res) => {
+  router.delete('/links/:shortCode', async (req, res) => {
     try {
       const { shortCode } = req.params;
       const result = await db.deleteLink(shortCode);

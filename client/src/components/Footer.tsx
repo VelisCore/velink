@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Link2, Github, Twitter, Heart, FileText, Shield, Code, Info, Coffee } from 'lucide-react';
+import { Github, Twitter, Heart, Coffee } from 'lucide-react';
+import logo from '../logo.svg';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -11,10 +12,8 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="bg-gradient-to-br from-primary-500 to-primary-700 p-2 rounded-lg">
-                <Link2 className="h-6 w-6 text-white" />
-              </div>
+            <div className="flex items-center space-x-3 mb-4">
+              <img src={logo} alt="Velink Logo" className="h-8 w-8" />
               <h3 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
                 Velink
               </h3>
@@ -126,6 +125,9 @@ const Footer: React.FC = () => {
                 </Link>
                 <Link to="/terms" className="hover:text-white transition-colors duration-200">
                   Terms of Service
+                </Link>
+                <Link to="/gdpr" className="hover:text-white transition-colors duration-200">
+                  Your Privacy Rights
                 </Link>
                 <Link to="/impressum" className="hover:text-white transition-colors duration-200">
                   Impressum

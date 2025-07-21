@@ -10,8 +10,8 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
     "client": "cd client && npm start",
-    "build": "cd client && npm install && npm run build",
-    "start": "cd server && npm install && npm start",
+    "build": "cd client && npm install && npm run build && cd .. && echo Build completed successfully",
+    "start": "cd server && npm install && node index.js",
     "install-all": "npm install && cd server && npm install && cd ../client && npm install"
   },
   "keywords": ["url-shortener", "react", "node", "express"],

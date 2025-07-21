@@ -95,43 +95,39 @@ const Stats: React.FC = () => {
     if (num >= 1000) {
       return (num / 1000).toFixed(1) + 'K';
     }
-    return num.toString();
+    return num.toLocaleString('de-DE');
   };
 
-  const getTimeAgo = (dateString: string | null) => {
+  const formatDateTime = (dateString: string | null) => {
     if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('de-DE', {
+      timeZone: 'Europe/Berlin',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short'
+    }).format(date);
+  };
+
+  const formatRelativeTime = (dateString: string | null) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
     
-    try {
-      const now = new Date();
-      const date = new Date(dateString);
-      
-      // Check if the date is valid
-      if (isNaN(date.getTime())) {
-        return 'Invalid Date';
-      }
-      
-      const diffMs = now.getTime() - date.getTime();
+    if (diffDays > 0) {
+      return `${diffDays} Tag${diffDays > 1 ? 'e' : ''} ago`;
+    } else if (diffHours > 0) {
+      return `${diffHours}h ago (${date.toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })})`;
+    } else {
       const diffMins = Math.floor(diffMs / (1000 * 60));
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
-
-      // Format the time with timezone
-      const timeOptions: Intl.DateTimeFormatOptions = {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZoneName: 'short'
-      };
-      
-      const localTimeString = date.toLocaleTimeString(undefined, timeOptions);
-
-      if (diffMins < 1) return `Just now (${localTimeString})`;
-      if (diffMins < 60) return `${diffMins}m ago (${localTimeString})`;
-      if (diffHours < 24) return `${diffHours}h ago (${localTimeString})`;
-      if (diffDays < 30) return `${diffDays}d ago`;
-      return date.toLocaleDateString();
-    } catch (error) {
-      return 'Invalid Date';
+      return `${diffMins}m ago`;
     }
   };
 
@@ -167,8 +163,8 @@ const Stats: React.FC = () => {
     {
       icon: Clock,
       label: 'Latest Link',
-      value: getTimeAgo(stats.latestCreated),
-      subValue: lastUpdate ? `Updated ${lastUpdate.toLocaleTimeString()}` : undefined,
+      value: formatRelativeTime(stats.latestCreated),
+      subValue: lastUpdate ? `Updated ${lastUpdate.toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })}` : undefined,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-50',
       iconColor: 'text-orange-600'

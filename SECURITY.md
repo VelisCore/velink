@@ -1,8 +1,8 @@
-# VeLink Security Documentation
+# Velink Security Documentation
 
 ## Security Overview
 
-VeLink has been comprehensively secured with multiple layers of protection against common web vulnerabilities and attack vectors.
+Velink has been comprehensively secured with multiple layers of protection against common web vulnerabilities and attack vectors.
 
 ## Vulnerability Assessment & Fixes
 

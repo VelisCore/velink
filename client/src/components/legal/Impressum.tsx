@@ -280,7 +280,7 @@ const Impressum: React.FC = () => {
                 </h2>
                 <div className="text-gray-700 space-y-3">
                   <div className="bg-white rounded-lg p-4 border border-red-100">
-                    <h4 className="font-medium text-gray-900 mb-2">© VeLink Service</h4>
+                    <h4 className="font-medium text-gray-900 mb-2">© Velink Service</h4>
                     <p className="text-sm mb-2">
                       All content on this website, including but not limited to:
                     </p>

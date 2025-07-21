@@ -117,7 +117,7 @@ Coming soon...
 
 ## 🔧 Admin Panel
 
-VeLink includes a secure admin panel for managing links and viewing statistics.
+Velink includes a secure admin panel for managing links and viewing statistics.
 
 ### Access
 - Visit `/admin` on your deployed instance
@@ -149,7 +149,7 @@ VeLink includes a secure admin panel for managing links and viewing statistics.
 
 ## 🍪 Cookie Compliance
 
-VeLink includes GDPR-compliant cookie management:
+Velink includes GDPR-compliant cookie management:
 
 - **Essential Cookies**: Required for service functionality
 - **Analytics Cookies**: Optional, for usage insights

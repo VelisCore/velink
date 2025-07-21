@@ -33,7 +33,7 @@ const Footer: React.FC = () => {
                 <Github className="h-5 w-5" />
               </a>
               <a
-                href="https://twitter.com/velyzo"
+                href="https://twitter.com/velyzo_official"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
@@ -125,12 +125,6 @@ const Footer: React.FC = () => {
                 </Link>
                 <Link to="/terms" className="hover:text-white transition-colors duration-200">
                   Terms of Service
-                </Link>
-                <Link to="/gdpr" className="hover:text-white transition-colors duration-200">
-                  Your Privacy Rights
-                </Link>
-                <Link to="/impressum" className="hover:text-white transition-colors duration-200">
-                  Impressum
                 </Link>
               </div>
             </div>

@@ -96,12 +96,9 @@ class Database {
 
   createShortUrl(data) {
     return new Promise((resolve, reject) => {
-      // Generate a random creation secret for verification
-      const creationSecret = crypto.randomBytes(32).toString('hex');
-      
       const sql = `
-        INSERT INTO short_urls (short_code, original_url, expires_at, ip_address, user_agent, custom_options, creation_secret, description)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO short_urls (short_code, original_url, expires_at, ip_address, user_agent, custom_options, description)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
       
       this.db.run(sql, [
@@ -111,7 +108,6 @@ class Database {
         data.ip, 
         data.userAgent, 
         data.customOptions ? JSON.stringify(data.customOptions) : null,
-        creationSecret,
         data.description || null
       ], function(err) {
         if (err) {
@@ -119,8 +115,7 @@ class Database {
         } else {
           resolve({
             id: this.lastID,
-            created_at: new Date().toISOString(),
-            creation_secret: creationSecret
+            created_at: new Date().toISOString()
           });
         }
       });
@@ -833,48 +828,6 @@ class Database {
     });
   }
 
-  // Verify ownership of short codes using creation secrets
-  verifyShortCodeOwnership(shortCodes, creationSecrets) {
-    return new Promise((resolve, reject) => {
-      if (!Array.isArray(shortCodes) || !Array.isArray(creationSecrets)) {
-        reject(new Error('Short codes and creation secrets must be arrays'));
-        return;
-      }
-
-      if (shortCodes.length !== creationSecrets.length) {
-        reject(new Error('Number of short codes must match number of creation secrets'));
-        return;
-      }
-
-      const placeholders = shortCodes.map(() => '(?, ?)').join(',');
-      const params = [];
-      
-      for (let i = 0; i < shortCodes.length; i++) {
-        params.push(shortCodes[i], creationSecrets[i]);
-      }
-
-      const sql = `
-        SELECT short_code, creation_secret
-        FROM short_urls 
-        WHERE (short_code, creation_secret) IN (VALUES ${placeholders})
-      `;
-
-      this.db.all(sql, params, (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          const verifiedCodes = rows.map(row => row.short_code);
-          const unverifiedCodes = shortCodes.filter(code => !verifiedCodes.includes(code));
-          
-          resolve({
-            verified: verifiedCodes,
-            unverified: unverifiedCodes,
-            isFullyVerified: unverifiedCodes.length === 0
-          });
-        }
-      });
-    });
-  }
 }
 
 module.exports = Database;

@@ -71,9 +71,9 @@ const TermsOfService: React.FC = () => {
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-3">Welcome to VeLink</h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-3">Welcome to Velink</h2>
                   <p className="text-gray-700 leading-relaxed">
-                    These Terms of Service ("Terms") govern your use of the VeLink URL shortening service operated by Devin Oldenburg. 
+                    These Terms of Service ("Terms") govern your use of the Velink URL shortening service operated by Devin Oldenburg. 
                     By using our service, you agree to these terms. Please read them carefully.
                   </p>
                 </div>
@@ -93,7 +93,7 @@ const TermsOfService: React.FC = () => {
                   <span>1. Service Description</span>
                 </h2>
                 <div className="text-gray-700 space-y-3">
-                  <p>VeLink provides URL shortening services that allow you to:</p>
+                  <p>Velink provides URL shortening services that allow you to:</p>
                   <ul className="list-disc pl-6 space-y-1">
                     <li>Convert long URLs into shorter, more manageable links</li>
                     <li>Track click statistics for your shortened links</li>
@@ -119,7 +119,7 @@ const TermsOfService: React.FC = () => {
                   <span>2. Acceptable Use</span>
                 </h2>
                 <div className="text-gray-700 space-y-3">
-                  <p>You agree to use VeLink responsibly and legally. You may NOT use our service to:</p>
+                  <p>You agree to use Velink responsibly and legally. You may NOT use our service to:</p>
                   <ul className="list-disc pl-6 space-y-1">
                     <li><strong>Illegal Content:</strong> Link to illegal, harmful, or offensive material</li>
                     <li><strong>Spam or Phishing:</strong> Distribute unsolicited content or fraudulent links</li>
@@ -274,7 +274,7 @@ const TermsOfService: React.FC = () => {
                 These Terms of Service are governed by German law. Last updated: January 21, 2025
               </p>
               <p className="text-gray-500 text-xs mt-2">
-                By using VeLink, you acknowledge that you have read, understood, and agree to these Terms of Service.
+                By using Velink, you acknowledge that you have read, understood, and agree to these Terms of Service.
               </p>
             </motion.div>
           </div>

@@ -1,3 +1,6 @@
+// Load environment variables
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -12,6 +15,9 @@ const Database = require('./database');
 const SitemapGenerator = require('./sitemap');
 const setupApiRoutes = require('./routes/api');
 const { generateShortCode, isValidUrl } = require('./utils');
+
+// Set timezone to German/Berlin
+process.env.TZ = 'Europe/Berlin';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -180,8 +186,7 @@ app.post('/api/shorten',
         expiresAt,
         clicks: 0,
         createdAt: result.created_at,
-        customOptions,
-        creationSecret: result.creation_secret // Include the secret for ownership verification
+        customOptions
       });
 
     } catch (error) {
@@ -230,6 +235,7 @@ app.get('/api/analytics/:shortCode', async (req, res) => {
 
 // Admin token for authentication
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'velink-admin-2025-secure-token';
+console.log('🔑 Admin token loaded:', ADMIN_TOKEN ? 'Yes (length: ' + ADMIN_TOKEN.length + ')' : 'No');
 
 // Admin middleware to verify token
 const verifyAdminToken = (req, res, next) => {

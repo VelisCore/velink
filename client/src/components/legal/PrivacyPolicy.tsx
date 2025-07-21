@@ -73,7 +73,7 @@ const PrivacyPolicy: React.FC = () => {
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 mb-3">Your Privacy Matters</h2>
                   <p className="text-gray-700 leading-relaxed">
-                    This Privacy Policy explains how VeLink, operated by Devin Oldenburg, collects, uses, and protects your data. 
+                    This Privacy Policy explains how Velink, operated by Devin Oldenburg, collects, uses, and protects your data. 
                     We are committed to transparency and your privacy rights under GDPR and other applicable data protection laws.
                   </p>
                 </div>

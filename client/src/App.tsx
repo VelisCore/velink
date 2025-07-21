@@ -13,8 +13,7 @@ import Impressum from './components/legal/Impressum';
 import ApiDocumentation from './components/documentation/NewApiDocumentation';
 import LinkAnalytics from './components/analytics/LinkAnalytics';
 import CookieNotice from './components/CookieNotice';
-import AdminPanel from './components/AdminPanel';
-import GDPRDataAccess from './components/GDPRDataAccess';
+import AdminPanel from './components/AdvancedAdminPanel';
 import './App.css';
 
 // HomePage component to keep the main page structure
@@ -66,9 +65,6 @@ function App() {
           <Route path="/legal/privacy" element={<PrivacyPolicy />} />
           <Route path="/legal/terms" element={<TermsOfService />} />
           <Route path="/legal/impressum" element={<Impressum />} />
-          <Route path="/gdpr" element={<GDPRDataAccess />} />
-          <Route path="/privacy-rights" element={<GDPRDataAccess />} />
-          <Route path="/my-data" element={<GDPRDataAccess />} />
           <Route path="/api-docs" element={<ApiDocumentation />} />
           <Route path="/analytics/:shortCode" element={<LinkAnalytics />} />
           <Route path="/admin" element={<AdminPanel />} />

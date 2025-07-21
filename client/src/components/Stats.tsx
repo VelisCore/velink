@@ -1,29 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, MousePointer, Clock, TrendingUp } from 'lucide-react';
+import { Link2, MousePointer, Clock, TrendingUp, Globe, BarChart2, Activity } from 'lucide-react';
 import axios from 'axios';
 
 interface StatsData {
   totalLinks: number;
   totalClicks: number;
   latestCreated: string | null;
+  topDomains?: Array<{domain: string, count: number}>;
+  clicksByDay?: Array<{date: string, clicks: number}>;
+  dailyAverage?: number;
 }
 
 const Stats: React.FC = () => {
   const [stats, setStats] = useState<StatsData>({
     totalLinks: 0,
     totalClicks: 0,
-    latestCreated: null
+    latestCreated: null,
+    dailyAverage: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [useDetailedStats, setUseDetailedStats] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get('/api/stats');
-        setStats(response.data);
+        setIsLoading(true);
+        // First try to get detailed stats from v1 API
+        try {
+          const response = await axios.get('/api/v1/stats');
+          const detailedData = response.data;
+          
+          // Calculate daily average clicks from the last 7 days if we have the data
+          let dailyAverage = 0;
+          if (detailedData.clicksByDay && detailedData.clicksByDay.length > 0) {
+            const last7Days = detailedData.clicksByDay.slice(0, 7);
+            const total = last7Days.reduce((sum: number, day: {date: string, clicks: number}) => sum + day.clicks, 0);
+            dailyAverage = Math.round(total / last7Days.length);
+          }
+          
+          setStats({
+            totalLinks: detailedData.totalLinks || 0,
+            totalClicks: detailedData.totalClicks || 0,
+            latestCreated: detailedData.latestCreated,
+            topDomains: detailedData.topDomains,
+            clicksByDay: detailedData.clicksByDay,
+            dailyAverage
+          });
+          setUseDetailedStats(true);
+          setError(null);
+        } catch (err) {
+          // Fallback to basic stats if detailed stats aren't available
+          const response = await axios.get('/api/stats');
+          setStats({
+            totalLinks: response.data.totalLinks || 0,
+            totalClicks: response.data.totalClicks || 0,
+            latestCreated: response.data.latestCreated,
+            dailyAverage: 0
+          });
+          setUseDetailedStats(false);
+          setError(null);
+        }
       } catch (error) {
         console.error('Failed to fetch stats:', error);
+        setError('Unable to load statistics. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -155,7 +196,77 @@ const Stats: React.FC = () => {
           </div>
         )}
 
-        {/* Additional info */}
+        {/* Detailed stats section */}
+        {!isLoading && stats.topDomains && stats.clicksByDay && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8"
+          >
+            {/* Top domains */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <Globe className="h-5 w-5 text-primary-600 mr-2" />
+                Top Domains
+              </h3>
+              <div className="space-y-4">
+                {stats.topDomains.slice(0, 5).map((domain, index) => (
+                  <div key={domain.domain} className="flex items-center">
+                    <div className="w-8 text-gray-500 text-sm">{index + 1}.</div>
+                    <div className="flex-1 truncate" title={domain.domain}>
+                      {domain.domain}
+                    </div>
+                    <div className="font-semibold text-primary-600">{domain.count}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Clicks by day */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <Activity className="h-5 w-5 text-primary-600 mr-2" />
+                Recent Activity
+              </h3>
+              <div className="space-y-4">
+                {stats.clicksByDay.slice(0, 5).map((day) => (
+                  <div key={day.date} className="flex items-center">
+                    <div className="w-24 text-gray-500 text-sm">
+                      {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </div>
+                    <div className="flex-1">
+                      <div className="bg-gray-200 h-2 rounded-full w-full">
+                        <div 
+                          className="bg-primary-600 h-2 rounded-full" 
+                          style={{ 
+                            width: `${Math.min(100, (day.clicks / ((stats.dailyAverage || 1) * 2) * 100))}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="w-12 text-right font-semibold text-primary-600">{day.clicks}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-8 bg-red-50 text-red-800 p-4 rounded-lg text-center"
+          >
+            {error}
+          </motion.div>
+        )}
+
+        {/* Platform performance stats */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -173,7 +284,7 @@ const Stats: React.FC = () => {
                 <div className="text-sm text-gray-600">Uptime</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary-600 mb-1">&lt;200ms</div>
+                <div className="text-2xl font-bold text-primary-600 mb-1">&lt;100ms</div>
                 <div className="text-sm text-gray-600">Response Time</div>
               </div>
               <div className="text-center">

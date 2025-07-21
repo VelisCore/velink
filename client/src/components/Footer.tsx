@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Link2, Github, Twitter, Heart, FileText, Shield, Code, Info } from 'lucide-react';
+import { Link2, Github, Twitter, Heart, FileText, Shield, Code, Info, Coffee } from 'lucide-react';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -41,6 +41,15 @@ const Footer: React.FC = () => {
                 aria-label="Twitter"
               >
                 <Twitter className="h-5 w-5" />
+              </a>
+              <a
+                href="https://ko-fi.com/wfxey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors duration-200"
+                aria-label="Ko-fi"
+              >
+                <Coffee className="h-5 w-5" />
               </a>
             </div>
           </div>
@@ -126,9 +135,6 @@ const Footer: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Background decoration */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-primary-600 to-primary-700"></div>
     </footer>
   );
 };

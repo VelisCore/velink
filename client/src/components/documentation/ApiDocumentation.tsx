@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Code, BookOpen, Server, Key, Globe, Clock } from 'lucide-react';
+import { ArrowLeft, Server, Key, Clock, Lock, Check, AlertTriangle, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ApiDocumentation: React.FC = () => {
@@ -11,16 +11,28 @@ const ApiDocumentation: React.FC = () => {
       endpoint: '/api/shorten',
       description: 'Create a new shortened URL',
       requestBody: {
-        url: 'https://example.com/very-long-url'
+        url: 'https://example.com/very-long-url',
+        expiresIn: '30d', // Optional: 1d, 7d, 30d, 365d, never
+        customOptions: {
+          isPrivate: true, // Optional: If true, link won't appear in public stats
+          password: 'secret' // Optional: Password protection for the link
+        },
+        customAlias: 'my-custom-link' // Optional: Custom short code
       },
       response: {
-        shortUrl: 'http://velink.example.com/abc123',
+        shortUrl: 'https://velink.me/abc123',
         shortCode: 'abc123',
         originalUrl: 'https://example.com/very-long-url',
         clicks: 0,
-        createdAt: '2025-07-21T12:00:00.000Z'
+        createdAt: '2025-07-21T12:00:00.000Z',
+        expiresAt: '2025-08-20T12:00:00.000Z',
+        customOptions: {
+          isPrivate: true,
+          password: true // Password is never returned, only a boolean indicating if set
+        }
       },
-      limits: 'Rate limited to 1 request per minute per IP address'
+      limits: 'Rate limited to 1 request per minute per IP address',
+      icon: <Server className="h-6 w-6 text-primary-600" />
     },
     {
       name: 'Get URL Info',
@@ -31,8 +43,24 @@ const ApiDocumentation: React.FC = () => {
         shortCode: 'abc123',
         originalUrl: 'https://example.com/very-long-url',
         clicks: 42,
-        createdAt: '2025-07-21T12:00:00.000Z'
-      }
+        createdAt: '2025-07-21T12:00:00.000Z',
+        expiresAt: '2025-08-20T12:00:00.000Z'
+      },
+      icon: <Key className="h-6 w-6 text-amber-600" />
+    },
+    {
+      name: 'Verify Link Password',
+      method: 'POST',
+      endpoint: '/api/verify-password/{shortCode}',
+      description: 'Verify password for a password-protected link',
+      requestBody: {
+        password: 'secret'
+      },
+      response: {
+        success: true,
+        originalUrl: 'https://example.com/very-long-url'
+      },
+      icon: <Lock className="h-6 w-6 text-green-600" />
     },
     {
       name: 'Get Statistics',
@@ -42,8 +70,17 @@ const ApiDocumentation: React.FC = () => {
       response: {
         totalLinks: 1000,
         totalClicks: 50000,
-        latestCreated: '2025-07-21T12:00:00.000Z'
-      }
+        latestCreated: '2025-07-21T12:00:00.000Z',
+        topDomains: [
+          { domain: 'example.com', count: 250 },
+          { domain: 'github.com', count: 180 }
+        ],
+        clicksByDay: [
+          { date: '2025-07-21', clicks: 1200 },
+          { date: '2025-07-20', clicks: 980 }
+        ]
+      },
+      icon: <Clock className="h-6 w-6 text-blue-600" />
     },
     {
       name: 'Get Link Analytics',
@@ -56,20 +93,141 @@ const ApiDocumentation: React.FC = () => {
         totalClicks: 42,
         createdAt: '2025-07-21T12:00:00.000Z',
         clickData: [
+          { date: '2025-07-21', clicks: 10 },
+          { date: '2025-07-20', clicks: 15 },
+          { date: '2025-07-19', clicks: 17 }
+        ],
+        browserStats: {
+          Chrome: 24,
+          Firefox: 10,
+          Safari: 8
+        },
+        deviceStats: {
+          Desktop: 30,
+          Mobile: 12
+        },
+        referrers: [
+          { domain: 'google.com', count: 15 },
+          { domain: 'twitter.com', count: 8 }
+        ]
+      },
+      icon: <Settings className="h-6 w-6 text-purple-600" />
+    },
+    {
+      name: 'Health Check',
+      method: 'GET',
+      endpoint: '/api/health',
+      description: 'Check if the API is running correctly',
+      response: {
+        status: 'OK',
+        timestamp: '2025-07-21T12:00:00.000Z',
+        version: '1.0.0'
+      },
+      icon: <Check className="h-6 w-6 text-green-600" />
+    },
+    {
+      name: 'Delete Link',
+      method: 'DELETE',
+      endpoint: '/api/links/{shortCode}',
+      description: 'Delete a shortened URL (requires API key)',
+      headers: {
+        'X-API-Key': 'your-api-key'
+      },
+      response: {
+        success: true,
+        message: 'Link successfully deleted'
+      },
+      icon: <AlertTriangle className="h-6 w-6 text-red-600" />
+    },
+    {
+      name: 'New API - Get Detailed Stats',
+      method: 'GET',
+      endpoint: '/api/v1/stats',
+      description: 'Get detailed statistics about all shortened URLs (requires API key)',
+      headers: {
+        'X-API-Key': 'your-api-key'
+      },
+      response: {
+        totalLinks: 1234,
+        totalClicks: 56789,
+        latestCreated: '2023-07-26T15:30:45Z',
+        topDomains: [
+          { domain: 'example.com', count: 42 },
+          { domain: 'github.com', count: 36 }
+        ],
+        clicksByDay: [
+          { date: '2023-07-26', clicks: 123 },
+          { date: '2023-07-25', clicks: 145 }
+        ]
+      },
+      icon: <Settings className="h-6 w-6 text-purple-600" />
+    },
+    {
+      name: 'New API - Batch Shorten URLs',
+      method: 'POST',
+      endpoint: '/api/v1/shorten-batch',
+      description: 'Shorten multiple URLs in a single request (requires API key)',
+      headers: {
+        'X-API-Key': 'your-api-key'
+      },
+      requestBody: {
+        urls: [
+          'https://example.com/page1',
+          'https://example.com/page2'
+        ],
+        customCodes: ['custom1', 'custom2'],  // Optional
+        expiresAt: ['2023-12-31T23:59:59Z', null]  // Optional
+      },
+      response: {
+        results: [
           {
-            date: '2025-07-21',
-            clicks: 10
+            original_url: 'https://example.com/page1',
+            short_code: 'custom1',
+            short_url: 'https://velink.me/custom1',
+            expires_at: '2023-12-31T23:59:59Z'
           },
           {
-            date: '2025-07-20',
-            clicks: 15
-          },
-          {
-            date: '2025-07-19',
-            clicks: 17
+            original_url: 'https://example.com/page2',
+            short_code: 'abc123',
+            short_url: 'https://velink.me/abc123',
+            expires_at: null
           }
         ]
-      }
+      },
+      icon: <Server className="h-6 w-6 text-indigo-600" />
+    },
+    {
+      name: 'New API - Get All Links',
+      method: 'GET',
+      endpoint: '/api/v1/links',
+      description: 'Get all links with pagination (requires API key)',
+      headers: {
+        'X-API-Key': 'your-api-key'
+      },
+      params: {
+        page: '1', // Optional, default: 1
+        limit: '100' // Optional, default: 100, max: 500
+      },
+      response: {
+        links: [
+          {
+            shortCode: 'abc123',
+            originalUrl: 'https://example.com/page1',
+            clicks: 42,
+            createdAt: '2023-07-26T15:30:45Z',
+            expiresAt: null,
+            customOptions: {},
+            short_url: 'https://velink.me/abc123'
+          }
+        ],
+        pagination: {
+          total: 1234,
+          page: 1,
+          limit: 100,
+          pages: 13
+        }
+      },
+      icon: <Check className="h-6 w-6 text-teal-600" />
     }
   ];
 
@@ -80,61 +238,62 @@ const ApiDocumentation: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-8">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Home
+        <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-8 transition-colors duration-200 group">
+          <div className="bg-primary-50 p-1 rounded group-hover:bg-primary-100 transition-colors duration-200 mr-2">
+            <ArrowLeft className="h-4 w-4" />
+          </div>
+          <span>Back to Home</span>
         </Link>
         
         <h1 className="text-3xl font-bold text-gray-900 mb-2">API Documentation</h1>
-        <p className="text-lg text-gray-600 mb-12">
-          Integrate Velink's URL shortening capabilities into your applications
-        </p>
+        <div className="bg-gradient-to-r from-primary-600 to-primary-800 text-white p-8 rounded-xl shadow-xl mb-12">
+          <h2 className="text-2xl font-bold mb-4">Base URL</h2>
+          <div className="bg-gray-900 p-4 rounded-md font-mono text-sm md:text-base overflow-auto">
+            https://velink.me/api
+          </div>
+          <p className="mt-4 text-primary-100">
+            All API requests should be made to this base URL followed by the endpoint path.
+          </p>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="card"
-          >
-            <div className="flex items-center mb-4">
-              <div className="bg-blue-50 p-3 rounded-lg mr-4">
-                <Server className="h-6 w-6 text-blue-600" />
+        <div className="space-y-12">
+          {apiEndpoints.map((endpoint, index) => (
+            <motion.div
+              key={endpoint.name}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="card border border-gray-200 hover:border-primary-300 transition-all duration-300 overflow-hidden"
+            >
+              <div className="flex items-center p-4 border-b border-gray-100 bg-gray-50">
+                <div className="mr-4">
+                  {endpoint.icon || <Server className="h-6 w-6 text-primary-600" />}
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">{endpoint.name}</h3>
+                  <p className="text-gray-600">{endpoint.description}</p>
+                </div>
+                <div className="ml-auto">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    endpoint.method === 'GET' ? 'bg-green-100 text-green-800' :
+                    endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800' :
+                    endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800' :
+                    'bg-purple-100 text-purple-800'
+                  }`}>
+                    {endpoint.method}
+                  </span>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold">RESTful API</h3>
-            </div>
-            <p className="text-gray-600">
-              Simple and intuitive HTTP endpoints for seamless integration
-            </p>
-          </motion.div>
-          
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="card"
-          >
-            <div className="flex items-center mb-4">
-              <div className="bg-green-50 p-3 rounded-lg mr-4">
-                <Key className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold">No API Key Required</h3>
-            </div>
-            <p className="text-gray-600">
-              Start using our API immediately without registration
-            </p>
-          </motion.div>
-          
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="card"
-          >
-            <div className="flex items-center mb-4">
-              <div className="bg-purple-50 p-3 rounded-lg mr-4">
-                <Clock className="h-6 w-6 text-purple-600" />
-              </div>
-              <h3 className="text-lg font-semibold">Rate Limiting</h3>
-            </div>
-            <p className="text-gray-600">
-              Reasonable rate limits to ensure fair usage for everyone
-            </p>
-          </motion.div>
+              {endpoint.limits && (
+                <div className="p-4 bg-amber-50 border-t border-amber-100">
+                  <div className="flex items-center text-amber-800">
+                    <Clock className="h-4 w-4 mr-2" />
+                    <span className="text-sm">{endpoint.limits}</span>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          ))}
         </div>
         
         <div className="mb-16">

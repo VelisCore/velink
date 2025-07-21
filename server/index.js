@@ -6,7 +6,11 @@ const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const https = require('https');
 const Database = require('./database');
+const SitemapGenerator = require('./sitemap');
+const setupApiRoutes = require('./routes/api');
 const { generateShortCode, isValidUrl } = require('./utils');
 
 const app = express();
@@ -353,6 +357,9 @@ if (process.env.NODE_ENV === 'production') {
     clientBuildPath = path.resolve(__dirname, '../client/build'); // Default fallback
   }
   
+  // Set up API routes
+  app.use('/api/v1', setupApiRoutes(db));
+  
   // Serve static files
   app.use(express.static(clientBuildPath));
   
@@ -366,7 +373,65 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`🚀 VeLink server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+// Initialize and generate sitemap
+const sitemapGenerator = new SitemapGenerator(
+  process.env.NODE_ENV === 'production' 
+    ? 'https://velink.me' 
+    : `http://localhost:${PORT}`
+);
+
+// Generate sitemap on startup
+sitemapGenerator.generateSitemap();
+
+// Sitemap route
+app.get('/sitemap.xml', (req, res) => {
+  const sitemapPath = path.join(__dirname, 'public', 'sitemap.xml');
+  
+  if (fs.existsSync(sitemapPath)) {
+    res.header('Content-Type', 'application/xml');
+    res.sendFile(sitemapPath);
+  } else {
+    // Generate sitemap on the fly if it doesn't exist
+    sitemapGenerator.generateSitemap()
+      .then(() => {
+        res.header('Content-Type', 'application/xml');
+        res.sendFile(sitemapPath);
+      })
+      .catch(err => {
+        console.error('Error generating sitemap:', err);
+        res.status(500).send('Error generating sitemap');
+      });
+  }
 });
+
+// Regenerate sitemap every hour
+setInterval(() => {
+  sitemapGenerator.generateSitemap();
+}, 60 * 60 * 1000);
+
+// Start the server
+const startServer = () => {
+  // Start HTTP server
+  http.createServer(app).listen(PORT, () => {
+    console.log(`🚀 VeLink HTTP server running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+
+  // Start HTTPS server if SSL certificates are available
+  const sslOptions = {
+    key: process.env.SSL_KEY_PATH ? fs.readFileSync(process.env.SSL_KEY_PATH) : null,
+    cert: process.env.SSL_CERT_PATH ? fs.readFileSync(process.env.SSL_CERT_PATH) : null
+  };
+
+  if (sslOptions.key && sslOptions.cert) {
+    const HTTPS_PORT = process.env.HTTPS_PORT || 443;
+    https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
+      console.log(`🔒 VeLink HTTPS server running on port ${HTTPS_PORT}`);
+    });
+  } else {
+    console.log('⚠️ SSL certificates not found. HTTPS server not started.');
+    console.log('To enable HTTPS, set SSL_KEY_PATH and SSL_CERT_PATH environment variables.');
+  }
+};
+
+startServer();

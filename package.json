@@ -12,6 +12,8 @@
     "client": "cd client && npm start",
     "build": "cd client && npm install && npm run build && cd .. && echo Build completed successfully",
     "start": "cd server && npm install && node index.js",
+    "start:test": "cd server && NODE_ENV=test node index.js",
+    "test": "cd server && npm test",
     "install-all": "npm install && cd server && npm install && cd ../client && npm install"
   },
   "keywords": ["url-shortener", "react", "node", "express"],

@@ -1,0 +1,90 @@
+name: Performance & Dependencies
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  performance:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install client dependencies
+      run: cd client && npm ci
+    
+    - name: Analyze bundle size
+      run: |
+        cd client
+        npm run build
+        
+        echo "## 📈 Performance Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Bundle Size Analysis" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        
+        if [ -d "build/static/js" ]; then
+          echo "JavaScript bundles:"
+          ls -lh build/static/js/*.js | awk '{print $9 ": " $5}'
+          echo ""
+          echo "CSS bundles:"
+          ls -lh build/static/css/*.css 2>/dev/null | awk '{print $9 ": " $5}' || echo "No CSS bundles found"
+          echo ""
+          echo "Total build size:"
+          du -sh build/
+        else
+          echo "Build directory not found"
+        fi
+        echo '```' >> $GITHUB_STEP_SUMMARY
+    
+    - name: Dependency analysis
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Dependency Analysis" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "Server dependencies:"
+        npm list --depth=0 --prod | head -20
+        echo ""
+        echo "Client dependencies:"
+        cd client && npm list --depth=0 --prod | head -20
+        echo '```' >> $GITHUB_STEP_SUMMARY
+    
+    - name: Check for outdated packages
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔄 Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "Server outdated packages:"
+        npm outdated || echo "All server packages are up to date"
+        echo ""
+        echo "Client outdated packages:"
+        cd client && npm outdated || echo "All client packages are up to date"
+        echo '```' >> $GITHUB_STEP_SUMMARY
+    
+    - name: Build performance metrics
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ⚡ Build Performance" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        
+        start_time=$(date +%s)
+        cd client && npm run build > /dev/null 2>&1
+        end_time=$(date +%s)
+        build_time=$((end_time - start_time))
+        
+        echo "Build time: ${build_time} seconds"
+        echo "Node.js version: $(node --version)"
+        echo "npm version: $(npm --version)"
+        echo '```' >> $GITHUB_STEP_SUMMARY

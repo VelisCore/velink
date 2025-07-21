@@ -828,6 +828,217 @@ class Database {
     });
   }
 
+  // Admin methods
+  getAllLinks() {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT 
+          id as _id,
+          short_code as shortCode,
+          original_url as originalUrl,
+          clicks,
+          created_at as createdAt,
+          last_accessed as lastClicked,
+          description,
+          ip_address as ipAddress,
+          user_agent as userAgent,
+          is_active as isActive
+        FROM short_urls 
+        ORDER BY created_at DESC
+      `;
+      
+      this.db.all(sql, [], (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  }
+
+  getAdminStats() {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT 
+          COUNT(*) as totalLinks,
+          SUM(clicks) as totalClicks,
+          COUNT(CASE WHEN created_at > datetime('now', '-1 day') THEN 1 END) as linksToday,
+          COUNT(CASE WHEN created_at > datetime('now', '-7 days') THEN 1 END) as linksThisWeek,
+          COUNT(CASE WHEN clicks > 0 THEN 1 END) as activeLinks,
+          AVG(clicks) as avgClicks
+        FROM short_urls
+      `;
+      
+      this.db.get(sql, [], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({
+            totalLinks: row.totalLinks || 0,
+            totalClicks: row.totalClicks || 0,
+            activeLinks: row.activeLinks || 0,
+            linksToday: row.linksToday || 0,
+            linksThisWeek: row.linksThisWeek || 0,
+            avgClicks: Math.round(row.avgClicks || 0)
+          });
+        }
+      });
+    });
+  }
+
+  getAnalytics() {
+    return new Promise((resolve, reject) => {
+      // Get basic stats
+      const statsSQL = `
+        SELECT 
+          COUNT(*) as totalLinks,
+          SUM(clicks) as totalClicks,
+          COUNT(CASE WHEN clicks > 0 THEN 1 END) as activeLinks,
+          COUNT(CASE WHEN created_at > datetime('now', '-1 day') THEN 1 END) as linksToday
+        FROM short_urls
+      `;
+      
+      this.db.get(statsSQL, [], (err, stats) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        // Get clicks by day (last 30 days)
+        const clicksByDaySQL = `
+          SELECT 
+            date(created_at) as date,
+            COUNT(*) as links_created,
+            SUM(clicks) as total_clicks
+          FROM short_urls 
+          WHERE created_at > datetime('now', '-30 days')
+          GROUP BY date(created_at)
+          ORDER BY date DESC
+        `;
+        
+        this.db.all(clicksByDaySQL, [], (err, clicksByDay) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          // Get top links
+          const topLinksSQL = `
+            SELECT 
+              short_code as shortCode,
+              original_url as originalUrl,
+              clicks
+            FROM short_urls 
+            WHERE clicks > 0
+            ORDER BY clicks DESC 
+            LIMIT 10
+          `;
+          
+          this.db.all(topLinksSQL, [], (err, topLinks) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+
+            // Get referrer stats
+            const referrerSQL = `
+              SELECT 
+                CASE 
+                  WHEN user_agent LIKE '%Chrome%' THEN 'Chrome'
+                  WHEN user_agent LIKE '%Firefox%' THEN 'Firefox'
+                  WHEN user_agent LIKE '%Safari%' AND user_agent NOT LIKE '%Chrome%' THEN 'Safari'
+                  WHEN user_agent LIKE '%Edge%' THEN 'Edge'
+                  ELSE 'Other'
+                END as browser,
+                COUNT(*) as count
+              FROM short_urls 
+              WHERE user_agent IS NOT NULL
+              GROUP BY browser
+              ORDER BY count DESC
+            `;
+            
+            this.db.all(referrerSQL, [], (err, referrerStats) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+
+              // Get country stats (simplified since we don't collect geo data)
+              const countrySQL = `
+                SELECT 
+                  'Unknown' as country,
+                  COUNT(*) as count
+                FROM short_urls 
+                LIMIT 1
+              `;
+              
+              this.db.all(countrySQL, [], (err, countryStats) => {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+
+                resolve({
+                  totalLinks: stats.totalLinks || 0,
+                  totalClicks: stats.totalClicks || 0,
+                  activeLinks: stats.activeLinks || 0,
+                  linksToday: stats.linksToday || 0,
+                  clicksByDay: clicksByDay || [],
+                  topLinks: topLinks || [],
+                  referrerStats: referrerStats || [],
+                  countryStats: countryStats || []
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+
+  deleteLink(id) {
+    return new Promise((resolve, reject) => {
+      const sql = 'DELETE FROM short_urls WHERE id = ?';
+      this.db.run(sql, [id], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this.changes > 0);
+        }
+      });
+    });
+  }
+
+  toggleLinkStatus(id) {
+    return new Promise((resolve, reject) => {
+      // Since we don't have an isActive column yet, we'll just update the description
+      // In a real implementation, you'd add an isActive column
+      const sql = 'UPDATE short_urls SET description = COALESCE(description, "") WHERE id = ?';
+      this.db.run(sql, [id], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this.changes > 0);
+        }
+      });
+    });
+  }
+
+  updateLink(id, data) {
+    return new Promise((resolve, reject) => {
+      const { description, isActive } = data;
+      const sql = 'UPDATE short_urls SET description = ? WHERE id = ?';
+      this.db.run(sql, [description || '', id], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this.changes > 0);
+        }
+      });
+    });
+  }
+
 }
 
 module.exports = Database;

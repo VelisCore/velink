@@ -19,6 +19,53 @@ const { generateShortCode, isValidUrl } = require('./utils');
 // Set timezone to German/Berlin
 process.env.TZ = 'Europe/Berlin';
 
+// Privacy and maintenance middleware
+const checkPrivacyAndMaintenance = (req, res, next) => {
+    // Check if maintenance mode is enabled
+    if (process.env.MAINTENANCE_MODE === 'true') {
+        // Allow admin routes during maintenance
+        if (req.path.startsWith('/api/admin')) {
+            return next();
+        }
+        
+        // Allow static assets
+        if (req.path.match(/\.(css|js|png|jpg|gif|ico|svg)$/)) {
+            return next();
+        }
+        
+        // Show maintenance page for all other routes
+        return res.status(503).json({
+            error: 'Maintenance Mode',
+            message: process.env.MAINTENANCE_MESSAGE || 'Website is temporarily under maintenance. Please check back later.'
+        });
+    }
+    
+    // Check if website is private
+    if (process.env.WEBSITE_PRIVATE === 'true') {
+        // Allow admin routes and password check
+        if (req.path.startsWith('/api/admin') || req.path === '/api/check-password') {
+            return next();
+        }
+        
+        // Allow static assets
+        if (req.path.match(/\.(css|js|png|jpg|gif|ico|svg)$/)) {
+            return next();
+        }
+        
+        // Check for privacy password in header or query
+        const providedPassword = req.headers['x-website-password'] || req.query.password;
+        if (providedPassword !== process.env.WEBSITE_PASSWORD) {
+            return res.status(401).json({
+                error: 'Private Website',
+                message: 'This website is private. Please provide the correct password.',
+                requiresPassword: true
+            });
+        }
+    }
+    
+    next();
+};
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -65,7 +112,25 @@ const generalLimiter = rateLimit({
   },
 });
 
+// Apply privacy and maintenance middleware before other middleware
+app.use(checkPrivacyAndMaintenance);
+
 app.use(generalLimiter);
+
+// Password check endpoint for private mode
+app.post('/api/check-password', (req, res) => {
+    const { password } = req.body;
+    
+    if (process.env.WEBSITE_PRIVATE !== 'true') {
+        return res.json({ valid: true, message: 'Website is not private' });
+    }
+    
+    if (password === process.env.WEBSITE_PASSWORD) {
+        res.json({ valid: true, message: 'Password correct' });
+    } else {
+        res.status(401).json({ valid: false, message: 'Invalid password' });
+    }
+});
 
 // Routes
 
@@ -361,7 +426,7 @@ app.get('/api/admin/system', verifyAdminToken, async (req, res) => {
     
     // Get database size
     try {
-      const dbPath = process.env.DB_PATH || '../data/velink.db';
+      const dbPath = process.env.DB_PATH || 'velink.db';
       const stats = fs.statSync(dbPath);
       systemInfo.dbSize = stats.size;
     } catch (err) {

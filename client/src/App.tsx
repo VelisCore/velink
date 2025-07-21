@@ -14,6 +14,7 @@ import ApiDocumentation from './components/documentation/NewApiDocumentation';
 import LinkAnalytics from './components/analytics/LinkAnalytics';
 import CookieNotice from './components/CookieNotice';
 import AdminPanel from './components/AdvancedAdminPanel';
+import PrivacyGate from './components/PrivacyGate';
 import './App.css';
 
 // HomePage component to keep the main page structure
@@ -33,45 +34,47 @@ const HomePage = () => (
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        <Toaster 
-          position="top-center"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
+      <PrivacyGate>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
-        
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-                    <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/impressum" element={<Impressum />} />
-          <Route path="/legal/privacy" element={<PrivacyPolicy />} />
-          <Route path="/legal/terms" element={<TermsOfService />} />
-          <Route path="/legal/impressum" element={<Impressum />} />
-          <Route path="/api-docs" element={<ApiDocumentation />} />
-          <Route path="/analytics/:shortCode" element={<LinkAnalytics />} />
-          <Route path="/admin" element={<AdminPanel />} />
-        </Routes>
-        
-        <CookieNotice />
-      </div>
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+          
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+                      <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/impressum" element={<Impressum />} />
+            <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+            <Route path="/legal/terms" element={<TermsOfService />} />
+            <Route path="/legal/impressum" element={<Impressum />} />
+            <Route path="/api-docs" element={<ApiDocumentation />} />
+            <Route path="/analytics/:shortCode" element={<LinkAnalytics />} />
+            <Route path="/admin" element={<AdminPanel />} />
+          </Routes>
+          
+          <CookieNotice />
+        </div>
+      </PrivacyGate>
     </Router>
   );
 }

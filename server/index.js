@@ -271,7 +271,13 @@ app.post('/api/shorten',
     body('expiresIn')
       .optional()
       .isIn(['1d', '7d', '30d', '365d', 'never'])
-      .withMessage('Invalid expiration option')
+      .withMessage('Invalid expiration option'),
+    body('customAlias')
+      .optional()
+      .isLength({ min: 3, max: 50 })
+      .withMessage('Custom alias must be between 3 and 50 characters')
+      .matches(/^[a-zA-Z0-9\-_]+$/)
+      .withMessage('Custom alias can only contain letters, numbers, hyphens, and underscores')
   ],
   async (req, res) => {
     try {
@@ -282,7 +288,7 @@ app.post('/api/shorten',
         });
       }
 
-      const { url, expiresIn, customOptions } = req.body;
+      const { url, expiresIn, customOptions, customAlias } = req.body;
       const ip = req.ip || req.connection.remoteAddress;
       
       // Calculate expiration date if provided
@@ -300,36 +306,50 @@ app.post('/api/shorten',
         expiresAt = expireDate.toISOString();
       }
 
-      // Check if URL already exists (optimization)
-      const existing = await db.findByUrl(url);
-      if (existing) {
-        // If the URL exists but we want a different expiration, create a new one
-        if ((expiresAt && !existing.expires_at) || 
-            (expiresAt && existing.expires_at && new Date(expiresAt).getTime() !== new Date(existing.expires_at).getTime())) {
-          // Continue to create a new short URL with the new expiration
-        } else {
-          return res.json({
-            shortUrl: `${req.protocol}://${req.get('host')}/${existing.short_code}`,
-            shortCode: existing.short_code,
-            originalUrl: existing.original_url,
-            clicks: existing.clicks,
-            expiresAt: existing.expires_at,
-            createdAt: existing.created_at,
-            customOptions: existing.custom_options ? JSON.parse(existing.custom_options) : null
-          });
+      // Check if URL already exists (optimization) - but skip if custom alias is provided
+      if (!customAlias) {
+        const existing = await db.findByUrl(url);
+        if (existing) {
+          // If the URL exists but we want a different expiration, create a new one
+          if ((expiresAt && !existing.expires_at) || 
+              (expiresAt && existing.expires_at && new Date(expiresAt).getTime() !== new Date(existing.expires_at).getTime())) {
+            // Continue to create a new short URL with the new expiration
+          } else {
+            return res.json({
+              shortUrl: `${req.protocol}://${req.get('host')}/${existing.short_code}`,
+              shortCode: existing.short_code,
+              originalUrl: existing.original_url,
+              clicks: existing.clicks,
+              expiresAt: existing.expires_at,
+              createdAt: existing.created_at,
+              customOptions: existing.custom_options ? JSON.parse(existing.custom_options) : null
+            });
+          }
         }
       }
 
-      // Generate unique short code
+      // Generate or use custom short code
       let shortCode;
-      let attempts = 0;
-      do {
-        shortCode = generateShortCode();
-        attempts++;
-        if (attempts > 10) {
-          throw new Error('Failed to generate unique short code');
+      if (customAlias) {
+        // Check if custom alias is already taken
+        const aliasExists = await db.findByShortCode(customAlias);
+        if (aliasExists) {
+          return res.status(409).json({ 
+            error: 'Custom alias is already taken. Please choose a different one.' 
+          });
         }
-      } while (await db.findByShortCode(shortCode));
+        shortCode = customAlias;
+      } else {
+        // Generate unique short code
+        let attempts = 0;
+        do {
+          shortCode = generateShortCode();
+          attempts++;
+          if (attempts > 10) {
+            throw new Error('Failed to generate unique short code');
+          }
+        } while (await db.findByShortCode(shortCode));
+      }
 
       // Save to database
       const result = await db.createShortUrl({
@@ -340,6 +360,11 @@ app.post('/api/shorten',
         userAgent: req.get('User-Agent') || '',
         customOptions,
         description: req.body.description
+      });
+
+      // Generate sitemap after creating new link
+      sitemapGenerator.generateSitemap().catch(err => {
+        console.error('Failed to update sitemap after link creation:', err);
       });
 
       res.status(201).json({
@@ -455,6 +480,12 @@ app.delete('/api/admin/links/:id', verifyAdminToken, async (req, res) => {
   try {
     const { id } = req.params;
     await db.deleteLink(id);
+    
+    // Generate sitemap after deleting link
+    sitemapGenerator.generateSitemap().catch(err => {
+      console.error('Failed to update sitemap after link deletion:', err);
+    });
+    
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting link:', error);
@@ -473,6 +504,12 @@ app.delete('/api/admin/links/bulk', verifyAdminToken, async (req, res) => {
     for (const id of linkIds) {
       await db.deleteLink(id);
     }
+    
+    // Generate sitemap after bulk deleting links
+    sitemapGenerator.generateSitemap().catch(err => {
+      console.error('Failed to update sitemap after bulk link deletion:', err);
+    });
+    
     res.json({ success: true });
   } catch (error) {
     console.error('Error bulk deleting links:', error);
@@ -1229,8 +1266,8 @@ app.get('/:shortCode', async (req, res) => {
   try {
     const { shortCode } = req.params;
     
-    // Skip API routes
-    if (shortCode.startsWith('api')) {
+    // Skip API routes and sitemap
+    if (shortCode.startsWith('api') || shortCode === 'sitemap.xml') {
       return res.status(404).json({ error: 'Not found' });
     }
 
@@ -1295,6 +1332,153 @@ app.get('/:shortCode', async (req, res) => {
         </body>
         </html>
       `);
+    }
+
+    // Check if link is password protected
+    const customOptions = urlData.custom_options ? JSON.parse(urlData.custom_options) : {};
+    if (customOptions.password) {
+      // Check if password is provided in query or if it's verification step
+      const providedPassword = req.query.password;
+      if (!providedPassword) {
+        // Show password protection page
+        return res.send(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Protected Link - Velink</title>
+            <meta name="robots" content="noindex, nofollow">
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+                     text-align: center; padding: 50px; background: #f8fafc; }
+              .container { max-width: 500px; margin: 0 auto; background: white; 
+                          border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+              h1 { color: #1e293b; margin-bottom: 20px; }
+              p { color: #64748b; margin-bottom: 30px; }
+              .form-group { margin-bottom: 20px; text-align: left; }
+              label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
+              input[type="password"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; 
+                                     border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+              input[type="password"]:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
+              .btn { width: 100%; padding: 12px 24px; border-radius: 8px; border: none; 
+                     font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 16px; }
+              .btn-primary { background: #0ea5e9; color: white; }
+              .btn-primary:hover { background: #0284c7; }
+              .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+              .error { background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; 
+                      padding: 12px; border-radius: 8px; margin-bottom: 20px; }
+              .back-link { margin-top: 20px; }
+              .back-link a { color: #0ea5e9; text-decoration: none; font-size: 14px; }
+              .back-link a:hover { text-decoration: underline; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🔒 Protected Link</h1>
+              <p>This link is password protected. Please enter the password to continue.</p>
+              
+              <div id="error-message" class="error" style="display: none;"></div>
+              
+              <form id="password-form" onsubmit="return submitPassword(event)">
+                <div class="form-group">
+                  <label for="password">Password</label>
+                  <input type="password" id="password" name="password" required 
+                         placeholder="Enter password" autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" id="submit-btn">
+                  Access Link
+                </button>
+              </form>
+              
+              <div class="back-link">
+                <a href="/">← Back to Velink</a>
+              </div>
+            </div>
+            
+            <script>
+              async function submitPassword(event) {
+                event.preventDefault();
+                
+                const password = document.getElementById('password').value;
+                const submitBtn = document.getElementById('submit-btn');
+                const errorDiv = document.getElementById('error-message');
+                
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Verifying...';
+                errorDiv.style.display = 'none';
+                
+                try {
+                  const response = await fetch('/api/verify-password/${shortCode}', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ password })
+                  });
+                  
+                  const result = await response.json();
+                  
+                  if (response.ok && result.success) {
+                    // Track click and redirect
+                    try {
+                      await fetch('/api/track/${shortCode}', { method: 'POST' });
+                    } catch (e) {
+                      // Continue anyway if tracking fails
+                    }
+                    window.location.href = result.originalUrl;
+                  } else {
+                    errorDiv.textContent = result.error || 'Invalid password. Please try again.';
+                    errorDiv.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Access Link';
+                  }
+                } catch (error) {
+                  errorDiv.textContent = 'An error occurred. Please try again.';
+                  errorDiv.style.display = 'block';
+                  submitBtn.disabled = false;
+                  submitBtn.textContent = 'Access Link';
+                }
+                
+                return false;
+              }
+            </script>
+          </body>
+          </html>
+        `);
+      } else {
+        // Verify the provided password
+        if (customOptions.password !== providedPassword) {
+          return res.status(401).send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Invalid Password - Velink</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+                       text-align: center; padding: 50px; background: #f8fafc; }
+                .container { max-width: 500px; margin: 0 auto; background: white; 
+                            border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                h1 { color: #e11d48; margin-bottom: 20px; }
+                p { color: #64748b; margin-bottom: 30px; }
+                a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
+                a:hover { text-decoration: underline; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>🔒 Invalid Password</h1>
+                <p>The password you entered is incorrect.</p>
+                <a href="/${shortCode}">← Try Again</a>
+              </div>
+            </body>
+            </html>
+          `);
+        }
+        // Password is correct, continue to redirect below
+      }
     }
 
     // Check for confirmation parameter
@@ -1407,34 +1591,7 @@ console.log(`Serving static files from: ${clientBuildPath}`);
 // Set up API routes
 app.use('/api/v1', setupApiRoutes(db));
 
-// Serve static files
-app.use(express.static(clientBuildPath));
-
-// For all routes except API and short URLs, serve the React app
-app.get('*', (req, res, next) => {
-  // Skip API routes and short URLs (which are handled by the redirect logic)
-  if (req.path.startsWith('/api/') || req.path.length <= 8) {
-    return next();
-  }
-  const indexPath = path.join(clientBuildPath, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).send('Application not found. Please build the client first.');
-  }
-});
-
-// Initialize and generate sitemap
-const sitemapGenerator = new SitemapGenerator(
-  process.env.NODE_ENV === 'production' 
-    ? 'https://velink.me' 
-    : `http://localhost:${PORT}`
-);
-
-// Generate sitemap on startup
-sitemapGenerator.generateSitemap();
-
-// Sitemap route
+// Sitemap route (must be before catch-all route)
 app.get('/sitemap.xml', (req, res) => {
   const sitemapPath = path.join(__dirname, 'public', 'sitemap.xml');
   
@@ -1454,6 +1611,33 @@ app.get('/sitemap.xml', (req, res) => {
       });
   }
 });
+
+// Serve static files
+app.use(express.static(clientBuildPath));
+
+// For all routes except API and short URLs, serve the React app
+app.get('*', (req, res, next) => {
+  // Skip API routes, sitemap, and short URLs (which are handled by the redirect logic)
+  if (req.path.startsWith('/api/') || req.path === '/sitemap.xml' || req.path.length <= 8) {
+    return next();
+  }
+  const indexPath = path.join(clientBuildPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send('Application not found. Please build the client first.');
+  }
+});
+
+// Initialize and generate sitemap
+const sitemapGenerator = new SitemapGenerator(
+  process.env.NODE_ENV === 'production' 
+    ? 'https://velink.me' 
+    : `http://localhost:${PORT}`
+);
+
+// Generate sitemap on startup
+sitemapGenerator.generateSitemap();
 
 // Regenerate sitemap every hour
 setInterval(() => {
@@ -1707,6 +1891,12 @@ app.delete('/api/admin/links/:id', adminAuth, async (req, res) => {
     }
     
     await db.deleteLink(link.short_code);
+    
+    // Generate sitemap after deleting link
+    sitemapGenerator.generateSitemap().catch(err => {
+      console.error('Failed to update sitemap after admin link deletion:', err);
+    });
+    
     log('info', `Admin deleted link: ${link.short_code}`);
     res.json({ success: true });
   } catch (error) {
@@ -1726,6 +1916,11 @@ app.delete('/api/admin/links/bulk', adminAuth, async (req, res) => {
         await db.deleteLink(link.short_code);
       }
     }
+    
+    // Generate sitemap after bulk deleting links
+    sitemapGenerator.generateSitemap().catch(err => {
+      console.error('Failed to update sitemap after admin bulk link deletion:', err);
+    });
     
     log('info', `Admin bulk deleted ${linkIds.length} links`);
     res.json({ success: true });

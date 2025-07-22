@@ -1820,10 +1820,21 @@ app.use(express.static(clientBuildPath));
 
 // For all routes except API and short URLs, serve the React app
 app.get('*', (req, res, next) => {
-  // Skip API routes, sitemap, and short URLs (which are handled by the redirect logic)
-  if (req.path.startsWith('/api/') || req.path === '/sitemap.xml' || req.path.length <= 8) {
+  // Skip API routes and sitemap
+  if (req.path.startsWith('/api/') || req.path === '/sitemap.xml') {
     return next();
   }
+  
+  // Skip if it looks like a short URL (no special characters, reasonable length)
+  // But allow known React routes like /admin, /privacy, /terms
+  const knownRoutes = ['/admin', '/privacy', '/terms', '/impressum', '/analytics', '/docs'];
+  const isKnownRoute = knownRoutes.some(route => req.path.startsWith(route));
+  const looksLikeShortUrl = req.path.length <= 8 && req.path.match(/^\/[a-zA-Z0-9\-_]+$/) && !isKnownRoute;
+  
+  if (looksLikeShortUrl) {
+    return next();
+  }
+  
   const indexPath = path.join(clientBuildPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);

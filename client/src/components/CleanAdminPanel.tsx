@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Shield, ExternalLink, Calendar, BarChart3, 
@@ -68,8 +68,15 @@ const CleanAdminPanel: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'links' | 'analytics' | 'system' | 'logs' | 'databases' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'links' | 'analytics' | 'system' | 'logs' | 'databases' | 'settings' | 'update'>('dashboard');
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+  
+  // Update management
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<string>('');
+  const [currentVersion, setCurrentVersion] = useState<string>('');
+  const [latestVersion, setLatestVersion] = useState<string>('');
+  const [updateAvailable, setUpdateAvailable] = useState(false);
   
   // Links management
   const [links, setLinks] = useState<LinkInterface[]>([]);
@@ -417,6 +424,74 @@ const CleanAdminPanel: React.FC = () => {
     }
   };
 
+  // Update functions
+  const checkForUpdates = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch('/api/admin/update/check', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentVersion(data.currentVersion || 'Unknown');
+        setLatestVersion(data.latestVersion || 'Unknown');
+        setUpdateAvailable(data.updateAvailable || false);
+        setUpdateStatus(data.status || 'Up to date');
+      }
+    } catch (error) {
+      console.error('Failed to check for updates:', error);
+      toast.error('Failed to check for updates');
+    }
+  }, [token]);
+
+  const performUpdate = useCallback(async () => {
+    if (!token) return;
+    
+    setUpdateLoading(true);
+    setUpdateStatus('Starting update...');
+    
+    try {
+      const response = await fetch('/api/admin/update/perform', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUpdateStatus(data.message || 'Update completed successfully');
+        toast.success('Update completed! The service will restart shortly.');
+        
+        // Refresh after a delay to allow server restart
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Update failed');
+      }
+    } catch (error) {
+      console.error('Update failed:', error);
+      setUpdateStatus(`Update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error('Update failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setUpdateLoading(false);
+    }
+  }, [token]);
+
+  // Check for updates when update tab is accessed
+  useEffect(() => {
+    if (activeTab === 'update' && token) {
+      checkForUpdates();
+    }
+  }, [activeTab, token, checkForUpdates]);
+
   const loadSystemInfo = async () => {
     if (!token) return;
     
@@ -738,6 +813,7 @@ const CleanAdminPanel: React.FC = () => {
     { id: 'system', label: 'System', icon: Activity },
     { id: 'logs', label: 'Logs', icon: Terminal },
     { id: 'databases', label: 'Database', icon: Database },
+    { id: 'update', label: 'Update', icon: RefreshCw },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
 
@@ -1679,6 +1755,153 @@ const CleanAdminPanel: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'update' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 shadow-lg">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">System Update</h2>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={checkForUpdates}
+                  className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all duration-200"
+                  disabled={updateLoading}
+                >
+                  <RefreshCw className={`w-5 h-5 ${updateLoading ? 'animate-spin' : ''}`} />
+                </motion.button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Current Version Info */}
+                <div className="bg-white/90 rounded-xl p-6 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Version Information</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <Shield className="w-5 h-5 text-green-600" />
+                        </div>
+                        <span className="text-gray-900">Current Version</span>
+                      </div>
+                      <span className="text-green-600 font-mono">{currentVersion || 'Loading...'}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Download className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <span className="text-gray-900">Latest Version</span>
+                      </div>
+                      <span className="text-blue-600 font-mono">{latestVersion || 'Loading...'}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 ${updateAvailable ? 'bg-orange-100' : 'bg-green-100'} rounded-lg flex items-center justify-center`}>
+                          {updateAvailable ? (
+                            <AlertTriangle className="w-5 h-5 text-orange-600" />
+                          ) : (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          )}
+                        </div>
+                        <span className="text-gray-900">Update Status</span>
+                      </div>
+                      <span className={`${updateAvailable ? 'text-orange-600' : 'text-green-600'} font-medium`}>
+                        {updateAvailable ? 'Update Available' : 'Up to Date'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Update Actions */}
+                <div className="bg-white/90 rounded-xl p-6 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Actions</h3>
+                  <div className="space-y-4">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={checkForUpdates}
+                      disabled={updateLoading}
+                      className="w-full flex items-center justify-center space-x-3 p-3 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw className={`w-5 h-5 ${updateLoading ? 'animate-spin' : ''}`} />
+                      <span>Check for Updates</span>
+                    </motion.button>
+                    
+                    {updateAvailable && (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={performUpdate}
+                        disabled={updateLoading}
+                        className="w-full flex items-center justify-center space-x-3 p-3 bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Download className="w-5 h-5" />
+                        <span>{updateLoading ? 'Updating...' : 'Perform Update'}</span>
+                      </motion.button>
+                    )}
+
+                    {!updateAvailable && currentVersion && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full flex items-center justify-center space-x-3 p-3 bg-green-50 text-green-600 border border-green-200 rounded-lg"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                        <span>System is up to date</span>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Update Status */}
+              {updateStatus && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-6"
+                >
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Update Status</h4>
+                    <div className="bg-gray-900 rounded-lg p-3 font-mono text-sm">
+                      <div className="text-green-400">{updateStatus}</div>
+                      {updateLoading && (
+                        <div className="text-yellow-400 mt-1">Please wait, this may take a few minutes...</div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Update Warning */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-6"
+              >
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="w-6 h-6 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-yellow-800 font-semibold mb-1">Important Update Information</h4>
+                    <ul className="text-yellow-700 text-sm space-y-1">
+                      <li>• The update process will restart the VeLink service</li>
+                      <li>• Your website will be briefly unavailable during the update</li>
+                      <li>• All data and settings will be preserved</li>
+                      <li>• The page will automatically refresh when the update is complete</li>
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </motion.div>
         )}

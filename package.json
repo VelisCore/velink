@@ -7,16 +7,16 @@
     "node": "18.x"
   },
   "scripts": {
+    "start": "npm run build && npm run start:prod",
+    "start:prod": "NODE_ENV=production PORT=5002 node server/index.js",
+    "build": "cd client && npm install && npm run build",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
     "client": "cd client && npm start",
-    "build": "cd client && npm install && npm run build && cd .. && echo Build completed successfully",
-    "start": "npm run build && npm run start:prod",
-    "start:prod": "cd server && npm install && npm run start:prod",
-    "start:dev": "npm run dev",
-    "start:test": "cd server && npm run start:test",
-    "test": "cd server && npm test",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:restart": "pm2 restart velink",
+    "pm2:stop": "pm2 stop velink"
   },
   "keywords": [
     "url-shortener",

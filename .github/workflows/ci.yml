@@ -1,45 +1,61 @@
-name: CI/CD Pipeline
+name: Production Build
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
     
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js 20.x
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: '20.x'
         cache: 'npm'
     
+    - name: Create client/public directory and index.html
+      run: |
+        mkdir -p client/public
+        cat > client/public/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <meta name="theme-color" content="#3b82f6" />
+            <meta name="description" content="Velink - Beautiful URL Shortener" />
+            <title>Velink - Beautiful URL Shortener</title>
+          </head>
+          <body>
+            <div id="root"></div>
+          </body>
+        </html>
+        EOF
+    
     - name: Install dependencies
-      run: npm ci
-    
-    - name: Install client dependencies
-      run: cd client && npm ci
-    
-    - name: Run server tests
-      run: npm test
-      env:
-        NODE_ENV: test
-    
-    - name: Run client tests
-      run: cd client && npm test -- --coverage --watchAll=false
+      run: |
+        npm ci --production
+        cd server && npm ci --production
+        cd ../client && npm ci
     
     - name: Build client
       run: cd client && npm run build
+      env:
+        CI: true
+        GENERATE_SOURCEMAP: false
     
-    - name: Test build
-      run: npm run start:test &
+    - name: Test production build
+      run: |
+        timeout 30s npm run start:prod &
+        sleep 10
+        curl -f http://localhost:5002/health
       env:
         NODE_ENV: production

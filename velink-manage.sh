@@ -24,6 +24,8 @@ show_help() {
     echo -e "  ${GREEN}logs-error${NC} - Show error logs"
     echo -e "  ${GREEN}update${NC}     - Update VeLink (pull from git and rebuild)"
     echo -e "  ${GREEN}backup${NC}     - Create database backup"
+    echo -e "  ${GREEN}maintenance-on${NC}  - Enable maintenance mode"
+    echo -e "  ${GREEN}maintenance-off${NC} - Disable maintenance mode"
     echo -e "  ${GREEN}ssl-renew${NC}  - Manually renew SSL certificates"
     echo -e "  ${GREEN}info${NC}       - Show system information"
     echo -e "  ${GREEN}monitor${NC}    - Start monitoring dashboard"
@@ -83,29 +85,83 @@ show_error_logs() {
 }
 
 update_velink() {
-    echo -e "${BLUE}🔄 Updating VeLink...${NC}"
+    echo -e "${BLUE}🔄 Starting VeLink Update Process...${NC}"
+    echo -e "${BLUE}===================================${NC}"
+    
+    # Create maintenance mode
+    echo -e "${YELLOW}🚧 Enabling maintenance mode...${NC}"
+    enable_maintenance_mode
     
     # Create backup first
+    echo -e "${BLUE}💾 Creating database backup...${NC}"
     create_backup
     
-    echo -e "${BLUE}📥 Pulling latest code...${NC}"
-    git pull origin main
+    # Stop the service gracefully
+    echo -e "${BLUE}🛑 Stopping VeLink service...${NC}"
+    pm2 stop velink 2>/dev/null || echo "Service not running"
     
-    echo -e "${BLUE}📦 Installing dependencies...${NC}"
-    npm install --production
+    # Stash any local changes
+    echo -e "${BLUE}📦 Stashing local changes...${NC}"
+    git stash push -m "Auto-stash before update $(date)"
     
+    # Pull latest code
+    echo -e "${BLUE}📥 Pulling latest code from repository...${NC}"
+    git fetch origin
+    git reset --hard origin/main
+    
+    # Ensure we have the client/public/index.html file
+    if [ ! -f "client/public/index.html" ]; then
+        echo -e "${YELLOW}⚠️  Creating missing client/public/index.html...${NC}"
+        mkdir -p client/public
+        create_index_html
+    fi
+    
+    # Install server dependencies
+    echo -e "${BLUE}📦 Installing server dependencies...${NC}"
+    npm install --production --silent
+    cd server
+    npm install --production --silent
+    cd ..
+    
+    # Build client
     if [ -d "client" ]; then
-        echo -e "${BLUE}🏗️  Rebuilding client...${NC}"
+        echo -e "${BLUE}🏗️  Building client application...${NC}"
         cd client
-        npm install
+        
+        # Clean install to avoid conflicts
+        rm -rf node_modules package-lock.json 2>/dev/null
+        npm install --silent
+        
+        # Build with error handling
         npm run build
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Client build failed!${NC}"
+            disable_maintenance_mode
+            exit 1
+        fi
         cd ..
     fi
     
-    echo -e "${BLUE}🔄 Restarting service...${NC}"
-    pm2 restart velink
+    # Disable maintenance mode
+    echo -e "${BLUE}� Disabling maintenance mode...${NC}"
+    disable_maintenance_mode
     
-    echo -e "${GREEN}✅ VeLink updated successfully${NC}"
+    # Start the service
+    echo -e "${BLUE}🚀 Starting VeLink service...${NC}"
+    pm2 start ecosystem.config.js || pm2 restart velink
+    pm2 save
+    
+    # Wait a moment for service to start
+    sleep 3
+    
+    # Verify service is running
+    if pm2 status velink | grep -q "online"; then
+        echo -e "${GREEN}✅ VeLink updated and restarted successfully!${NC}"
+        echo -e "${GREEN}📊 Service is running and healthy${NC}"
+    else
+        echo -e "${RED}❌ Service failed to start after update${NC}"
+        echo -e "${YELLOW}🔧 Check logs with: ./velink-manage.sh logs${NC}"
+    fi
 }
 
 create_backup() {
@@ -123,6 +179,144 @@ create_backup() {
     else
         echo -e "${RED}❌ Database file not found: server/velink.db${NC}"
     fi
+}
+
+enable_maintenance_mode() {
+    echo -e "${YELLOW}🚧 Enabling maintenance mode...${NC}"
+    
+    # Create maintenance page
+    mkdir -p server/public/maintenance
+    cat > server/public/maintenance/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeLink - Under Maintenance</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            max-width: 500px;
+            padding: 2rem;
+        }
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .details {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">VeLink</div>
+        <div class="spinner"></div>
+        <div class="message">We're updating VeLink</div>
+        <div class="details">
+            We're currently performing maintenance to improve your experience.<br>
+            All your data and shortened links are safe.<br>
+            We'll be back online shortly!
+        </div>
+    </div>
+    <script>
+        // Auto-refresh every 30 seconds during maintenance
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
+EOF
+    
+    # Create maintenance flag
+    touch server/.maintenance
+    echo -e "${GREEN}✅ Maintenance mode enabled${NC}"
+}
+
+disable_maintenance_mode() {
+    echo -e "${BLUE}🚧 Disabling maintenance mode...${NC}"
+    
+    # Remove maintenance flag and page
+    rm -f server/.maintenance
+    rm -rf server/public/maintenance
+    
+    echo -e "${GREEN}✅ Maintenance mode disabled${NC}"
+}
+
+create_index_html() {
+    cat > client/public/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#3b82f6" />
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Velink - Beautiful, fast, and secure URL shortening platform. Transform your long links into powerful short URLs with detailed analytics. No registration required." />
+    <meta name="keywords" content="url shortener, link shortener, short links, analytics, free, no registration, fast, secure" />
+    <meta name="author" content="Velink Team" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Velink - Beautiful URL Shortener" />
+    <meta property="og:description" content="Transform your long URLs into powerful, trackable short links. Beautiful, fast, and completely free." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://velink.me" />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Velink" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Velink - Beautiful URL Shortener" />
+    <meta name="twitter:description" content="Transform your long URLs into powerful, trackable short links. Beautiful, fast, and completely free." />
+    <meta name="twitter:image" content="%PUBLIC_URL%/og-image.png" />
+    
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>Velink - Beautiful URL Shortener</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
+EOF
 }
 
 renew_ssl() {
@@ -204,6 +398,12 @@ case "$1" in
         ;;
     "backup")
         create_backup
+        ;;
+    "maintenance-on")
+        enable_maintenance_mode
+        ;;
+    "maintenance-off")
+        disable_maintenance_mode
         ;;
     "ssl-renew")
         renew_ssl

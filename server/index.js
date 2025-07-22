@@ -98,10 +98,13 @@ cleanOldLogs(); // Clean on startup
 
 // Privacy and maintenance middleware
 const checkPrivacyAndMaintenance = (req, res, next) => {
-    // Check if maintenance mode is enabled
-    if (process.env.MAINTENANCE_MODE === 'true') {
+    // Check if maintenance mode is enabled (file-based)
+    const maintenanceFile = path.join(__dirname, '.maintenance');
+    const isMaintenanceMode = fs.existsSync(maintenanceFile) || process.env.MAINTENANCE_MODE === 'true';
+    
+    if (isMaintenanceMode) {
         // Allow admin routes during maintenance
-        if (req.path.startsWith('/api/admin')) {
+        if (req.path.startsWith('/api/admin') || req.path === '/health') {
             return next();
         }
         
@@ -110,10 +113,19 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
             return next();
         }
         
-        // Show maintenance page for all other routes
+        // Serve maintenance page for root
+        if (req.path === '/') {
+            const maintenancePage = path.join(__dirname, 'public', 'maintenance', 'index.html');
+            if (fs.existsSync(maintenancePage)) {
+                return res.sendFile(maintenancePage);
+            }
+        }
+        
+        // Show maintenance message for API endpoints
         return res.status(503).json({
             error: 'Maintenance Mode',
-            message: process.env.MAINTENANCE_MESSAGE || 'Website is temporarily under maintenance. Please check back later.'
+            message: process.env.MAINTENANCE_MESSAGE || 'Website is temporarily under maintenance. Please check back later.',
+            maintenanceMode: true
         });
     }
     
@@ -232,7 +244,27 @@ app.post('/api/check-password', (req, res) => {
 
 // Routes
 
-// Health check
+// Health check with maintenance mode detection
+app.get('/health', (req, res) => {
+  const maintenanceFile = path.join(__dirname, '.maintenance');
+  const isMaintenanceMode = fs.existsSync(maintenanceFile);
+  
+  if (isMaintenanceMode) {
+    res.status(503).json({ 
+      status: 'MAINTENANCE', 
+      message: 'Server is in maintenance mode',
+      timestamp: new Date().toISOString() 
+    });
+  } else {
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0'
+    });
+  }
+});
+
+// Legacy health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
@@ -972,6 +1004,177 @@ app.post('/api/admin/privacy-settings', verifyAdminToken, (req, res) => {
   } catch (error) {
     log('error', `Error updating privacy settings: ${error.message}`);
     res.status(500).json({ error: 'Failed to update privacy settings' });
+  }
+});
+
+// ==========================================
+// UPDATE SYSTEM ENDPOINTS
+// ==========================================
+
+// Check for updates
+app.get('/api/admin/update/check', verifyAdminToken, async (req, res) => {
+  try {
+    const { execSync } = require('child_process');
+    const fs = require('fs');
+    const path = require('path');
+    
+    let currentVersion = 'Unknown';
+    let latestVersion = 'Unknown';
+    let updateAvailable = false;
+    
+    try {
+      // Get current version from package.json
+      const packagePath = path.join(__dirname, '../package.json');
+      if (fs.existsSync(packagePath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+        currentVersion = packageJson.version || 'Unknown';
+      }
+      
+      // Check if we're in a git repository
+      try {
+        const currentCommit = execSync('git rev-parse HEAD', { 
+          cwd: path.join(__dirname, '..'),
+          encoding: 'utf8' 
+        }).trim().substring(0, 7);
+        
+        currentVersion = `${currentVersion} (${currentCommit})`;
+        
+        // Fetch latest changes from remote
+        execSync('git fetch origin main', { 
+          cwd: path.join(__dirname, '..'),
+          stdio: 'pipe' 
+        });
+        
+        // Check if there are new commits
+        const localCommit = execSync('git rev-parse HEAD', { 
+          cwd: path.join(__dirname, '..'),
+          encoding: 'utf8' 
+        }).trim();
+        
+        const remoteCommit = execSync('git rev-parse origin/main', { 
+          cwd: path.join(__dirname, '..'),
+          encoding: 'utf8' 
+        }).trim();
+        
+        const latestCommitShort = remoteCommit.substring(0, 7);
+        latestVersion = `Latest (${latestCommitShort})`;
+        
+        updateAvailable = localCommit !== remoteCommit;
+        
+      } catch (gitError) {
+        log('warn', `Git operations failed: ${gitError.message}`);
+        latestVersion = 'Git not available';
+      }
+      
+    } catch (error) {
+      log('error', `Error checking version: ${error.message}`);
+    }
+    
+    const status = updateAvailable ? 'Update available' : 'Up to date';
+    
+    res.json({
+      currentVersion,
+      latestVersion,
+      updateAvailable,
+      status
+    });
+    
+  } catch (error) {
+    log('error', `Error checking for updates: ${error.message}`);
+    res.status(500).json({ error: 'Failed to check for updates' });
+  }
+});
+
+// Perform system update
+app.post('/api/admin/update/perform', verifyAdminToken, async (req, res) => {
+  try {
+    const { spawn } = require('child_process');
+    const path = require('path');
+    
+    log('info', 'Admin initiated system update');
+    
+    // Enable maintenance mode immediately
+    const maintenanceFile = path.join(__dirname, '.maintenance');
+    require('fs').writeFileSync(maintenanceFile, new Date().toISOString());
+    log('info', 'Maintenance mode enabled for update');
+    
+    // Check if update script exists
+    const updateScript = path.join(__dirname, '../velink-manage.sh');
+    if (!require('fs').existsSync(updateScript)) {
+      // Remove maintenance mode if script doesn't exist
+      require('fs').unlinkSync(maintenanceFile);
+      return res.status(400).json({ 
+        error: 'Update script not found. Make sure velink-manage.sh exists in the project root.' 
+      });
+    }
+    
+    res.json({ 
+      message: 'Update started successfully. VeLink is now in maintenance mode and will restart automatically.',
+      status: 'Update in progress - Maintenance mode active',
+      maintenanceMode: true
+    });
+    
+    // Run update in background
+    setTimeout(() => {
+      const updateProcess = spawn('bash', [updateScript, 'update'], {
+        cwd: path.join(__dirname, '..'),
+        detached: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, FORCE_UPDATE: 'true' }
+      });
+      
+      // Log update output
+      updateProcess.stdout.on('data', (data) => {
+        log('info', `Update output: ${data.toString().trim()}`);
+      });
+      
+      updateProcess.stderr.on('data', (data) => {
+        log('error', `Update error: ${data.toString().trim()}`);
+      });
+      
+      updateProcess.on('close', (code) => {
+        if (code === 0) {
+          log('info', 'Update completed successfully');
+        } else {
+          log('error', `Update failed with exit code: ${code}`);
+          // Remove maintenance mode if update fails
+          try {
+            require('fs').unlinkSync(maintenanceFile);
+            log('info', 'Maintenance mode disabled due to update failure');
+          } catch (err) {
+            log('error', `Failed to remove maintenance file: ${err.message}`);
+          }
+        }
+      });
+      
+      updateProcess.unref();
+      
+      log('info', 'Update process started in background');
+      
+      // Exit current process after a delay to allow response to be sent
+      setTimeout(() => {
+        log('info', 'Exiting for update restart...');
+        process.exit(0);
+      }, 3000);
+      
+    }, 1000);
+    
+  } catch (error) {
+    // Remove maintenance mode on error
+    try {
+      const maintenanceFile = path.join(__dirname, '.maintenance');
+      if (require('fs').existsSync(maintenanceFile)) {
+        require('fs').unlinkSync(maintenanceFile);
+      }
+    } catch (err) {
+      log('error', `Failed to remove maintenance file: ${err.message}`);
+    }
+    
+    log('error', `Error performing update: ${error.message}`);
+    res.status(500).json({ 
+      error: 'Failed to perform update: ' + error.message,
+      maintenanceMode: false
+    });
   }
 });
 

@@ -36,6 +36,79 @@ html {
   background: #a1a1a1;
 }
 
+/* 3D Database Visualization Styles */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-gpu {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.rotate-y-6 {
+  transform: rotateY(6deg);
+}
+
+.rotate-y-12 {
+  transform: rotateY(12deg);
+}
+
+/* Enhanced button hover effects */
+.admin-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Live logs animation */
+.log-entry-enter {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.log-entry-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.3s ease-out;
+}
+
+/* Database block animations */
+.db-block {
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.db-block:hover {
+  transform: scale(1.05) rotateY(10deg);
+}
+
+.db-block.selected {
+  transform: scale(1.1) rotateY(15deg);
+  box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.4);
+}
+
+/* Scrollbar styling for log containers */
+.log-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.log-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.log-container::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
 /* Focus styles for accessibility */
 .focus-ring:focus {
   outline: 2px solid #3b82f6;

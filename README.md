@@ -165,6 +165,264 @@ Velink includes GDPR-compliant cookie management:
 - **Privacy Policy**: Comprehensive data handling documentation
 - **Terms of Service**: Clear usage guidelines and contact information
 
+## 🌐 API Documentation
+
+Velink provides a comprehensive REST API for link management and analytics.
+
+### Public Endpoints
+
+#### Shorten Link
+```bash
+POST /api/shorten
+Content-Type: application/json
+
+{
+  "url": "https://example.com",
+  "description": "Optional description"
+}
+```
+
+**Response:**
+```json
+{
+  "shortCode": "abc123",
+  "originalUrl": "https://example.com",
+  "shortUrl": "https://yourdomain.com/abc123",
+  "description": "Optional description",
+  "createdAt": "2025-07-21T21:50:00.000Z"
+}
+```
+
+#### Get Link Info
+```bash
+GET /api/info/:shortCode
+```
+
+**Response:**
+```json
+{
+  "shortCode": "abc123",
+  "originalUrl": "https://example.com",
+  "description": "Optional description",
+  "clicks": 42,
+  "createdAt": "2025-07-21T21:50:00.000Z",
+  "lastClicked": "2025-07-21T22:30:00.000Z"
+}
+```
+
+#### Get Public Statistics
+```bash
+GET /api/stats
+GET /api/v1/stats
+```
+
+**Response:**
+```json
+{
+  "totalLinks": 1234,
+  "totalClicks": 5678,
+  "linksToday": 12,
+  "clicksToday": 89
+}
+```
+
+### Admin Endpoints
+
+All admin endpoints require the `Authorization: Bearer <token>` header.
+
+#### Admin Authentication
+```bash
+POST /api/admin/verify
+Content-Type: application/json
+
+{
+  "token": "your-admin-token"
+}
+```
+
+#### Get All Links
+```bash
+GET /api/admin/links
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+[
+  {
+    "_id": "unique-id",
+    "shortCode": "abc123",
+    "originalUrl": "https://example.com",
+    "description": "Optional description",
+    "clicks": 42,
+    "createdAt": "2025-07-21T21:50:00.000Z",
+    "lastClicked": "2025-07-21T22:30:00.000Z",
+    "isActive": true
+  }
+]
+```
+
+#### Update Link
+```bash
+PUT /api/admin/links/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "description": "Updated description",
+  "isActive": true
+}
+```
+
+#### Delete Link
+```bash
+DELETE /api/admin/links/:id
+Authorization: Bearer <token>
+```
+
+#### Get Analytics
+```bash
+GET /api/admin/analytics
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "totalLinks": 1234,
+  "totalClicks": 5678,
+  "activeLinks": 890,
+  "linksToday": 12,
+  "clicksByDay": [
+    {
+      "date": "2025-07-21",
+      "links_created": 5,
+      "total_clicks": 23
+    }
+  ],
+  "topLinks": [
+    {
+      "shortCode": "abc123",
+      "originalUrl": "https://example.com",
+      "clicks": 42
+    }
+  ],
+  "referrerStats": [
+    {
+      "browser": "Chrome",
+      "count": 150
+    }
+  ],
+  "countryStats": [
+    {
+      "country": "Germany",
+      "count": 89
+    }
+  ]
+}
+```
+
+#### Get System Information
+```bash
+GET /api/admin/system
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "uptime": 3600000,
+  "memoryUsage": {
+    "used": 123456789,
+    "total": 987654321
+  },
+  "diskUsage": {
+    "used": 1234567890,
+    "total": 9876543210
+  },
+  "dbSize": 1048576,
+  "activeConnections": 10,
+  "version": "1.0.0"
+}
+```
+
+#### Get Logs
+```bash
+GET /api/admin/logs?date=2025-07-21
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+[
+  {
+    "timestamp": "2025-07-21T21:50:00.000Z",
+    "level": "info",
+    "message": "GET /api/stats - 200 (2ms)",
+    "method": "GET",
+    "url": "/api/stats",
+    "ip": "127.0.0.1"
+  }
+]
+```
+
+#### Export Data
+```bash
+GET /api/admin/export/links
+GET /api/admin/export/analytics
+Authorization: Bearer <token>
+```
+
+Returns CSV formatted data for download.
+
+#### Database Management
+```bash
+GET /api/admin/databases
+GET /api/admin/databases/:id
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "id": "main",
+  "name": "Main Database",
+  "size": 1048576,
+  "tables": [
+    {
+      "name": "short_urls",
+      "records": 1234,
+      "size": 524288
+    }
+  ]
+}
+```
+
+### Rate Limiting
+
+- **Public endpoints**: 1 request per minute per IP
+- **Admin endpoints**: 100 requests per minute per token
+- **Static files**: No limits
+
+### Error Responses
+
+All endpoints return standardized error responses:
+
+```json
+{
+  "error": "Error message",
+  "code": "ERROR_CODE",
+  "timestamp": "2025-07-21T21:50:00.000Z"
+}
+```
+
+**Common Error Codes:**
+- `400 Bad Request`: Invalid input data
+- `401 Unauthorized`: Missing or invalid admin token
+- `404 Not Found`: Resource not found
+- `429 Too Many Requests`: Rate limit exceeded
+- `500 Internal Server Error`: Server error
+
 ## 🤝 Contributing
 
 Feel free to submit issues and pull requests!

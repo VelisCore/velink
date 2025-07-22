@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "start:prod": "cross-env NODE_ENV=production node index.js",
+    "start:test": "cross-env NODE_ENV=test node index.js",
     "test": "echo \"Server tests not yet implemented\" && exit 0"
   },
   "dependencies": {
@@ -20,6 +22,7 @@
     "sqlite3": "^5.1.6"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.0.2"
   }
 }

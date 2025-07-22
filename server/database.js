@@ -997,10 +997,10 @@ class Database {
     });
   }
 
-  deleteLink(id) {
+  deleteLink(shortCode) {
     return new Promise((resolve, reject) => {
-      const sql = 'DELETE FROM short_urls WHERE id = ?';
-      this.db.run(sql, [id], function(err) {
+      const sql = 'DELETE FROM short_urls WHERE short_code = ?';
+      this.db.run(sql, [shortCode], function(err) {
         if (err) {
           reject(err);
         } else {
@@ -1010,18 +1010,184 @@ class Database {
     });
   }
 
-  toggleLinkStatus(id) {
+  findById(id) {
     return new Promise((resolve, reject) => {
-      // Since we don't have an isActive column yet, we'll just update the description
-      // In a real implementation, you'd add an isActive column
-      const sql = 'UPDATE short_urls SET description = COALESCE(description, "") WHERE id = ?';
-      this.db.run(sql, [id], function(err) {
+      const sql = 'SELECT * FROM short_urls WHERE id = ?';
+      this.db.get(sql, [id], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row);
+        }
+      });
+    });
+  }
+
+  toggleLinkStatus(shortCode) {
+    return new Promise((resolve, reject) => {
+      const sql = 'UPDATE short_urls SET is_active = NOT is_active WHERE short_code = ?';
+      this.db.run(sql, [shortCode], function(err) {
         if (err) {
           reject(err);
         } else {
           resolve(this.changes > 0);
         }
       });
+    });
+  }
+
+  updateLinkDescription(shortCode, description) {
+    return new Promise((resolve, reject) => {
+      const sql = 'UPDATE short_urls SET description = ? WHERE short_code = ?';
+      this.db.run(sql, [description || '', shortCode], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this.changes > 0);
+        }
+      });
+    });
+  }
+
+  getAllLinks() {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT 
+          id,
+          short_code,
+          original_url,
+          clicks,
+          created_at,
+          expires_at,
+          description,
+          is_active,
+          last_accessed as last_clicked,
+          custom_options
+        FROM short_urls 
+        ORDER BY created_at DESC
+      `;
+      this.db.all(sql, [], (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  }
+
+  getStats() {
+    return new Promise((resolve, reject) => {
+      const queries = [
+        'SELECT COUNT(*) as totalLinks FROM short_urls',
+        'SELECT SUM(clicks) as totalClicks FROM short_urls',
+        'SELECT COUNT(*) as linksToday FROM short_urls WHERE date(created_at) = date("now")',
+        'SELECT SUM(clicks) as clicksToday FROM clicks WHERE date(clicked_at) = date("now")'
+      ];
+
+      Promise.all(queries.map(query => 
+        new Promise((res, rej) => {
+          this.db.get(query, [], (err, row) => {
+            if (err) rej(err);
+            else res(row);
+          });
+        })
+      )).then(results => {
+        resolve({
+          totalLinks: results[0].totalLinks || 0,
+          totalClicks: results[1].totalClicks || 0,
+          linksToday: results[2].linksToday || 0,
+          clicksToday: results[3].clicksToday || 0,
+          topLinks: [],
+          recentActivity: []
+        });
+      }).catch(reject);
+    });
+  }
+
+  getAnalytics() {
+    return new Promise((resolve, reject) => {
+      const queries = {
+        totalLinks: 'SELECT COUNT(*) as count FROM short_urls',
+        totalClicks: 'SELECT SUM(clicks) as count FROM short_urls',
+        activeLinks: 'SELECT COUNT(*) as count FROM short_urls WHERE is_active = 1',
+        linksToday: 'SELECT COUNT(*) as count FROM short_urls WHERE date(created_at) = date("now")',
+        topLinks: `
+          SELECT short_code as shortCode, original_url as originalUrl, clicks 
+          FROM short_urls 
+          ORDER BY clicks DESC 
+          LIMIT 10
+        `,
+        clicksByDay: `
+          SELECT 
+            date(created_at) as date,
+            COUNT(*) as links_created,
+            SUM(clicks) as total_clicks
+          FROM short_urls 
+          WHERE created_at >= date('now', '-30 days')
+          GROUP BY date(created_at)
+          ORDER BY date(created_at) DESC
+        `,
+        referrerStats: `
+          SELECT 
+            CASE 
+              WHEN user_agent LIKE '%Chrome%' THEN 'Chrome'
+              WHEN user_agent LIKE '%Firefox%' THEN 'Firefox'
+              WHEN user_agent LIKE '%Safari%' THEN 'Safari'
+              WHEN user_agent LIKE '%Edge%' THEN 'Edge'
+              ELSE 'Other'
+            END as browser,
+            COUNT(*) as count
+          FROM clicks 
+          GROUP BY browser
+          ORDER BY count DESC
+        `,
+        countryStats: `
+          SELECT 'Unknown' as country, COUNT(*) as count
+          FROM clicks
+          GROUP BY country
+          ORDER BY count DESC
+          LIMIT 10
+        `
+      };
+
+      const executeQueries = async () => {
+        const results = {};
+        
+        for (const [key, query] of Object.entries(queries)) {
+          try {
+            if (key === 'topLinks' || key === 'clicksByDay' || key === 'referrerStats' || key === 'countryStats') {
+              results[key] = await new Promise((res, rej) => {
+                this.db.all(query, [], (err, rows) => {
+                  if (err) rej(err);
+                  else res(rows || []);
+                });
+              });
+            } else {
+              const result = await new Promise((res, rej) => {
+                this.db.get(query, [], (err, row) => {
+                  if (err) rej(err);
+                  else res(row);
+                });
+              });
+              results[key] = result?.count || 0;
+            }
+          } catch (error) {
+            console.error(`Error executing query ${key}:`, error);
+            if (key === 'topLinks' || key === 'clicksByDay' || key === 'referrerStats' || key === 'countryStats') {
+              results[key] = [];
+            } else {
+              results[key] = 0;
+            }
+          }
+        }
+        
+        return results;
+      };
+
+      executeQueries()
+        .then(resolve)
+        .catch(reject);
     });
   }
 

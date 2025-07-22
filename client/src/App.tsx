@@ -13,7 +13,7 @@ import Impressum from './components/legal/Impressum';
 import ApiDocumentation from './components/documentation/NewApiDocumentation';
 import LinkAnalytics from './components/analytics/LinkAnalytics';
 import CookieNotice from './components/CookieNotice';
-import AdminPanel from './components/AdvancedAdminPanel';
+import AdminPanel from './components/CleanAdminPanel';
 import PrivacyGate from './components/PrivacyGate';
 import './App.css';
 

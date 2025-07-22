@@ -1,5 +1,5 @@
 // Load environment variables
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 
 const express = require('express');
 const cors = require('cors');
@@ -18,6 +18,83 @@ const { generateShortCode, isValidUrl } = require('./utils');
 
 // Set timezone to German/Berlin
 process.env.TZ = 'Europe/Berlin';
+
+// Logging system
+const logLevels = ['debug', 'info', 'warn', 'error'];
+const logs = [];
+const MAX_LOGS_IN_MEMORY = 10000;
+const LOG_RETENTION_DAYS = 7;
+
+const log = (level, message, metadata = {}) => {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    ...metadata
+  };
+  
+  // Add to in-memory logs
+  logs.unshift(logEntry);
+  if (logs.length > MAX_LOGS_IN_MEMORY) {
+    logs.pop();
+  }
+  
+  // Write to file
+  const logDir = path.join(__dirname, 'logs');
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+  }
+  
+  const today = new Date().toISOString().split('T')[0];
+  const logFile = path.join(logDir, `${today}.log`);
+  const logLine = `[${logEntry.timestamp}] ${level.toUpperCase()}: ${message}${metadata.ip ? ` (${metadata.ip})` : ''}\n`;
+  
+  fs.appendFileSync(logFile, logLine);
+  
+  // Console output
+  console.log(logLine.trim());
+  
+  // Emit to SSE clients
+  if (sseClients.length > 0) {
+    const sseData = `data: ${JSON.stringify(logEntry)}\n\n`;
+    sseClients.forEach(client => {
+      try {
+        client.write(sseData);
+      } catch (error) {
+        // Remove dead clients
+        const index = sseClients.indexOf(client);
+        if (index > -1) sseClients.splice(index, 1);
+      }
+    });
+  }
+};
+
+// SSE clients for live logs
+const sseClients = [];
+
+// Clean old logs daily
+const cleanOldLogs = () => {
+  const logDir = path.join(__dirname, 'logs');
+  if (!fs.existsSync(logDir)) return;
+  
+  const files = fs.readdirSync(logDir);
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - LOG_RETENTION_DAYS);
+  
+  files.forEach(file => {
+    const filePath = path.join(logDir, file);
+    const fileDate = new Date(file.replace('.log', ''));
+    
+    if (fileDate < cutoffDate) {
+      fs.unlinkSync(filePath);
+      log('info', `Deleted old log file: ${file}`);
+    }
+  });
+};
+
+// Clean logs daily at midnight
+setInterval(cleanOldLogs, 24 * 60 * 60 * 1000);
+cleanOldLogs(); // Clean on startup
 
 // Privacy and maintenance middleware
 const checkPrivacyAndMaintenance = (req, res, next) => {
@@ -116,6 +193,27 @@ const generalLimiter = rateLimit({
 app.use(checkPrivacyAndMaintenance);
 
 app.use(generalLimiter);
+
+// Logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const logLevel = res.statusCode >= 400 ? 'error' : res.statusCode >= 300 ? 'warn' : 'info';
+    
+    log(logLevel, `${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`, {
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration,
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('User-Agent')
+    });
+  });
+  
+  next();
+});
 
 // Password check endpoint for private mode
 app.post('/api/check-password', (req, res) => {
@@ -305,7 +403,12 @@ console.log('🔑 Admin token loaded:', ADMIN_TOKEN ? 'Yes (length: ' + ADMIN_TO
 // Admin middleware to verify token
 const verifyAdminToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  let token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  
+  // For EventSource requests, also check query parameter
+  if (!token && req.query.token) {
+    token = req.query.token;
+  }
 
   if (!token || token !== ADMIN_TOKEN) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -505,6 +608,333 @@ app.get('/api/admin/export/:type', verifyAdminToken, async (req, res) => {
   } catch (error) {
     console.error('Error exporting data:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin endpoint: Get logs
+app.get('/api/admin/logs', verifyAdminToken, async (req, res) => {
+  try {
+    const { date } = req.query;
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    
+    const logFile = path.join(__dirname, 'logs', `${targetDate}.log`);
+    
+    if (fs.existsSync(logFile)) {
+      const logContent = fs.readFileSync(logFile, 'utf8');
+      const logLines = logContent.split('\n').filter(line => line.trim());
+      
+      const parsedLogs = logLines.map(line => {
+        const match = line.match(/\[(.*?)\] (\w+): (.*?)(?:\s\((.*?)\))?$/);
+        if (match) {
+          return {
+            timestamp: match[1],
+            level: match[2].toLowerCase(),
+            message: match[3],
+            ip: match[4] || null
+          };
+        }
+        return {
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: line,
+          ip: null
+        };
+      });
+      
+      res.json(parsedLogs);
+    } else {
+      res.json([]);
+    }
+  } catch (error) {
+    log('error', `Error loading logs: ${error.message}`);
+    res.status(500).json({ error: 'Failed to load logs' });
+  }
+});
+
+// Admin endpoint: Download logs
+app.get('/api/admin/logs/download', verifyAdminToken, async (req, res) => {
+  try {
+    const { date } = req.query;
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    
+    const logFile = path.join(__dirname, 'logs', `${targetDate}.log`);
+    
+    if (fs.existsSync(logFile)) {
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="velink-logs-${targetDate}.log"`);
+      res.sendFile(logFile);
+    } else {
+      res.status(404).json({ error: 'Log file not found' });
+    }
+  } catch (error) {
+    log('error', `Error downloading logs: ${error.message}`);
+    res.status(500).json({ error: 'Failed to download logs' });
+  }
+});
+
+// Admin endpoint: Live logs stream
+app.get('/api/admin/logs/stream', verifyAdminToken, (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+
+  sseClients.push(res);
+  
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({
+    timestamp: new Date().toISOString(),
+    level: 'info',
+    message: 'Live log streaming started'
+  })}\n\n`);
+
+  // Clean up on disconnect
+  req.on('close', () => {
+    const index = sseClients.indexOf(res);
+    if (index > -1) sseClients.splice(index, 1);
+  });
+});
+
+// Admin endpoint: Get databases info
+app.get('/api/admin/databases', verifyAdminToken, async (req, res) => {
+  try {
+    const databases = [];
+    
+    // Main database info
+    const dbPath = path.join(__dirname, 'velink.db');
+    if (fs.existsSync(dbPath)) {
+      const stats = fs.statSync(dbPath);
+      const allLinks = await db.getAllLinks();
+      
+      databases.push({
+        id: 'main',
+        name: 'Velink Main Database',
+        size: stats.size,
+        tables: [
+          {
+            name: 'links',
+            records: allLinks.length,
+            size: Math.round(stats.size * 0.8) // Estimate
+          },
+          {
+            name: 'analytics',
+            records: allLinks.reduce((sum, link) => sum + link.clicks, 0),
+            size: Math.round(stats.size * 0.2) // Estimate
+          }
+        ],
+        lastModified: stats.mtime.toISOString()
+      });
+    }
+    
+    // Check for log databases
+    const logDir = path.join(__dirname, 'logs');
+    if (fs.existsSync(logDir)) {
+      const logFiles = fs.readdirSync(logDir).filter(f => f.endsWith('.log'));
+      
+      let totalLogSize = 0;
+      let totalLogEntries = 0;
+      
+      logFiles.forEach(file => {
+        const filePath = path.join(logDir, file);
+        const fileStats = fs.statSync(filePath);
+        totalLogSize += fileStats.size;
+        
+        // Estimate log entries (rough calculation)
+        const content = fs.readFileSync(filePath, 'utf8');
+        const lines = content.split('\n').filter(line => line.trim());
+        totalLogEntries += lines.length;
+      });
+      
+      if (totalLogSize > 0) {
+        databases.push({
+          id: 'logs',
+          name: 'System Logs',
+          size: totalLogSize,
+          tables: [
+            {
+              name: 'daily_logs',
+              records: totalLogEntries,
+              size: totalLogSize
+            }
+          ],
+          lastModified: new Date().toISOString()
+        });
+      }
+    }
+    
+    res.json(databases);
+  } catch (error) {
+    log('error', `Error loading databases: ${error.message}`);
+    res.status(500).json({ error: 'Failed to load databases' });
+  }
+});
+
+// Admin endpoint: Get database content
+app.get('/api/admin/databases/:id', verifyAdminToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (id === 'main') {
+      const allLinks = await db.getAllLinks();
+      const analytics = await db.getAnalytics();
+      
+      res.json({
+        tables: [
+          {
+            name: 'links',
+            records: allLinks.length,
+            size: JSON.stringify(allLinks).length
+          },
+          {
+            name: 'analytics',
+            records: analytics.clicksByDay?.length || 0,
+            size: JSON.stringify(analytics).length
+          }
+        ],
+        sampleData: {
+          recentLinks: allLinks.slice(0, 5).map(link => ({
+            shortCode: link.shortCode,
+            originalUrl: link.originalUrl.substring(0, 50) + '...',
+            clicks: link.clicks,
+            createdAt: link.createdAt
+          })),
+          analytics: {
+            totalClicks: analytics.clicksByDay?.reduce((sum, day) => sum + day.clicks, 0) || 0,
+            topReferrers: analytics.topReferrers?.slice(0, 3) || []
+          }
+        }
+      });
+    } else if (id === 'logs') {
+      const logDir = path.join(__dirname, 'logs');
+      const logFiles = fs.existsSync(logDir) ? fs.readdirSync(logDir).filter(f => f.endsWith('.log')) : [];
+      
+      let sampleLogs = [];
+      if (logFiles.length > 0) {
+        const latestLogFile = path.join(logDir, logFiles[logFiles.length - 1]);
+        const content = fs.readFileSync(latestLogFile, 'utf8');
+        const lines = content.split('\n').filter(line => line.trim()).slice(0, 10);
+        
+        sampleLogs = lines.map(line => {
+          const match = line.match(/\[(.*?)\] (\w+): (.*)/);
+          return match ? {
+            timestamp: match[1],
+            level: match[2],
+            message: match[3].substring(0, 100) + '...'
+          } : line.substring(0, 100) + '...';
+        });
+      }
+      
+      res.json({
+        tables: [
+          {
+            name: 'daily_logs',
+            records: logs.length,
+            size: JSON.stringify(logs).length
+          }
+        ],
+        sampleData: {
+          recentLogs: sampleLogs,
+          logFiles: logFiles.map(f => ({
+            filename: f,
+            date: f.replace('.log', '')
+          }))
+        }
+      });
+    } else {
+      res.status(404).json({ error: 'Database not found' });
+    }
+  } catch (error) {
+    log('error', `Error loading database content: ${error.message}`);
+    res.status(500).json({ error: 'Failed to load database content' });
+  }
+});
+
+// Admin endpoint: Get privacy settings
+app.get('/api/admin/privacy-settings', verifyAdminToken, (req, res) => {
+  try {
+    const privacySettings = {
+      isPrivate: process.env.WEBSITE_PRIVATE === 'true',
+      password: process.env.WEBSITE_PASSWORD || '',
+      isMaintenanceMode: process.env.MAINTENANCE_MODE === 'true',
+      maintenanceMessage: process.env.MAINTENANCE_MESSAGE || 'Website is temporarily under maintenance. Please check back later.'
+    };
+    
+    res.json(privacySettings);
+  } catch (error) {
+    log('error', `Error getting privacy settings: ${error.message}`);
+    res.status(500).json({ error: 'Failed to get privacy settings' });
+  }
+});
+
+// Admin endpoint: Update privacy settings
+app.post('/api/admin/privacy-settings', verifyAdminToken, (req, res) => {
+  try {
+    const { isPrivate, password, isMaintenanceMode, maintenanceMessage } = req.body;
+    
+    // Update environment variables (note: this won't persist across restarts without updating .env file)
+    if (typeof isPrivate === 'boolean') {
+      process.env.WEBSITE_PRIVATE = isPrivate.toString();
+    }
+    
+    if (typeof password === 'string') {
+      process.env.WEBSITE_PASSWORD = password;
+    }
+    
+    if (typeof isMaintenanceMode === 'boolean') {
+      process.env.MAINTENANCE_MODE = isMaintenanceMode.toString();
+    }
+    
+    if (typeof maintenanceMessage === 'string') {
+      process.env.MAINTENANCE_MESSAGE = maintenanceMessage;
+    }
+    
+    // Write to .env file to persist changes
+    const envPath = path.join(__dirname, '.env');
+    let envContent = '';
+    
+    if (fs.existsSync(envPath)) {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    }
+    
+    // Update or add environment variables in .env file
+    const updateEnvVar = (key, value) => {
+      const regex = new RegExp(`^${key}=.*$`, 'm');
+      const line = `${key}=${value}`;
+      
+      if (regex.test(envContent)) {
+        envContent = envContent.replace(regex, line);
+      } else {
+        envContent += `\n${line}`;
+      }
+    };
+    
+    if (typeof isPrivate === 'boolean') {
+      updateEnvVar('WEBSITE_PRIVATE', isPrivate);
+    }
+    
+    if (typeof password === 'string') {
+      updateEnvVar('WEBSITE_PASSWORD', password);
+    }
+    
+    if (typeof isMaintenanceMode === 'boolean') {
+      updateEnvVar('MAINTENANCE_MODE', isMaintenanceMode);
+    }
+    
+    if (typeof maintenanceMessage === 'string') {
+      updateEnvVar('MAINTENANCE_MESSAGE', maintenanceMessage);
+    }
+    
+    fs.writeFileSync(envPath, envContent.trim() + '\n');
+    
+    log('info', `Privacy settings updated by admin`);
+    res.json({ success: true, message: 'Privacy settings updated successfully' });
+    
+  } catch (error) {
+    log('error', `Error updating privacy settings: ${error.message}`);
+    res.status(500).json({ error: 'Failed to update privacy settings' });
   }
 });
 
@@ -775,6 +1205,25 @@ app.post('/api/gdpr/export-data', gdprLimiter, async (req, res) => {
   }
 });
 
+// Track click endpoint for confirmation page
+app.post('/api/track/:shortCode', async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+    const urlData = await db.findByShortCode(shortCode);
+    
+    if (!urlData) {
+      return res.status(404).json({ error: 'Short code not found' });
+    }
+
+    // Increment click count
+    await db.incrementClicks(shortCode);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error tracking click:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Redirect short URL
 app.get('/:shortCode', async (req, res) => {
   try {
@@ -848,54 +1297,92 @@ app.get('/:shortCode', async (req, res) => {
       `);
     }
 
-    // Increment click count
-    await db.incrementClicks(shortCode);
+    // Check for confirmation parameter
+    const showConfirmation = req.query.confirm === 'true';
+    
+    if (showConfirmation) {
+      // Show confirmation page
+      res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Confirm Redirect - Velink</title>
+          <meta name="description" content="Confirm redirect to ${urlData.original_url}">
+          <meta name="robots" content="noindex, nofollow">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+                   text-align: center; padding: 50px; background: #f8fafc; }
+            .container { max-width: 600px; margin: 0 auto; background: white; 
+                        border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            h1 { color: #1e293b; margin-bottom: 20px; }
+            p { color: #64748b; margin-bottom: 20px; }
+            .url { background: #f1f5f9; padding: 15px; border-radius: 8px; 
+                   word-break: break-all; margin: 20px 0; font-family: monospace; }
+            .buttons { display: flex; gap: 15px; justify-content: center; margin-top: 30px; }
+            .btn { padding: 12px 24px; border-radius: 8px; border: none; 
+                   font-weight: 600; cursor: pointer; transition: all 0.2s; }
+            .btn-primary { background: #0ea5e9; color: white; }
+            .btn-primary:hover { background: #0284c7; }
+            .btn-secondary { background: #e2e8f0; color: #64748b; }
+            .btn-secondary:hover { background: #cbd5e1; }
+            .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; 
+                      border-radius: 8px; margin: 20px 0; color: #92400e; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🔗 Redirect Confirmation</h1>
+            <p>You're about to visit an external website. This link will take you to:</p>
+            <div class="url">${urlData.original_url}</div>
+            <div class="warning">
+              <strong>Privacy Notice:</strong> By continuing, your visit will be logged for analytics purposes. 
+              This helps us understand link usage and improve our service.
+            </div>
+            <div class="buttons">
+              <button class="btn btn-primary" onclick="confirmRedirect()">
+                Continue to Website
+              </button>
+              <button class="btn btn-secondary" onclick="goBack()">
+                Go Back
+              </button>
+            </div>
+            <p style="margin-top: 30px; font-size: 14px; color: #9ca3af;">
+              Short link: ${req.protocol}://${req.get('host')}/${shortCode}
+            </p>
+          </div>
+          <script>
+            function confirmRedirect() {
+              // Increment click count before redirect
+              fetch('/api/track/${shortCode}', { method: 'POST' })
+                .then(() => {
+                  window.location.href = '${urlData.original_url}';
+                })
+                .catch(() => {
+                  // Redirect anyway if tracking fails
+                  window.location.href = '${urlData.original_url}';
+                });
+            }
+            
+            function goBack() {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                window.location.href = '/';
+              }
+            }
+          </script>
+        </body>
+        </html>
+      `);
+    } else {
+      // Increment click count
+      await db.incrementClicks(shortCode);
 
-    // SEO-friendly redirect page
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Redirecting... - Velink</title>
-        <meta name="description" content="Redirecting to ${urlData.original_url}">
-        <meta name="robots" content="noindex, nofollow">
-        <meta http-equiv="refresh" content="0;url=${urlData.original_url}">
-        <link rel="canonical" href="${urlData.original_url}">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-                 text-align: center; padding: 50px; background: #f8fafc; }
-          .container { max-width: 500px; margin: 0 auto; background: white; 
-                      border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-          .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; 
-                    border-top: 4px solid #0ea5e9; border-radius: 50%; 
-                    animation: spin 1s linear infinite; margin: 20px auto; }
-          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-          h1 { color: #1e293b; margin-bottom: 20px; }
-          p { color: #64748b; margin-bottom: 20px; }
-          a { color: #0ea5e9; text-decoration: none; word-break: break-all; }
-          a:hover { text-decoration: underline; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="spinner"></div>
-          <h1>🔗 Redirecting...</h1>
-          <p>You're being redirected to:</p>
-          <a href="${urlData.original_url}" target="_blank">${urlData.original_url}</a>
-          <p style="margin-top: 30px; font-size: 14px;">
-            If you're not redirected automatically, <a href="${urlData.original_url}">click here</a>
-          </p>
-        </div>
-        <script>
-          setTimeout(() => {
-            window.location.href = '${urlData.original_url}';
-          }, 1000);
-        </script>
-      </body>
-      </html>
-    `);
+      // Direct redirect (fast mode)
+      res.redirect(302, urlData.original_url);
+    }
 
   } catch (error) {
     console.error('Error redirecting:', error);
@@ -972,6 +1459,425 @@ app.get('/sitemap.xml', (req, res) => {
 setInterval(() => {
   sitemapGenerator.generateSitemap();
 }, 60 * 60 * 1000);
+
+// Admin authentication middleware
+const adminAuth = (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const adminToken = process.env.ADMIN_TOKEN || 'admin';
+  
+  if (!token || token !== adminToken) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  next();
+};
+
+// Admin token verification endpoint
+app.post('/api/admin/verify', (req, res) => {
+  const { token } = req.body;
+  const adminToken = process.env.ADMIN_TOKEN || 'admin';
+  
+  if (token === adminToken) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// Admin - Get all links
+app.get('/api/admin/links', adminAuth, async (req, res) => {
+  try {
+    const links = await db.getAllLinks();
+    const transformedLinks = links.map(link => ({
+      _id: link.id,
+      shortCode: link.short_code,
+      originalUrl: link.original_url,
+      createdAt: link.created_at,
+      clicks: link.clicks || 0,
+      lastClicked: link.last_clicked,
+      isActive: link.is_active !== 0,
+      description: link.description,
+      expiresAt: link.expires_at,
+      password: link.custom_options ? JSON.parse(link.custom_options).password : null
+    }));
+    res.json(transformedLinks);
+  } catch (error) {
+    log('error', 'Error fetching admin links', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Get stats
+app.get('/api/admin/stats', adminAuth, async (req, res) => {
+  try {
+    const stats = await db.getStats();
+    res.json(stats);
+  } catch (error) {
+    log('error', 'Error fetching admin stats', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Get system info
+app.get('/api/admin/system', adminAuth, (req, res) => {
+  try {
+    const stats = process.memoryUsage();
+    const systemInfo = {
+      uptime: process.uptime(),
+      memoryUsage: {
+        used: stats.heapUsed,
+        total: stats.heapTotal
+      },
+      diskUsage: {
+        used: 0, // Would need disk usage library
+        total: 1000000000 // 1GB placeholder
+      },
+      dbSize: fs.existsSync(path.join(__dirname, 'velink.db')) ? 
+        fs.statSync(path.join(__dirname, 'velink.db')).size : 0,
+      activeConnections: 1, // Placeholder
+      version: require('../package.json').version || '1.0.0'
+    };
+    res.json(systemInfo);
+  } catch (error) {
+    log('error', 'Error fetching system info', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Get analytics
+app.get('/api/admin/analytics', adminAuth, async (req, res) => {
+  try {
+    const analytics = await db.getAnalytics();
+    res.json(analytics);
+  } catch (error) {
+    log('error', 'Error fetching analytics', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Get logs
+app.get('/api/admin/logs', adminAuth, (req, res) => {
+  try {
+    const { date } = req.query;
+    
+    if (date) {
+      // Read logs from file for specific date
+      const logFile = path.join(__dirname, 'logs', `${date}.log`);
+      if (fs.existsSync(logFile)) {
+        const logContent = fs.readFileSync(logFile, 'utf8');
+        const logEntries = logContent.split('\n')
+          .filter(line => line.trim())
+          .map(line => {
+            const match = line.match(/\[(.*?)\] (.*?): (.*)/);
+            if (match) {
+              return {
+                timestamp: match[1],
+                level: match[2].toLowerCase(),
+                message: match[3]
+              };
+            }
+            return null;
+          })
+          .filter(entry => entry)
+          .reverse();
+        
+        res.json(logEntries);
+      } else {
+        res.json([]);
+      }
+    } else {
+      // Return recent in-memory logs
+      res.json(logs.slice(0, 1000));
+    }
+  } catch (error) {
+    log('error', 'Error fetching logs', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Live log streaming
+app.get('/api/admin/logs/stream', (req, res) => {
+  const token = req.query.token;
+  const adminToken = process.env.ADMIN_TOKEN || 'admin';
+  
+  if (!token || token !== adminToken) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+  
+  // Send existing logs first
+  logs.slice(0, 50).forEach(logEntry => {
+    res.write(`data: ${JSON.stringify(logEntry)}\n\n`);
+  });
+  
+  // Set up log streaming (simplified for this example)
+  const interval = setInterval(() => {
+    if (logs.length > 0) {
+      const latestLog = logs[0];
+      res.write(`data: ${JSON.stringify(latestLog)}\n\n`);
+    }
+  }, 1000);
+  
+  req.on('close', () => {
+    clearInterval(interval);
+  });
+});
+
+// Admin - Download logs
+app.get('/api/admin/logs/download', adminAuth, (req, res) => {
+  try {
+    const { date } = req.query;
+    const logFile = path.join(__dirname, 'logs', `${date}.log`);
+    
+    if (fs.existsSync(logFile)) {
+      res.download(logFile, `velink-logs-${date}.txt`);
+    } else {
+      res.status(404).json({ error: 'Log file not found' });
+    }
+  } catch (error) {
+    log('error', 'Error downloading logs', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Get databases
+app.get('/api/admin/databases', adminAuth, (req, res) => {
+  try {
+    const databases = [{
+      id: 'main',
+      name: 'Velink Database',
+      size: fs.existsSync(path.join(__dirname, 'velink.db')) ? 
+        fs.statSync(path.join(__dirname, 'velink.db')).size : 0,
+      tables: [
+        { name: 'urls', records: 0, size: 0 },
+        { name: 'clicks', records: 0, size: 0 }
+      ],
+      lastModified: fs.existsSync(path.join(__dirname, 'velink.db')) ? 
+        fs.statSync(path.join(__dirname, 'velink.db')).mtime.toISOString() : new Date().toISOString()
+    }];
+    
+    res.json(databases);
+  } catch (error) {
+    log('error', 'Error fetching databases', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Get database content
+app.get('/api/admin/databases/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (id === 'main') {
+      const links = await db.getAllLinks();
+      res.json({
+        name: 'Velink Database',
+        tables: {
+          urls: links.slice(0, 50), // Limit for performance
+          meta: {
+            total_links: links.length,
+            total_clicks: links.reduce((sum, link) => sum + (link.clicks || 0), 0)
+          }
+        }
+      });
+    } else {
+      res.status(404).json({ error: 'Database not found' });
+    }
+  } catch (error) {
+    log('error', 'Error fetching database content', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Delete link
+app.delete('/api/admin/links/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find link by ID first
+    const link = await db.findById(id);
+    if (!link) {
+      return res.status(404).json({ error: 'Link not found' });
+    }
+    
+    await db.deleteLink(link.short_code);
+    log('info', `Admin deleted link: ${link.short_code}`);
+    res.json({ success: true });
+  } catch (error) {
+    log('error', 'Error deleting link', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Bulk delete links
+app.delete('/api/admin/links/bulk', adminAuth, async (req, res) => {
+  try {
+    const { linkIds } = req.body;
+    
+    for (const id of linkIds) {
+      const link = await db.findById(id);
+      if (link) {
+        await db.deleteLink(link.short_code);
+      }
+    }
+    
+    log('info', `Admin bulk deleted ${linkIds.length} links`);
+    res.json({ success: true });
+  } catch (error) {
+    log('error', 'Error bulk deleting links', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Toggle link status
+app.patch('/api/admin/links/:id/toggle', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const link = await db.findById(id);
+    if (!link) {
+      return res.status(404).json({ error: 'Link not found' });
+    }
+    
+    await db.toggleLinkStatus(link.short_code);
+    log('info', `Admin toggled link status: ${link.short_code}`);
+    res.json({ success: true });
+  } catch (error) {
+    log('error', 'Error toggling link status', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Update link
+app.patch('/api/admin/links/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { description } = req.body;
+    
+    const link = await db.findById(id);
+    if (!link) {
+      return res.status(404).json({ error: 'Link not found' });
+    }
+    
+    await db.updateLinkDescription(link.short_code, description);
+    log('info', `Admin updated link description: ${link.short_code}`);
+    res.json({ success: true });
+  } catch (error) {
+    log('error', 'Error updating link', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin - Export data
+app.get('/api/admin/export/:type', adminAuth, async (req, res) => {
+  try {
+    const { type } = req.params;
+    
+    if (type === 'links') {
+      const links = await db.getAllLinks();
+      const csv = 'Short Code,Original URL,Created At,Clicks,Last Clicked\n' +
+        links.map(link => 
+          `"${link.short_code}","${link.original_url}","${link.created_at}","${link.clicks || 0}","${link.last_clicked || ''}"`
+        ).join('\n');
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="velink-links.csv"');
+      res.send(csv);
+    } else if (type === 'analytics') {
+      const analytics = await db.getAnalytics();
+      const csv = 'Date,Links Created,Total Clicks\n' +
+        (analytics.clicksByDay || []).map(day => 
+          `"${day.date}","${day.links_created}","${day.total_clicks}"`
+        ).join('\n');
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="velink-analytics.csv"');
+      res.send(csv);
+    } else {
+      res.status(400).json({ error: 'Invalid export type' });
+    }
+  } catch (error) {
+    log('error', 'Error exporting data', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Privacy settings endpoints
+app.get('/api/admin/privacy-settings', adminAuth, (req, res) => {
+  try {
+    const envPath = path.join(__dirname, '..', '.env');
+    const settings = {
+      isPrivate: process.env.WEBSITE_PRIVATE === 'true',
+      password: process.env.WEBSITE_PASSWORD || '',
+      isMaintenanceMode: process.env.MAINTENANCE_MODE === 'true',
+      maintenanceMessage: process.env.MAINTENANCE_MESSAGE || 'Website is under maintenance'
+    };
+    res.json(settings);
+  } catch (error) {
+    log('error', 'Error fetching privacy settings', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/admin/privacy-settings', adminAuth, (req, res) => {
+  try {
+    const { isPrivate, password, isMaintenanceMode, maintenanceMessage } = req.body;
+    const envPath = path.join(__dirname, '..', '.env');
+    
+    // Read current .env file
+    let envContent = '';
+    if (fs.existsSync(envPath)) {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    }
+    
+    // Update or add environment variables
+    const updateEnvVar = (content, key, value) => {
+      const regex = new RegExp(`^${key}=.*$`, 'm');
+      const line = `${key}=${value}`;
+      
+      if (regex.test(content)) {
+        return content.replace(regex, line);
+      } else {
+        return content + (content.endsWith('\n') ? '' : '\n') + line + '\n';
+      }
+    };
+    
+    if (isPrivate !== undefined) {
+      envContent = updateEnvVar(envContent, 'WEBSITE_PRIVATE', isPrivate.toString());
+      process.env.WEBSITE_PRIVATE = isPrivate.toString();
+    }
+    
+    if (password !== undefined) {
+      envContent = updateEnvVar(envContent, 'WEBSITE_PASSWORD', password);
+      process.env.WEBSITE_PASSWORD = password;
+    }
+    
+    if (isMaintenanceMode !== undefined) {
+      envContent = updateEnvVar(envContent, 'MAINTENANCE_MODE', isMaintenanceMode.toString());
+      process.env.MAINTENANCE_MODE = isMaintenanceMode.toString();
+    }
+    
+    if (maintenanceMessage !== undefined) {
+      envContent = updateEnvVar(envContent, 'MAINTENANCE_MESSAGE', maintenanceMessage);
+      process.env.MAINTENANCE_MESSAGE = maintenanceMessage;
+    }
+    
+    // Write back to .env file
+    fs.writeFileSync(envPath, envContent);
+    
+    log('info', 'Admin updated privacy settings');
+    res.json({ success: true });
+  } catch (error) {
+    log('error', 'Error updating privacy settings', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Start the server
 const startServer = () => {

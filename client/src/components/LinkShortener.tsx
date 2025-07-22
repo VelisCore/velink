@@ -253,15 +253,7 @@ const LinkShortener: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Simple Notice */}
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="text-sm text-gray-700">
-                  <p>
-                    💡 <strong>Tip:</strong> You'll get a secret code to manage your link later (delete, view stats, etc.). 
-                    We only collect basic anonymous analytics - no personal data stored.
-                  </p>
-                </div>
-              </div>
+
 
               <button
                 type="submit"

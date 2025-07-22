@@ -62,5 +62,5 @@ else
 fi
 
 echo ""
-echo "🚀 SSL setup complete! Your VeLink is ready for HTTPS."
+echo "🚀 SSL setup complete! Your Velink is ready for HTTPS."
 echo "🔗 Access your site at: https://velink.me"

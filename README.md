@@ -1,6 +1,50 @@
-# Velink - Beautiful Link Shortener 🔗
+# Velink - Beautiful Link Shortener## � Quick Start
 
-A modern, fast, and beautiful link shortening platform built with React and Node.js.
+### Development Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm run install-all
+   ```
+
+2. **Start development:**
+   ```bash
+   npm run dev
+   ```
+
+3. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+### 🐧 Ubuntu Server Deployment
+
+For production deployment on Ubuntu server:
+
+1. **Upload your VeLink files to the server**
+2. **Run the automated setup script:**
+   ```bash
+   chmod +x ubuntu-setup.sh
+   sudo ./ubuntu-setup.sh
+   ```
+
+3. **Manage your VeLink installation:**
+   ```bash
+   chmod +x velink-manage.sh
+   ./velink-manage.sh status    # Check status
+   ./velink-manage.sh logs      # View logs
+   ./velink-manage.sh restart   # Restart service
+   ```
+
+The setup script automatically:
+- ✅ Installs Node.js 20 LTS
+- ✅ Sets up PM2 process manager
+- ✅ Configures SSL with Let's Encrypt
+- ✅ Creates system service with auto-startup
+- ✅ Sets up firewall and security
+- ✅ Configures log rotation and monitoring
+
+📖 **Full Ubuntu Setup Guide**: See [UBUNTU-SETUP.md](UBUNTU-SETUP.md) fast, and beautiful link shortening platform built with React and Node.js.
 
 ## ✨ Features
 

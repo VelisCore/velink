@@ -2,14 +2,10 @@
 node_modules/
 */node_modules/
 
-# Production builds
+# Production builds (allow client/build for deployment)
 build/
 dist/
-client/build/
-
-# But keep essential source files
-!client/public/
-!client/src/
+# client/build/ - commented out to allow deployment build
 
 # Environment variables (keep .env.example)
 .env

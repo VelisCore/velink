@@ -7,12 +7,16 @@ build/
 dist/
 client/build/
 
-# Environment variables
+# Environment variables (keep .env.example)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# But include essential public files
+!client/public/
+!client/public/*
 
 # SSL Certificates (Security)
 *.key

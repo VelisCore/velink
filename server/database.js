@@ -191,6 +191,7 @@ class Database {
           SUM(clicks) as total_clicks,
           MAX(created_at) as latest_created
         FROM short_urls
+        WHERE (custom_options IS NULL OR custom_options NOT LIKE '%"isPrivate":true%')
       `;
       
       this.db.get(sql, [], (err, row) => {
@@ -210,7 +211,7 @@ class Database {
   // Get detailed statistics with enhanced analytics
   getDetailedStats() {
     return new Promise((resolve, reject) => {
-      // Get basic stats first
+      // Get basic stats first (excluding private links)
       const basicStatsSQL = `
         SELECT 
           COUNT(*) as total_links,
@@ -220,6 +221,7 @@ class Database {
           COUNT(CASE WHEN created_at >= date('now', '-24 hours') THEN 1 END) as links_today,
           AVG(clicks) as avg_clicks_per_link
         FROM short_urls
+        WHERE (custom_options IS NULL OR custom_options NOT LIKE '%"isPrivate":true%')
       `;
 
       this.db.get(basicStatsSQL, [], (err, basicStats) => {
@@ -228,7 +230,7 @@ class Database {
           return;
         }
 
-        // Get top domains
+        // Get top domains (excluding private links)
         const topDomainsSQL = `
           SELECT 
             CASE 
@@ -239,7 +241,7 @@ class Database {
             COUNT(*) as count,
             SUM(clicks) as total_clicks
           FROM short_urls 
-          WHERE domain != ''
+          WHERE domain != '' AND (custom_options IS NULL OR custom_options NOT LIKE '%"isPrivate":true%')
           GROUP BY domain 
           ORDER BY count DESC 
           LIMIT 10
@@ -251,7 +253,7 @@ class Database {
             return;
           }
 
-          // Get clicks by day for the last 30 days
+          // Get clicks by day for the last 30 days (excluding private links)
           const clicksByDaySQL = `
             SELECT 
               date(created_at) as date,
@@ -259,6 +261,7 @@ class Database {
               SUM(clicks) as total_clicks
             FROM short_urls 
             WHERE created_at >= date('now', '-30 days')
+              AND (custom_options IS NULL OR custom_options NOT LIKE '%"isPrivate":true%')
             GROUP BY date(created_at)
             ORDER BY date DESC
           `;
@@ -269,13 +272,14 @@ class Database {
               return;
             }
 
-            // Get hourly stats for today
+            // Get hourly stats for today (excluding private links)
             const hourlyStatsSQL = `
               SELECT 
                 strftime('%H', created_at) as hour,
                 COUNT(*) as links_created
               FROM short_urls 
               WHERE date(created_at) = date('now')
+                AND (custom_options IS NULL OR custom_options NOT LIKE '%"isPrivate":true%')
               GROUP BY strftime('%H', created_at)
               ORDER BY hour
             `;
@@ -979,15 +983,61 @@ class Database {
                   return;
                 }
 
-                resolve({
-                  totalLinks: stats.totalLinks || 0,
-                  totalClicks: stats.totalClicks || 0,
-                  activeLinks: stats.activeLinks || 0,
-                  linksToday: stats.linksToday || 0,
-                  clicksByDay: clicksByDay || [],
-                  topLinks: topLinks || [],
-                  referrerStats: referrerStats || [],
-                  countryStats: countryStats || []
+                // Get top domains
+                const topDomainsSQL = `
+                  SELECT 
+                    CASE 
+                      WHEN original_url LIKE 'https://www.%' THEN SUBSTR(original_url, 13, INSTR(SUBSTR(original_url, 13), '/') - 1)
+                      WHEN original_url LIKE 'http://www.%' THEN SUBSTR(original_url, 12, INSTR(SUBSTR(original_url, 12), '/') - 1)
+                      WHEN original_url LIKE 'https://%' THEN SUBSTR(original_url, 9, INSTR(SUBSTR(original_url, 9), '/') - 1)
+                      WHEN original_url LIKE 'http://%' THEN SUBSTR(original_url, 8, INSTR(SUBSTR(original_url, 8), '/') - 1)
+                      ELSE SUBSTR(original_url, 1, INSTR(original_url, '/') - 1)
+                    END as domain,
+                    COUNT(*) as count,
+                    SUM(clicks) as total_clicks
+                  FROM short_urls 
+                  WHERE original_url IS NOT NULL
+                  GROUP BY domain
+                  HAVING domain != '' AND domain NOT NULL
+                  ORDER BY total_clicks DESC, count DESC
+                  LIMIT 10
+                `;
+
+                this.db.all(topDomainsSQL, [], (err, topDomains) => {
+                  if (err) {
+                    reject(err);
+                    return;
+                  }
+
+                  // Get visitor stats (estimate based on unique IPs and clicks)
+                  const visitorStatsSQL = `
+                    SELECT 
+                      COUNT(DISTINCT ip_address) as totalVisitors,
+                      COUNT(DISTINCT CASE WHEN created_at > datetime('now', '-1 day') THEN ip_address END) as visitsToday
+                    FROM short_urls 
+                    WHERE ip_address IS NOT NULL AND ip_address != ''
+                  `;
+
+                  this.db.get(visitorStatsSQL, [], (err, visitorStats) => {
+                    if (err) {
+                      reject(err);
+                      return;
+                    }
+
+                    resolve({
+                      totalLinks: stats.totalLinks || 0,
+                      totalClicks: stats.totalClicks || 0,
+                      activeLinks: stats.activeLinks || 0,
+                      linksToday: stats.linksToday || 0,
+                      clicksByDay: clicksByDay || [],
+                      topLinks: topLinks || [],
+                      referrerStats: referrerStats || [],
+                      countryStats: countryStats || [],
+                      topDomains: topDomains || [],
+                      totalVisitors: visitorStats?.totalVisitors || 0,
+                      visitsToday: visitorStats?.visitsToday || 0
+                    });
+                  });
                 });
               });
             });
@@ -1082,7 +1132,7 @@ class Database {
         'SELECT COUNT(*) as totalLinks FROM short_urls',
         'SELECT SUM(clicks) as totalClicks FROM short_urls',
         'SELECT COUNT(*) as linksToday FROM short_urls WHERE date(created_at) = date("now")',
-        'SELECT SUM(clicks) as clicksToday FROM clicks WHERE date(clicked_at) = date("now")'
+        'SELECT COUNT(*) as clicksToday FROM clicks WHERE date(clicked_at) = date("now")'
       ];
 
       Promise.all(queries.map(query => 

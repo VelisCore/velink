@@ -26,13 +26,18 @@ const LinkShortener: React.FC = () => {
   const [expiresIn, setExpiresIn] = useState<string>('never');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [customPassword, setCustomPassword] = useState('');
-  const [customAlias, setCustomAlias] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
+  const [redirectDelay, setRedirectDelay] = useState<number>(0);
+  const [urlPreview, setUrlPreview] = useState<string>('');
 
   const isValidUrl = (string: string) => {
     try {
-      new URL(string);
-      return string.startsWith('http://') || string.startsWith('https://');
+      const url = new URL(string);
+      return (url.protocol === 'http:' || url.protocol === 'https:') && 
+             url.hostname && 
+             url.hostname.includes('.') &&
+             !url.hostname.startsWith('.') &&
+             !url.hostname.endsWith('.');
     } catch (_) {
       return false;
     }
@@ -47,7 +52,21 @@ const LinkShortener: React.FC = () => {
     }
 
     if (!isValidUrl(url)) {
-      setError('Please enter a valid URL starting with http:// or https://');
+      setError('Please enter a valid URL starting with http:// or https:// (e.g., https://example.com)');
+      return;
+    }
+
+    // Additional URL validation
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1' || 
+          urlObj.hostname.endsWith('.local') || urlObj.hostname.includes('192.168.') ||
+          urlObj.hostname.includes('10.0.') || urlObj.hostname.includes('172.16.')) {
+        setError('Local URLs cannot be shortened for security reasons');
+        return;
+      }
+    } catch (e) {
+      setError('Invalid URL format');
       return;
     }
 
@@ -66,12 +85,15 @@ const LinkShortener: React.FC = () => {
         customOptions.isPrivate = true;
       }
 
+      if (redirectDelay > 0) {
+        customOptions.redirectDelay = redirectDelay;
+      }
+
       // Prepare the request payload
       const payload = { 
         url,
         expiresIn,
-        ...(Object.keys(customOptions).length > 0 ? { customOptions } : {}),
-        ...(customAlias ? { customAlias } : {})
+        ...(Object.keys(customOptions).length > 0 ? { customOptions } : {})
       };
 
       const response = await axios.post('/api/shorten', payload);
@@ -106,9 +128,10 @@ const LinkShortener: React.FC = () => {
     setCopied(false);
     setExpiresIn('never');
     setCustomPassword('');
-    setCustomAlias('');
     setIsPrivate(false);
+    setRedirectDelay(0);
     setShowAdvancedOptions(false);
+    setUrlPreview('');
   };
 
   return (
@@ -150,12 +173,33 @@ const LinkShortener: React.FC = () => {
                     type="url"
                     id="url"
                     value={url}
-                    onChange={(e) => setUrl(e.target.value)}
+                    onChange={(e) => {
+                      setUrl(e.target.value);
+                      // Update URL preview
+                      if (e.target.value && isValidUrl(e.target.value)) {
+                        try {
+                          const urlObj = new URL(e.target.value);
+                          setUrlPreview(`${urlObj.hostname}${urlObj.pathname}`);
+                        } catch {
+                          setUrlPreview('');
+                        }
+                      } else {
+                        setUrlPreview('');
+                      }
+                    }}
                     placeholder="https://example.com/very-long-url-here"
                     className={`input-primary pl-10 ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                     disabled={isLoading}
                   />
                 </div>
+                {urlPreview && !error && (
+                  <div className="mt-2 text-sm text-gray-500 flex items-center">
+                    <span className="text-gray-400 mr-1">Preview:</span>
+                    <span className="font-mono bg-gray-50 px-2 py-1 rounded">velink.me/abc123</span>
+                    <span className="mx-2 text-gray-300">→</span>
+                    <span className="truncate">{urlPreview}</span>
+                  </div>
+                )}
                 {error && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -205,24 +249,6 @@ const LinkShortener: React.FC = () => {
                   className="space-y-4 bg-gray-50 p-4 rounded-lg"
                 >
                   <div>
-                    <label htmlFor="customAlias" className="block text-sm font-medium text-gray-700 mb-1">
-                      Custom alias (optional)
-                    </label>
-                    <input
-                      type="text"
-                      id="customAlias"
-                      value={customAlias}
-                      onChange={(e) => setCustomAlias(e.target.value)}
-                      placeholder="my-custom-link"
-                      className="input-primary"
-                      disabled={isLoading}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Leave empty to generate a random code
-                    </p>
-                  </div>
-                  
-                  <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                       Password protection (optional)
                     </label>
@@ -235,6 +261,33 @@ const LinkShortener: React.FC = () => {
                       className="input-primary"
                       disabled={isLoading}
                     />
+                    {customPassword && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        🔒 Visitors will need to enter this password before accessing the link
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="redirectDelay" className="block text-sm font-medium text-gray-700 mb-1">
+                      Redirect delay (seconds)
+                    </label>
+                    <select
+                      id="redirectDelay"
+                      value={redirectDelay}
+                      onChange={(e) => setRedirectDelay(Number(e.target.value))}
+                      className="input-primary"
+                      disabled={isLoading}
+                    >
+                      <option value={0}>Instant redirect</option>
+                      <option value={3}>3 seconds</option>
+                      <option value={5}>5 seconds</option>
+                      <option value={10}>10 seconds</option>
+                      <option value={15}>15 seconds</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Add a countdown before redirecting to the destination
+                    </p>
                   </div>
                   
                   <div className="flex items-center">
@@ -410,6 +463,9 @@ const LinkShortener: React.FC = () => {
                       )}
                       {shortenedLink.customOptions.isPrivate && (
                         <li>🔏 Private link (not shown in public stats)</li>
+                      )}
+                      {shortenedLink.customOptions.redirectDelay && shortenedLink.customOptions.redirectDelay > 0 && (
+                        <li>⏱️ {shortenedLink.customOptions.redirectDelay}s redirect delay</li>
                       )}
                     </ul>
                   </div>

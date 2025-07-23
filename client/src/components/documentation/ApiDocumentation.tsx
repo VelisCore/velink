@@ -9,30 +9,66 @@ const ApiDocumentation: React.FC = () => {
       name: 'Shorten URL',
       method: 'POST',
       endpoint: '/api/shorten',
-      description: 'Create a new shortened URL',
+      description: 'Create a new shortened URL with advanced options',
       requestBody: {
         url: 'https://example.com/very-long-url',
         expiresIn: '30d', // Optional: 1d, 7d, 30d, 365d, never
         customOptions: {
           isPrivate: true, // Optional: If true, link won't appear in public stats
-          password: 'secret' // Optional: Password protection for the link
-        },
-        customAlias: 'my-custom-link' // Optional: Custom short code
+          password: 'secret', // Optional: Password protection for the link
+          redirectDelay: 5 // Optional: Delay in seconds (0-15) before redirect
+        }
       },
       response: {
         shortUrl: 'https://velink.me/abc123',
         shortCode: 'abc123',
         originalUrl: 'https://example.com/very-long-url',
         clicks: 0,
-        createdAt: '2025-07-21T12:00:00.000Z',
-        expiresAt: '2025-08-20T12:00:00.000Z',
+        createdAt: '2025-07-23T12:00:00.000Z',
+        expiresAt: '2025-08-22T12:00:00.000Z',
         customOptions: {
           isPrivate: true,
-          password: true // Password is never returned, only a boolean indicating if set
+          password: true, // Password is never returned, only a boolean indicating if set
+          redirectDelay: 5
         }
       },
-      limits: 'Rate limited to 1 request per minute per IP address',
+      limits: 'Rate limited to 1 request per 0.5 seconds, 500 links per day per IP',
       icon: <Server className="h-6 w-6 text-primary-600" />
+    },
+    {
+      name: 'Batch Shorten URLs',
+      method: 'POST',
+      endpoint: '/api/batch-shorten',
+      description: 'Create multiple shortened URLs in a single request',
+      requestBody: {
+        urls: [
+          'https://example.com/url1',
+          'https://example.com/url2'
+        ],
+        expiresIn: '30d', // Optional: applies to all URLs
+        customOptions: {
+          isPrivate: false,
+          redirectDelay: 3
+        }
+      },
+      response: [
+        {
+          shortUrl: 'https://velink.me/abc123',
+          shortCode: 'abc123',
+          originalUrl: 'https://example.com/url1',
+          clicks: 0,
+          createdAt: '2025-07-23T12:00:00.000Z'
+        },
+        {
+          shortUrl: 'https://velink.me/def456',
+          shortCode: 'def456',
+          originalUrl: 'https://example.com/url2',
+          clicks: 0,
+          createdAt: '2025-07-23T12:00:00.000Z'
+        }
+      ],
+      limits: 'Rate limited to 1 request per 0.5 seconds, max 10 URLs per batch',
+      icon: <Server className="h-6 w-6 text-indigo-600" />
     },
     {
       name: 'Get URL Info',
@@ -43,8 +79,13 @@ const ApiDocumentation: React.FC = () => {
         shortCode: 'abc123',
         originalUrl: 'https://example.com/very-long-url',
         clicks: 42,
-        createdAt: '2025-07-21T12:00:00.000Z',
-        expiresAt: '2025-08-20T12:00:00.000Z'
+        createdAt: '2025-07-23T12:00:00.000Z',
+        expiresAt: '2025-08-22T12:00:00.000Z',
+        customOptions: {
+          isPrivate: false,
+          password: false,
+          redirectDelay: 0
+        }
       },
       icon: <Key className="h-6 w-6 text-amber-600" />
     },
@@ -63,24 +104,89 @@ const ApiDocumentation: React.FC = () => {
       icon: <Lock className="h-6 w-6 text-green-600" />
     },
     {
-      name: 'Get Statistics',
+      name: 'Track Click',
+      method: 'POST',
+      endpoint: '/api/track/{shortCode}',
+      description: 'Track a click on a shortened URL (internal use)',
+      response: {
+        success: true,
+        clicks: 43
+      },
+      icon: <Settings className="h-6 w-6 text-orange-600" />
+    },
+    {
+      name: 'Get Enhanced Statistics',
       method: 'GET',
-      endpoint: '/api/stats',
-      description: 'Get global statistics about the service',
+      endpoint: '/api/v1/stats',
+      description: 'Get comprehensive real-time statistics with detailed metrics',
       response: {
         totalLinks: 1000,
         totalClicks: 50000,
-        latestCreated: '2025-07-21T12:00:00.000Z',
+        activeLinks: 950,
+        linksToday: 25,
+        avgClicksPerLink: 50,
+        latestCreated: '2025-07-23T12:00:00.000Z',
+        dailyAverage: 1200,
         topDomains: [
-          { domain: 'example.com', count: 250 },
-          { domain: 'github.com', count: 180 }
+          { domain: 'example.com', count: 250, total_clicks: 12500 },
+          { domain: 'github.com', count: 180, total_clicks: 9000 }
         ],
         clicksByDay: [
-          { date: '2025-07-21', clicks: 1200 },
-          { date: '2025-07-20', clicks: 980 }
+          { date: '2025-07-23', links_created: 25, total_clicks: 1200 },
+          { date: '2025-07-22', links_created: 32, total_clicks: 1100 }
+        ],
+        hourlyStats: [
+          { hour: '14', links_created: 5 },
+          { hour: '13', links_created: 8 }
+        ],
+        recentActivity: [
+          { 
+            short_code: 'abc123', 
+            original_url: 'https://example.com', 
+            clicks: 42,
+            created_at: '2025-07-23T12:00:00.000Z',
+            description: 'Popular link'
+          }
         ]
       },
       icon: <Clock className="h-6 w-6 text-blue-600" />
+    },
+    {
+      name: 'Get Basic Statistics',
+      method: 'GET',
+      endpoint: '/api/stats',
+      description: 'Get basic global statistics (fallback endpoint)',
+      response: {
+        totalLinks: 1000,
+        totalClicks: 50000,
+        linksToday: 25,
+        clicksToday: 1200,
+        topLinks: [],
+        recentActivity: []
+      },
+      icon: <Clock className="h-6 w-6 text-cyan-600" />
+    },
+    {
+      name: 'Get Detailed Statistics',
+      method: 'GET',
+      endpoint: '/api/stats/detailed',
+      description: 'Get detailed statistics with domain analytics',
+      response: {
+        totalLinks: 1000,
+        totalClicks: 50000,
+        activeLinks: 950,
+        linksToday: 25,
+        avgClicksPerLink: 50,
+        latestCreated: '2025-07-23T12:00:00.000Z',
+        dailyAverage: 1200,
+        topDomains: [
+          { domain: 'example.com', count: 250, total_clicks: 12500 }
+        ],
+        clicksByDay: [
+          { date: '2025-07-23', links_created: 25, total_clicks: 1200 }
+        ]
+      },
+      icon: <Settings className="h-6 w-6 text-purple-600" />
     },
     {
       name: 'Get Link Analytics',
@@ -91,11 +197,11 @@ const ApiDocumentation: React.FC = () => {
         shortCode: 'abc123',
         originalUrl: 'https://example.com/very-long-url',
         totalClicks: 42,
-        createdAt: '2025-07-21T12:00:00.000Z',
+        createdAt: '2025-07-23T12:00:00.000Z',
         clickData: [
-          { date: '2025-07-21', clicks: 10 },
-          { date: '2025-07-20', clicks: 15 },
-          { date: '2025-07-19', clicks: 17 }
+          { date: '2025-07-23', clicks: 10 },
+          { date: '2025-07-22', clicks: 15 },
+          { date: '2025-07-21', clicks: 17 }
         ],
         browserStats: {
           Chrome: 24,
@@ -109,9 +215,36 @@ const ApiDocumentation: React.FC = () => {
         referrers: [
           { domain: 'google.com', count: 15 },
           { domain: 'twitter.com', count: 8 }
-        ]
+        ],
+        geoStats: {
+          'United States': 20,
+          'Germany': 12,
+          'United Kingdom': 10
+        }
       },
       icon: <Settings className="h-6 w-6 text-purple-600" />
+    },
+    {
+      name: 'Sitemap',
+      method: 'GET',
+      endpoint: '/sitemap.xml',
+      description: 'Get XML sitemap with all public links (auto-updates every 20 minutes)',
+      response: `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://velink.me</loc>
+    <lastmod>2025-07-23</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://velink.me/abc123</loc>
+    <lastmod>2025-07-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>`,
+      icon: <Server className="h-6 w-6 text-teal-600" />
     },
     {
       name: 'Health Check',
@@ -120,8 +253,10 @@ const ApiDocumentation: React.FC = () => {
       description: 'Check if the API is running correctly',
       response: {
         status: 'OK',
-        timestamp: '2025-07-21T12:00:00.000Z',
-        version: '1.0.0'
+        timestamp: '2025-07-23T12:00:00.000Z',
+        version: '2.0.0',
+        database: 'connected',
+        uptime: '7 days, 12 hours'
       },
       icon: <Check className="h-6 w-6 text-green-600" />
     },
@@ -131,94 +266,10 @@ const ApiDocumentation: React.FC = () => {
       endpoint: '/api/links/{shortCode}',
       description: 'Delete a shortened URL',
       response: {
-        success: true,
-        message: 'Link successfully deleted'
+        message: 'Link deleted successfully',
+        shortCode: 'abc123'
       },
       icon: <AlertTriangle className="h-6 w-6 text-red-600" />,
-      limits: 'Rate limited to 1 request per 0.5 seconds'
-    },
-    {
-      name: 'Get Detailed Stats',
-      method: 'GET',
-      endpoint: '/api/v1/stats',
-      description: 'Get detailed statistics about all shortened URLs',
-      response: {
-        totalLinks: 1234,
-        totalClicks: 56789,
-        latestCreated: '2023-07-26T15:30:45Z',
-        topDomains: [
-          { domain: 'example.com', count: 42 },
-          { domain: 'github.com', count: 36 }
-        ],
-        clicksByDay: [
-          { date: '2023-07-26', clicks: 123 },
-          { date: '2023-07-25', clicks: 145 }
-        ]
-      },
-      icon: <Settings className="h-6 w-6 text-purple-600" />,
-      limits: 'Rate limited to 1 request per 0.5 seconds'
-    },
-    {
-      name: 'Batch Shorten URLs',
-      method: 'POST',
-      endpoint: '/api/v1/shorten-batch',
-      description: 'Shorten multiple URLs in a single request',
-      requestBody: {
-        urls: [
-          'https://example.com/page1',
-          'https://example.com/page2'
-        ],
-        customCodes: ['custom1', 'custom2'],  // Optional
-        expiresAt: ['2023-12-31T23:59:59Z', null]  // Optional
-      },
-      response: {
-        results: [
-          {
-            original_url: 'https://example.com/page1',
-            short_code: 'custom1',
-            short_url: 'https://velink.me/custom1',
-            expires_at: '2023-12-31T23:59:59Z'
-          },
-          {
-            original_url: 'https://example.com/page2',
-            short_code: 'abc123',
-            short_url: 'https://velink.me/abc123',
-            expires_at: null
-          }
-        ]
-      },
-      icon: <Server className="h-6 w-6 text-indigo-600" />,
-      limits: 'Rate limited to 1 request per 0.5 seconds, suspended after 500 links per day'
-    },
-    {
-      name: 'Get All Links',
-      method: 'GET',
-      endpoint: '/api/v1/links',
-      description: 'Get all links with pagination',
-      params: {
-        page: '1', // Optional, default: 1
-        limit: '100' // Optional, default: 100, max: 500
-      },
-      response: {
-        links: [
-          {
-            shortCode: 'abc123',
-            originalUrl: 'https://example.com/page1',
-            clicks: 42,
-            createdAt: '2023-07-26T15:30:45Z',
-            expiresAt: null,
-            customOptions: {},
-            short_url: 'https://velink.me/abc123'
-          }
-        ],
-        pagination: {
-          total: 1234,
-          page: 1,
-          limit: 100,
-          pages: 13
-        }
-      },
-      icon: <Check className="h-6 w-6 text-teal-600" />,
       limits: 'Rate limited to 1 request per 0.5 seconds'
     }
   ];

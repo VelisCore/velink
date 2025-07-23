@@ -5,9 +5,9 @@ import {
   Download, Settings, Activity, Database, 
   RefreshCw, Save, TrendingUp, Clock, Terminal, 
   Lock, Unlock, Eye, EyeOff, Construction,
-  Trash2, Edit3, Copy, Search, Filter, FileText,
-  Globe, ToggleLeft, ToggleRight, AlertTriangle,
-  CheckCircle, XCircle, Monitor, HardDrive, Cpu,
+  Trash2, Edit3, Copy, Search, FileText,
+  Globe, AlertTriangle,
+  CheckCircle, HardDrive,
   RotateCcw, Zap, Wifi
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -47,6 +47,9 @@ interface AnalyticsData {
   topReferrers?: Array<{ domain: string; clicks: number }>;
   deviceStats?: Array<{ device: string; count: number }>;
   browserStats?: Array<{ browser: string; count: number }>;
+  topDomains?: Array<{ domain: string; count: number; total_clicks: number }>;
+  totalVisitors?: number;
+  visitsToday?: number;
 }
 
 interface SystemInfo {
@@ -1448,6 +1451,64 @@ const CleanAdminPanel: React.FC = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Additional Analytics Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white/90 rounded-xl p-4 border border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-gray-600 text-sm">Total Visitors</p>
+                          <p className="text-2xl font-bold text-gray-900">{analytics.totalVisitors || 0}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+                          <Activity className="w-6 h-6 text-indigo-600" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white/90 rounded-xl p-4 border border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-gray-600 text-sm">Visits Today</p>
+                          <p className="text-2xl font-bold text-gray-900">{analytics.visitsToday || 0}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
+                          <Eye className="w-6 h-6 text-teal-600" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top Domains Section */}
+                  {analytics.topDomains && analytics.topDomains.length > 0 && (
+                    <div className="bg-white/90 rounded-xl p-6 border border-gray-200">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <Globe className="w-5 h-5 text-primary-600 mr-2" />
+                        Top Domains
+                      </h3>
+                      <div className="space-y-3">
+                        {analytics.topDomains.slice(0, 8).map((domain, index) => (
+                          <div key={domain.domain} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center space-x-3">
+                              <span className="w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-sm font-medium">
+                                {index + 1}
+                              </span>
+                              <div className="flex-1">
+                                <div className="text-gray-900 font-medium truncate" title={domain.domain}>
+                                  {domain.domain}
+                                </div>
+                                <div className="text-gray-500 text-sm">
+                                  {domain.count} links • {domain.total_clicks} total clicks
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-primary-600 font-semibold">
+                              {Math.round((domain.total_clicks / analytics.totalClicks) * 100)}%
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Top Links */}
                   <div className="bg-white/90 rounded-xl p-6 border border-gray-200">

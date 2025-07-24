@@ -112,7 +112,7 @@ velink-admin-2025-secure-token-v2
 </details>
 
 <details>
-<summary><b>� Analytics & Reporting</b></summary>
+<summary><b>📊 Analytics & Reporting</b></summary>
 
 | Feature | Description | Status |
 |---------|-------------|--------|
@@ -122,6 +122,22 @@ velink-admin-2025-secure-token-v2
 | **Referrer Analysis** | Track traffic sources and referrers | ✅ |
 | **Device & Browser Stats** | Comprehensive device analytics | ✅ |
 | **Export Capabilities** | JSON/CSV export for all data | ✅ |
+
+</details>
+
+<details>
+<summary><b>🔄 Automated Update System</b></summary>
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **One-Click Updates** | Automated system updates via admin panel | ✅ |
+| **Update Monitoring** | Real-time progress tracking with live logs | ✅ |
+| **Backup & Restore** | Automatic backups before updates with restore capability | ✅ |
+| **Ubuntu Optimization** | Specially optimized for Ubuntu/Linux environments | ✅ |
+| **Service Management** | Automatic service restart and health validation | ✅ |
+| **Maintenance Mode** | Automatic maintenance mode during updates | ✅ |
+| **Rollback Protection** | Automatic rollback on failed updates | ✅ |
+| **Health Monitoring** | Comprehensive system health checks | ✅ |
 
 </details>
 
@@ -221,15 +237,25 @@ MAINTENANCE_MESSAGE=Velink is currently under maintenance.
 
 ### 📖 Interactive Documentation
 Visit `/api-docs` for complete interactive API documentation with:
-- **Live API playground** - Test endpoints directly
-- **Code examples** in multiple languages
-- **Authentication guide** 
-- **Response schemas**
+- **Live API playground** - Test endpoints directly  
+- **Comprehensive code examples** in multiple languages
+- **Authentication guide** with bearer token setup
+- **Complete response schemas** for all endpoints
+- **Update system management** with real-time monitoring
+
+### 🎯 API Categories
+
+| Category | Endpoints | Features |
+|----------|-----------|----------|
+| **🌐 Public API** | 5 endpoints | URL shortening, analytics, link management |
+| **🛡️ Admin API** | 10+ endpoints | Full system control, user management, analytics |
+| **🔄 Update System** | 8 endpoints | Automated updates, backup/restore, maintenance |
+| **📊 System Health** | 3 endpoints | Real-time monitoring, performance metrics |
 
 ### 🔥 Quick API Examples
 
 <details>
-<summary><b>🌐 JavaScript/Fetch</b></summary>
+<summary><b>🌐 Basic URL Shortening - JavaScript/Fetch</b></summary>
 
 ```javascript
 // Shorten URL
@@ -250,32 +276,134 @@ console.log('QR Code:', data.qrCode);
 </details>
 
 <details>
-<summary><b>🐍 Python</b></summary>
+<summary><b>� System Update Management - JavaScript</b></summary>
 
-```python
-import requests
+```javascript
+// Check for system updates
+const updateCheck = await fetch('http://localhost:80/api/admin/update/check', {
+  headers: { 'Authorization': 'Bearer YOUR_ADMIN_TOKEN' }
+});
 
-# Shorten URL
-response = requests.post('http://localhost:80/api/shorten', json={
-    'url': 'https://example.com/very-long-url',
-    'expiresIn': '30d'
-})
-
-data = response.json()
-print(f"Short URL: {data['shortUrl']}")
-print(f"QR Code: {data['qrCode']}")
+const updateData = await updateCheck.json();
+if (updateData.updateAvailable) {
+  console.log(`Update available: v${updateData.latestVersion}`);
+  
+  // Start update process
+  const updateResponse = await fetch('http://localhost:80/api/admin/update/perform', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_ADMIN_TOKEN',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      createBackup: true,
+      maintenanceMode: true,
+      restartServices: true
+    })
+  });
+  
+  const updateResult = await updateResponse.json();
+  console.log('Update started:', updateResult.updateId);
+}
 ```
 
 </details>
 
 <details>
-<summary><b>💻 cURL</b></summary>
+<summary><b>📊 System Health Monitoring - JavaScript</b></summary>
+
+```javascript
+// Get comprehensive system health
+const healthResponse = await fetch('http://localhost:80/api/admin/system/health', {
+  headers: { 'Authorization': 'Bearer YOUR_ADMIN_TOKEN' }
+});
+
+const health = await healthResponse.json();
+console.log(`System Status: ${health.status}`);
+console.log(`Uptime: ${health.uptime}`);
+console.log(`Memory Usage: ${health.system.memory.used}/${health.system.memory.total}`);
+console.log(`CPU Usage: ${health.system.cpu.usage}%`);
+console.log(`Disk Usage: ${health.system.disk.percentage}%`);
+```
+
+</details>
+
+<details>
+<summary><b>🐍 Python SDK Example</b></summary>
+
+```python
+import requests
+
+class VelinkAPI:
+    def __init__(self, base_url, admin_token=None):
+        self.base_url = base_url
+        self.admin_token = admin_token
+    
+    def shorten_url(self, url, expires_in="30d"):
+        response = requests.post(f"{self.base_url}/api/shorten", json={
+            'url': url,
+            'expiresIn': expires_in
+        })
+        return response.json()
+    
+    def check_system_health(self):
+        headers = {'Authorization': f'Bearer {self.admin_token}'}
+        response = requests.get(f"{self.base_url}/api/admin/system/health", 
+                              headers=headers)
+        return response.json()
+    
+    def start_system_update(self, options=None):
+        if options is None:
+            options = {
+                'createBackup': True,
+                'maintenanceMode': True,
+                'restartServices': True
+            }
+        
+        headers = {
+            'Authorization': f'Bearer {self.admin_token}',
+            'Content-Type': 'application/json'
+        }
+        response = requests.post(f"{self.base_url}/api/admin/update/perform",
+                               json=options, headers=headers)
+        return response.json()
+
+# Usage
+api = VelinkAPI("http://localhost:80", "your-admin-token")
+
+# Basic usage
+result = api.shorten_url("https://example.com/long-url")
+print(f"Short URL: {result['shortUrl']}")
+
+# Admin usage
+health = api.check_system_health()
+print(f"System Status: {health['status']}")
+```
+
+</details>
+
+<details>
+<summary><b>💻 cURL Commands</b></summary>
 
 ```bash
 # Shorten URL
 curl -X POST "http://localhost:80/api/shorten" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com/very-long-url", "expiresIn": "30d"}'
+
+# Check system health (Admin)
+curl -X GET "http://localhost:80/api/admin/system/health" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+
+# Start system update (Admin)
+curl -X POST "http://localhost:80/api/admin/update/perform" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"createBackup": true, "maintenanceMode": true, "restartServices": true}'
+
+# Monitor update progress (Admin)
+curl -X GET "http://localhost:80/api/admin/update/status" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
 
 # Get statistics
 curl "http://localhost:80/api/info/abc123"
@@ -749,11 +877,15 @@ console.log(result.shortUrl);
 - Time-based metrics
 
 ### Admin Panel
-- System monitoring
-- User management
-- Log viewing
-- Database management
-- Configuration updates
+- **System Monitoring** - Real-time health metrics and performance data
+- **Update Management** - One-click system updates with progress monitoring
+- **Backup & Restore** - Automated backup creation and restore capabilities
+- **User Management** - Complete user and link administration
+- **Log Viewing** - Real-time log streaming and historical log access
+- **Database Management** - Database operations and maintenance
+- **Configuration Updates** - Dynamic system configuration management
+- **Maintenance Mode** - System maintenance mode control with custom messaging
+- **Service Management** - Service status monitoring and restart capabilities
 
 ## 🛡️ Security Features
 

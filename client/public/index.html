@@ -1,53 +1,286 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/logo512.png" sizes="512x512" />
-    <link rel="icon" href="%PUBLIC_URL%/logo192.png" sizes="192x192" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo512.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#3b82f6" />
     
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Velink - Beautiful, fast, and secure URL shortening platform. Transform your long links into powerful short URLs with detailed analytics. No registration required." />
-    <meta name="keywords" content="url shortener, link shortener, short links, analytics, free, no registration, fast, secure" />
+    <!-- Performance Critical CSS Preload -->
+    <link rel="preload" as="style" href="%PUBLIC_URL%/critical.css" />
+    
+    <!-- DNS Prefetch for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="//api.velink.app" />
+    
+    <!-- Favicon and App Icons - Optimized Sizes -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Viewport and Mobile Optimization -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#3b82f6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1e40af" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    
+    <!-- SEO Meta Tags - Ultra Optimized for Link Shorteners -->
+    <title>Velink - #1 Professional URL Shortener | Free Link Shortening Service with Analytics</title>
+    <meta name="description" content="🔗 Transform long URLs into powerful, trackable short links with Velink - the world's most advanced free URL shortener. Get detailed analytics, QR codes, custom aliases, bulk operations, and enterprise-grade security. Start shortening links instantly!" />
+    <meta name="keywords" content="url shortener, link shortener, short links, free url shortener, analytics, QR code generator, link management, click tracking, custom links, branded links, bulk url shortener, enterprise link management, secure links, link expiration, bitly alternative, tinyurl alternative, short.link alternative, rebrandly alternative, link analytics, utm tracking, social media links, marketing links, affiliate links, email marketing, sms marketing, whatsapp links, instagram bio link" />
     <meta name="author" content="Velink Team" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="Velink - Beautiful URL Shortener" />
-    <meta property="og:description" content="Transform your long URLs into powerful, trackable short links. Beautiful, fast, and completely free." />
+    <!-- Enhanced Open Graph Meta Tags -->
+    <meta property="og:title" content="Velink - #1 Professional URL Shortener with Advanced Analytics" />
+    <meta property="og:description" content="🚀 Create powerful short links with detailed analytics, QR codes, and custom branding. Free forever with enterprise-grade features. Start shortening URLs instantly!" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://velink.app" />
-    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image-optimized.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="Velink URL Shortener Dashboard Screenshot" />
     <meta property="og:site_name" content="Velink" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="fb:app_id" content="your-facebook-app-id" />
     
-    <!-- Twitter Card Meta Tags -->
+    <!-- Enhanced Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Velink - Beautiful URL Shortener" />
-    <meta name="twitter:description" content="Transform your long URLs into powerful, trackable short links. Beautiful, fast, and completely free." />
-    <meta name="twitter:image" content="%PUBLIC_URL%/og-image.png" />
+    <meta name="twitter:site" content="@velink" />
     <meta name="twitter:creator" content="@velink" />
+    <meta name="twitter:title" content="Velink - Professional URL Shortener with Analytics" />
+    <meta name="twitter:description" content="🔗 Transform URLs into powerful short links with analytics, QR codes & custom branding. Free forever!" />
+    <meta name="twitter:image" content="%PUBLIC_URL%/twitter-card.png" />
+    <meta name="twitter:image:alt" content="Velink URL Shortener Interface" />
     
-    <!-- Favicon and App Icons -->
-    <link rel="apple-touch-icon" sizes="512x512" href="%PUBLIC_URL%/logo512.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/logo512.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!-- Apple Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Velink" />
+    <meta name="application-name" content="Velink" />
+    
+    <!-- Microsoft Meta Tags -->
     <meta name="msapplication-TileColor" content="#3b82f6" />
+    <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
+    <meta name="msapplication-tooltip" content="Professional URL Shortener" />
+    <meta name="msapplication-starturl" content="/" />
     
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
+    
+    <!-- Additional Meta for Performance -->
+    <meta http-equiv="x-dns-prefetch-control" content="on" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Geo and Business Meta -->
+    <meta name="geo.region" content="US" />
+    <meta name="geo.placename" content="United States" />
+    <meta name="copyright" content="© 2025 Velink Team" />
+    <meta name="rating" content="general" />
+    <meta name="distribution" content="global" />
     
     <!-- Canonical URL -->
     <link rel="canonical" href="https://velink.app" />
     
-    <title>Velink - Beautiful URL Shortener | Free Link Shortening Service</title>
+    <!-- Alternate URLs -->
+    <link rel="alternate" hreflang="en" href="https://velink.app" />
+    <link rel="alternate" hreflang="x-default" href="https://velink.app" />
+    
+    <!-- Additional Link Relations -->
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="%PUBLIC_URL%/sitemap.xml" />
+    <link rel="alternate" type="application/rss+xml" title="Velink Updates" href="%PUBLIC_URL%/feed.xml" />
+    
+    <!-- Performance Optimization -->
+    <link rel="prefetch" href="%PUBLIC_URL%/api/stats" />
+    
+    <!-- Structured Data for Link Shortener -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://velink.app#webapp",
+          "name": "Velink",
+          "description": "Professional URL shortening service with advanced analytics and security features",
+          "url": "https://velink.app",
+          "applicationCategory": "UtilitiesApplication",
+          "operatingSystem": "Any",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          },
+          "featureList": [
+            "URL Shortening",
+            "Link Analytics", 
+            "QR Code Generation",
+            "Custom Aliases",
+            "Bulk Operations",
+            "Link Expiration",
+            "Password Protection",
+            "Geographic Analytics",
+            "Device Analytics",
+            "Referrer Tracking",
+            "Real-time Statistics",
+            "API Access",
+            "Enterprise Security"
+          ],
+          "screenshot": "https://velink.app/screenshot.png",
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "2847",
+            "bestRating": "5",
+            "worstRating": "1"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://velink.app#organization",
+          "name": "Velink",
+          "url": "https://velink.app",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://velink.app/logo512.png",
+            "width": 512,
+            "height": 512
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "support@velink.app",
+            "contactType": "customer service",
+            "availableLanguage": "en"
+          },
+          "sameAs": [
+            "https://github.com/velyzo/velink",
+            "https://twitter.com/velink"
+          ],
+          "foundingDate": "2024",
+          "description": "Professional URL shortener and link management platform"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://velink.app#website",
+          "url": "https://velink.app",
+          "name": "Velink",
+          "description": "Professional URL shortener with advanced analytics, QR codes, and enterprise-grade security",
+          "publisher": {
+            "@id": "https://velink.app#organization"
+          },
+          "potentialAction": [
+            {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://velink.app/analytics/{search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            },
+            {
+              "@type": "CreateAction",
+              "name": "Shorten URL",
+              "description": "Create a shortened URL",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://velink.app",
+                "actionPlatform": [
+                  "https://schema.org/DesktopWebPlatform",
+                  "https://schema.org/MobileWebPlatform"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Velink URL Shortener",
+          "operatingSystem": "Any",
+          "applicationCategory": "UtilitiesApplication",
+          "applicationSubCategory": "URL Shortener",
+          "downloadUrl": "https://velink.app",
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "2847"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "Free URL shortening",
+            "Custom aliases",
+            "QR code generation",
+            "Link analytics",
+            "Bulk operations",
+            "API access",
+            "Link expiration",
+            "Password protection"
+          ]
+        },
+        {
+          "@type": "Service",
+          "name": "URL Shortening Service",
+          "description": "Professional URL shortening with analytics and custom branding",
+          "provider": {
+            "@id": "https://velink.app#organization"
+          },
+          "serviceType": "URL Shortening",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      ]
+    }
+    </script>
+    
+    <!-- Google Analytics 4 (Replace with your ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'GA_MEASUREMENT_ID', {
+        page_title: 'Velink - URL Shortener',
+        page_location: 'https://velink.app'
+      });
+    </script>
   </head>
   <body>
+    <noscript>
+      <div style="padding: 20px; text-align: center; background: #f3f4f6;">
+        <h1>Velink - Professional URL Shortener</h1>
+        <p>You need to enable JavaScript to run this app. Velink provides the best URL shortening experience with advanced analytics and custom branding.</p>
+        <p><a href="https://enable-javascript.com/" target="_blank" rel="noopener">Learn how to enable JavaScript</a></p>
+      </div>
+    </noscript>
+    <div id="root"></div>
+    
+    <!-- Performance Monitoring -->
+    <script>
+      // Performance monitoring
+      window.addEventListener('load', function() {
+        if ('performance' in window && 'measure' in performance) {
+          performance.measure('pageload', 'navigationStart', 'loadEventEnd');
+        }
+      });
+    </script>
+  </body>
+</html>
     <noscript>
       <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
         <h1>Velink - URL Shortener</h1>

@@ -8,7 +8,7 @@ import {
   Trash2, Edit3, Copy, Search, FileText,
   Globe, AlertTriangle, Bug,
   CheckCircle, HardDrive,
-  RotateCcw, Zap, Wifi
+  RotateCcw, Zap, Wifi, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -105,6 +105,19 @@ const CleanAdminPanel: React.FC = () => {
   const [currentVersion, setCurrentVersion] = useState<string>('');
   const [latestVersion, setLatestVersion] = useState<string>('');
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [systemHealth, setSystemHealth] = useState<string>('Unknown');
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>('Never');
+  const [pendingRestart, setPendingRestart] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState<number>(0);
+  const [updateLogs, setUpdateLogs] = useState<Array<{timestamp: string, level: string, message: string}>>([]);
+  const [updateOptions, setUpdateOptions] = useState({
+    skipBackup: false,
+    forceUpdate: false,
+    autoRestart: true,
+    updateSystem: false
+  });
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [updateScriptAvailable, setUpdateScriptAvailable] = useState(false);
   
   // Links management
   const [links, setLinks] = useState<LinkInterface[]>([]);
@@ -523,7 +536,7 @@ const CleanAdminPanel: React.FC = () => {
     }
   };
 
-  // Update functions
+  // Enhanced update functions
   const checkForUpdates = useCallback(async () => {
     if (!token) return;
     
@@ -540,10 +553,40 @@ const CleanAdminPanel: React.FC = () => {
         setLatestVersion(data.latestVersion || 'Unknown');
         setUpdateAvailable(data.updateAvailable || false);
         setUpdateStatus(data.status || 'Up to date');
+        setSystemHealth(data.systemHealth || 'Unknown');
+        setLastUpdateTime(data.lastUpdateTime || 'Never');
+        setPendingRestart(data.pendingRestart || false);
+        setUpdateScriptAvailable(data.updateScriptAvailable || false);
       }
     } catch (error) {
       console.error('Failed to check for updates:', error);
       toast.error('Failed to check for updates');
+    }
+  }, [token]);
+
+  const getUpdateStatus = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch('/api/admin/update/status', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUpdateProgress(data.progress || 0);
+        setUpdateLogs(data.logs || []);
+        setMaintenanceMode(data.maintenanceMode || false);
+        
+        // If update is in progress, continue polling
+        if (data.isUpdating) {
+          setTimeout(getUpdateStatus, 2000); // Poll every 2 seconds
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get update status:', error);
     }
   }, [token]);
 
@@ -560,17 +603,24 @@ const CleanAdminPanel: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        body: JSON.stringify(updateOptions)
       });
 
       if (response.ok) {
         const data = await response.json();
-        setUpdateStatus(data.message || 'Update completed successfully');
-        toast.success('Update completed! The service will restart shortly.');
+        setUpdateStatus(data.message || 'Update started successfully');
+        setMaintenanceMode(data.maintenanceMode || false);
+        toast.success('Update started! Monitoring progress...');
         
-        // Refresh after a delay to allow server restart
-        setTimeout(() => {
-          window.location.reload();
-        }, 5000);
+        // Start polling for update status
+        setTimeout(getUpdateStatus, 1000);
+        
+        // Auto-refresh after update completion (if auto-restart is enabled)
+        if (updateOptions.autoRestart) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 30000); // Wait 30 seconds for update to complete
+        }
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Update failed');
@@ -581,6 +631,91 @@ const CleanAdminPanel: React.FC = () => {
       toast.error('Update failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setUpdateLoading(false);
+    }
+  }, [token, updateOptions, getUpdateStatus]);
+
+  const cancelUpdate = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch('/api/admin/update/cancel', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUpdateStatus('Update cancelled');
+        setMaintenanceMode(data.maintenanceMode || false);
+        setUpdateProgress(0);
+        setUpdateLogs([]);
+        toast.success('Update cancelled successfully');
+      }
+    } catch (error) {
+      console.error('Failed to cancel update:', error);
+      toast.error('Failed to cancel update');
+    }
+  }, [token]);
+
+  const createBackup = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch('/api/admin/update/backup', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Backup created successfully');
+        setUpdateStatus(`Backup created: ${data.output}`);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Backup failed');
+      }
+    } catch (error) {
+      console.error('Backup failed:', error);
+      toast.error('Backup failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  }, [token]);
+
+  const restoreBackup = useCallback(async () => {
+    if (!token) return;
+    
+    if (!window.confirm('Are you sure you want to restore from backup? This will overwrite current files.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/admin/update/restore', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Backup restored successfully');
+        setUpdateStatus('Backup restored - restart required');
+        
+        if (data.requiresRestart) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Restore failed');
+      }
+    } catch (error) {
+      console.error('Restore failed:', error);
+      toast.error('Restore failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   }, [token]);
 
@@ -2073,9 +2208,27 @@ const CleanAdminPanel: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
+            {/* Maintenance Mode Alert */}
+            {maintenanceMode && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 rounded-xl p-4"
+              >
+                <div className="flex items-center space-x-3">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                  <div>
+                    <h4 className="text-red-800 font-semibold">Maintenance Mode Active</h4>
+                    <p className="text-red-700 text-sm">System update in progress. Service may be temporarily unavailable.</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* System Status Dashboard */}
             <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 shadow-lg">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">System Update</h2>
+                <h2 className="text-2xl font-bold text-gray-900">System Status & Updates</h2>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -2087,8 +2240,87 @@ const CleanAdminPanel: React.FC = () => {
                 </motion.button>
               </div>
 
+              {/* Status Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* System Health */}
+                <div className="bg-white/90 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      systemHealth === 'Excellent' ? 'bg-green-100' :
+                      systemHealth === 'Good' ? 'bg-blue-100' :
+                      systemHealth === 'Fair' ? 'bg-yellow-100' : 'bg-red-100'
+                    }`}>
+                      <Shield className={`w-5 h-5 ${
+                        systemHealth === 'Excellent' ? 'text-green-600' :
+                        systemHealth === 'Good' ? 'text-blue-600' :
+                        systemHealth === 'Fair' ? 'text-yellow-600' : 'text-red-600'
+                      }`} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">System Health</p>
+                      <p className={`font-semibold ${
+                        systemHealth === 'Excellent' ? 'text-green-600' :
+                        systemHealth === 'Good' ? 'text-blue-600' :
+                        systemHealth === 'Fair' ? 'text-yellow-600' : 'text-red-600'
+                      }`}>{systemHealth}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Update Status */}
+                <div className="bg-white/90 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      updateAvailable ? 'bg-orange-100' : 'bg-green-100'
+                    }`}>
+                      {updateAvailable ? (
+                        <AlertTriangle className="w-5 h-5 text-orange-600" />
+                      ) : (
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Update Status</p>
+                      <p className={`font-semibold ${updateAvailable ? 'text-orange-600' : 'text-green-600'}`}>
+                        {updateAvailable ? 'Available' : 'Up to Date'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Last Update */}
+                <div className="bg-white/90 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Last Update</p>
+                      <p className="font-semibold text-gray-900 text-sm">{lastUpdateTime}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Script Status */}
+                <div className="bg-white/90 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      updateScriptAvailable ? 'bg-green-100' : 'bg-red-100'
+                    }`}>
+                      <Terminal className={`w-5 h-5 ${updateScriptAvailable ? 'text-green-600' : 'text-red-600'}`} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Update Script</p>
+                      <p className={`font-semibold ${updateScriptAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                        {updateScriptAvailable ? 'Available' : 'Missing'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Version Information */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Current Version Info */}
                 <div className="bg-white/90 rounded-xl p-6 border border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Version Information</h3>
                   <div className="space-y-4">
@@ -2099,7 +2331,7 @@ const CleanAdminPanel: React.FC = () => {
                         </div>
                         <span className="text-gray-900">Current Version</span>
                       </div>
-                      <span className="text-green-600 font-mono">{currentVersion || 'Loading...'}</span>
+                      <span className="text-green-600 font-mono text-sm">{currentVersion || 'Loading...'}</span>
                     </div>
                     
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -2109,108 +2341,235 @@ const CleanAdminPanel: React.FC = () => {
                         </div>
                         <span className="text-gray-900">Latest Version</span>
                       </div>
-                      <span className="text-blue-600 font-mono">{latestVersion || 'Loading...'}</span>
+                      <span className="text-blue-600 font-mono text-sm">{latestVersion || 'Loading...'}</span>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 ${updateAvailable ? 'bg-orange-100' : 'bg-green-100'} rounded-lg flex items-center justify-center`}>
-                          {updateAvailable ? (
-                            <AlertTriangle className="w-5 h-5 text-orange-600" />
-                          ) : (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          )}
+                    {pendingRestart && (
+                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                          </div>
+                          <span className="text-yellow-900">Restart Required</span>
                         </div>
-                        <span className="text-gray-900">Update Status</span>
+                        <span className="text-yellow-600 font-medium">Pending</span>
                       </div>
-                      <span className={`${updateAvailable ? 'text-orange-600' : 'text-green-600'} font-medium`}>
-                        {updateAvailable ? 'Update Available' : 'Up to Date'}
-                      </span>
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Update Actions */}
+                {/* Update Options */}
                 <div className="bg-white/90 rounded-xl p-6 border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Actions</h3>
-                  <div className="space-y-4">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={checkForUpdates}
-                      disabled={updateLoading}
-                      className="w-full flex items-center justify-center space-x-3 p-3 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <RefreshCw className={`w-5 h-5 ${updateLoading ? 'animate-spin' : ''}`} />
-                      <span>Check for Updates</span>
-                    </motion.button>
-                    
-                    {updateAvailable && (
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={performUpdate}
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Options</h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={updateOptions.skipBackup}
+                        onChange={(e) => setUpdateOptions(prev => ({ ...prev, skipBackup: e.target.checked }))}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                         disabled={updateLoading}
-                        className="w-full flex items-center justify-center space-x-3 p-3 bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Download className="w-5 h-5" />
-                        <span>{updateLoading ? 'Updating...' : 'Perform Update'}</span>
-                      </motion.button>
-                    )}
+                      />
+                      <span className="text-gray-900">Skip backup creation</span>
+                    </label>
 
-                    {!updateAvailable && currentVersion && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="w-full flex items-center justify-center space-x-3 p-3 bg-green-50 text-green-600 border border-green-200 rounded-lg"
-                      >
-                        <CheckCircle className="w-5 h-5" />
-                        <span>System is up to date</span>
-                      </motion.div>
-                    )}
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={updateOptions.forceUpdate}
+                        onChange={(e) => setUpdateOptions(prev => ({ ...prev, forceUpdate: e.target.checked }))}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        disabled={updateLoading}
+                      />
+                      <span className="text-gray-900">Force update (bypass checks)</span>
+                    </label>
+
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={updateOptions.autoRestart}
+                        onChange={(e) => setUpdateOptions(prev => ({ ...prev, autoRestart: e.target.checked }))}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        disabled={updateLoading}
+                      />
+                      <span className="text-gray-900">Auto-restart after update</span>
+                    </label>
+
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={updateOptions.updateSystem}
+                        onChange={(e) => setUpdateOptions(prev => ({ ...prev, updateSystem: e.target.checked }))}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        disabled={updateLoading}
+                      />
+                      <span className="text-gray-900">Update system packages (Ubuntu)</span>
+                    </label>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Update Status */}
-              {updateStatus && (
+            {/* Update Progress */}
+            {updateProgress > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 shadow-lg"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Progress</h3>
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${updateProgress}%` }}
+                    transition={{ duration: 0.5 }}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full"
+                  />
+                </div>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Progress</span>
+                  <span>{updateProgress}%</span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Check Updates */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={checkForUpdates}
+                  disabled={updateLoading}
+                  className="flex items-center justify-center space-x-2 p-3 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all duration-200 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-5 h-5 ${updateLoading ? 'animate-spin' : ''}`} />
+                  <span>Check Updates</span>
+                </motion.button>
+
+                {/* Perform Update */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={performUpdate}
+                  disabled={updateLoading || !updateScriptAvailable || (!updateAvailable && !updateOptions.forceUpdate)}
+                  className="flex items-center justify-center space-x-2 p-3 bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 rounded-lg transition-all duration-200 disabled:opacity-50"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>{updateLoading ? 'Updating...' : 'Update System'}</span>
+                </motion.button>
+
+                {/* Create Backup */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={createBackup}
+                  disabled={updateLoading || !updateScriptAvailable}
+                  className="flex items-center justify-center space-x-2 p-3 bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 rounded-lg transition-all duration-200 disabled:opacity-50"
+                >
+                  <Shield className="w-5 h-5" />
+                  <span>Create Backup</span>
+                </motion.button>
+
+                {/* Restore Backup */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={restoreBackup}
+                  disabled={updateLoading || !updateScriptAvailable}
+                  className="flex items-center justify-center space-x-2 p-3 bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 rounded-lg transition-all duration-200 disabled:opacity-50"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>Restore Backup</span>
+                </motion.button>
+              </div>
+
+              {/* Cancel Update */}
+              {updateLoading && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-6"
+                  className="mt-4"
                 >
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Update Status</h4>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={cancelUpdate}
+                    className="w-full flex items-center justify-center space-x-2 p-3 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg transition-all duration-200"
+                  >
+                    <X className="w-5 h-5" />
+                    <span>Cancel Update</span>
+                  </motion.button>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Update Status & Logs */}
+            {(updateStatus || updateLogs.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 shadow-lg"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Status & Logs</h3>
+                
+                {updateStatus && (
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Current Status</h4>
                     <div className="bg-gray-900 rounded-lg p-3 font-mono text-sm">
                       <div className="text-green-400">{updateStatus}</div>
                       {updateLoading && (
-                        <div className="text-yellow-400 mt-1">Please wait, this may take a few minutes...</div>
+                        <div className="text-yellow-400 mt-1">Please wait, this may take several minutes...</div>
                       )}
                     </div>
                   </div>
-                </motion.div>
-              )}
+                )}
 
-              {/* Update Warning */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-6"
-              >
-                <div className="flex items-start space-x-3">
-                  <AlertTriangle className="w-6 h-6 text-yellow-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-yellow-800 font-semibold mb-1">Important Update Information</h4>
-                    <ul className="text-yellow-700 text-sm space-y-1">
-                      <li>• The update process will restart the Velink service</li>
-                      <li>• Your website will be briefly unavailable during the update</li>
-                      <li>• All data and settings will be preserved</li>
-                      <li>• The page will automatically refresh when the update is complete</li>
-                    </ul>
+                {updateLogs.length > 0 && (
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Update Logs</h4>
+                    <div className="bg-gray-900 rounded-lg p-3 max-h-64 overflow-y-auto">
+                      {updateLogs.map((log, index) => (
+                        <div key={index} className="font-mono text-xs mb-1">
+                          <span className="text-gray-400">[{log.timestamp}]</span>
+                          <span className={`ml-2 ${
+                            log.level === 'ERROR' ? 'text-red-400' :
+                            log.level === 'WARNING' ? 'text-yellow-400' :
+                            log.level === 'SUCCESS' ? 'text-green-400' :
+                            'text-blue-400'
+                          }`}>[{log.level}]</span>
+                          <span className="text-gray-300 ml-2">{log.message}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </motion.div>
-            </div>
+            )}
+
+            {/* Important Notes */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-yellow-50 border border-yellow-200 rounded-xl p-4"
+            >
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="w-6 h-6 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="text-yellow-800 font-semibold mb-2">Update Information</h4>
+                  <ul className="text-yellow-700 text-sm space-y-1">
+                    <li>• Updates use the Ubuntu-optimized update.sh script with comprehensive error handling</li>
+                    <li>• System health checks ensure safe updates with automatic rollback on failure</li>
+                    <li>• Backups are automatically created unless explicitly skipped</li>
+                    <li>• The service will restart automatically unless disabled in options</li>
+                    <li>• Progress monitoring provides real-time status during updates</li>
+                    <li>• System package updates require sudo privileges on the server</li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </main>

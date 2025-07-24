@@ -1,3 +1,69 @@
-# https://www.robotstxt.org/robotstxt.html
+# Robots.txt for Velink URL Shortener
+# https://velink.app/robots.txt
+
+# Allow all crawlers
 User-agent: *
-Disallow:
+Allow: /
+
+# Optimize crawling for link shortener
+Allow: /api/stats
+Allow: /api-docs
+Allow: /privacy
+Allow: /terms
+Allow: /impressum
+Allow: /bug-report
+
+# Disallow admin and private areas
+Disallow: /admin
+Disallow: /api/admin/
+Disallow: /analytics/
+
+# Disallow API endpoints that don't provide useful content for SEO
+Disallow: /api/shorten
+Disallow: /api/batch-shorten
+Disallow: /api/check-password
+Disallow: /api/info/
+Disallow: /api/links/
+
+# Allow specific bots for better indexing
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 2
+
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+# Sitemap location
+Sitemap: https://velink.app/sitemap.xml
+
+# Host directive (helps with canonical URLs)
+Host: https://velink.app

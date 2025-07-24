@@ -219,6 +219,241 @@ const ApiDocumentation: React.FC = () => {
         topLinks: [],
         recentActivity: []
       }
+    },
+    {
+      id: 'admin-update-check',
+      name: 'Check Update Status',
+      method: 'GET',
+      endpoint: '/api/admin/update/check',
+      description: 'Check if updates are available and get system health status',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        updateAvailable: true,
+        currentVersion: '1.2.3',
+        latestVersion: '1.3.0',
+        systemHealth: {
+          status: 'healthy',
+          uptime: '5 days, 12 hours',
+          memoryUsage: '256MB',
+          diskSpace: '15GB free'
+        },
+        lastCheck: '2024-01-15T10:30:00Z'
+      }
+    },
+    {
+      id: 'admin-update-status',
+      name: 'Get Update Progress',
+      method: 'GET',
+      endpoint: '/api/admin/update/status',
+      description: 'Get real-time update progress and status information',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        isUpdating: true,
+        progress: 45,
+        currentStep: 'Installing dependencies',
+        totalSteps: 7,
+        stepProgress: {
+          step: 3,
+          name: 'Installing dependencies',
+          status: 'running',
+          progress: 65
+        },
+        estimatedTimeRemaining: 120,
+        logs: [
+          { timestamp: '2024-01-15T10:30:00Z', level: 'info', message: 'Starting update process...' },
+          { timestamp: '2024-01-15T10:30:05Z', level: 'info', message: 'Backing up current version...' }
+        ]
+      }
+    },
+    {
+      id: 'admin-update-perform',
+      name: 'Start System Update',
+      method: 'POST',
+      endpoint: '/api/admin/update/perform',
+      description: 'Initiate system update process with configurable options',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        createBackup: true,
+        restartServices: true,
+        skipDependencyCheck: false,
+        updateBranch: 'main',
+        maintenanceMode: true,
+        notifyUsers: true
+      },
+      responseExample: {
+        success: true,
+        message: 'Update process initiated successfully',
+        updateId: 'upd_1234567890',
+        estimatedDuration: 300,
+        maintenanceModeEnabled: true,
+        backupCreated: true
+      }
+    },
+    {
+      id: 'admin-update-cancel',
+      name: 'Cancel Update Process',
+      method: 'POST',
+      endpoint: '/api/admin/update/cancel',
+      description: 'Cancel ongoing update process and restore from backup if needed',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        reason: 'User cancelled',
+        restoreFromBackup: true
+      },
+      responseExample: {
+        success: true,
+        message: 'Update process cancelled successfully',
+        restoredFromBackup: true,
+        maintenanceModeDisabled: true
+      }
+    },
+    {
+      id: 'admin-update-backup',
+      name: 'Create System Backup',
+      method: 'POST',
+      endpoint: '/api/admin/update/backup',
+      description: 'Create a manual backup of the current system state',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        name: 'manual-backup-2024-01-15',
+        includeDatabase: true,
+        includeLogs: false,
+        description: 'Manual backup before major changes'
+      },
+      responseExample: {
+        success: true,
+        backupId: 'backup_1234567890',
+        backupPath: '/backups/manual-backup-2024-01-15.tar.gz',
+        size: '45.2MB',
+        created: '2024-01-15T10:30:00Z'
+      }
+    },
+    {
+      id: 'admin-update-restore',
+      name: 'Restore from Backup',
+      method: 'POST',
+      endpoint: '/api/admin/update/restore',
+      description: 'Restore system from a specific backup',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        backupId: 'backup_1234567890',
+        restoreDatabase: true,
+        restartServices: true,
+        maintenanceMode: true
+      },
+      responseExample: {
+        success: true,
+        message: 'System restored successfully from backup',
+        restoredVersion: '1.2.3',
+        restoredAt: '2024-01-15T10:30:00Z',
+        servicesRestarted: true
+      }
+    },
+    {
+      id: 'admin-update-backups',
+      name: 'List Available Backups',
+      method: 'GET',
+      endpoint: '/api/admin/update/backups',
+      description: 'Get list of all available system backups',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        backups: [
+          {
+            id: 'backup_1234567890',
+            name: 'manual-backup-2024-01-15',
+            version: '1.2.3',
+            size: '45.2MB',
+            created: '2024-01-15T10:30:00Z',
+            type: 'manual',
+            description: 'Manual backup before major changes'
+          },
+          {
+            id: 'backup_0987654321',
+            name: 'auto-backup-2024-01-14',
+            version: '1.2.2',
+            size: '44.8MB',
+            created: '2024-01-14T02:00:00Z',
+            type: 'automatic',
+            description: 'Automatic daily backup'
+          }
+        ],
+        totalBackups: 2,
+        totalSize: '90.0MB'
+      }
+    },
+    {
+      id: 'admin-maintenance-mode',
+      name: 'Toggle Maintenance Mode',
+      method: 'POST',
+      endpoint: '/api/admin/maintenance',
+      description: 'Enable or disable maintenance mode for system updates',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        enabled: true,
+        message: 'System maintenance in progress. Please try again later.',
+        estimatedDuration: 600,
+        allowAdminAccess: true
+      },
+      responseExample: {
+        success: true,
+        maintenanceMode: true,
+        message: 'Maintenance mode enabled successfully',
+        enabledAt: '2024-01-15T10:30:00Z',
+        estimatedCompletion: '2024-01-15T10:40:00Z'
+      }
+    },
+    {
+      id: 'admin-system-health',
+      name: 'Get System Health',
+      method: 'GET',
+      endpoint: '/api/admin/system/health',
+      description: 'Get comprehensive system health and performance metrics',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        status: 'healthy',
+        uptime: '5 days, 12 hours, 34 minutes',
+        version: '1.2.3',
+        environment: 'production',
+        system: {
+          os: 'Ubuntu 22.04 LTS',
+          node: '18.17.0',
+          memory: {
+            used: '256MB',
+            total: '2GB',
+            percentage: 12.5
+          },
+          cpu: {
+            usage: 15.2,
+            cores: 4
+          },
+          disk: {
+            used: '5.2GB',
+            total: '20GB',
+            available: '14.8GB',
+            percentage: 26
+          }
+        },
+        services: {
+          database: 'running',
+          webServer: 'running',
+          scheduler: 'running'
+        },
+        lastUpdate: '2024-01-10T08:00:00Z',
+        nextScheduledMaintenance: '2024-01-20T02:00:00Z'
+      }
     }
   ];
 
@@ -418,7 +653,7 @@ const ApiDocumentation: React.FC = () => {
                   <div className="bg-green-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
                     <Zap className="h-8 w-8 text-green-600" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">500</div>
+                  <div className="text-2xl font-bold text-gray-900">1000</div>
                   <div className="text-sm text-gray-600">Requests/Day</div>
                 </div>
                 
@@ -477,9 +712,11 @@ const ApiDocumentation: React.FC = () => {
                   <div>
                     <h4 className="text-lg font-semibold text-amber-800 mb-2">Current Limits</h4>
                     <ul className="text-amber-700 space-y-1">
-                      <li>• <strong>Request Frequency:</strong> Maximum 1 request per 0.5 seconds</li>
-                      <li>• <strong>Daily Limit:</strong> 500 new links per day per IP address</li>
-                      <li>• <strong>Read Operations:</strong> Statistics and info endpoints have higher limits</li>
+                      <li>• <strong>Public API:</strong> Maximum 1 request per 0.5 seconds</li>
+                      <li>• <strong>Daily Limit:</strong> 1000 new links per day per IP address</li>
+                      <li>• <strong>Admin API:</strong> Higher limits for authenticated admin operations</li>
+                      <li>• <strong>Update Operations:</strong> No rate limits during maintenance windows</li>
+                      <li>• <strong>Read Operations:</strong> Statistics and info endpoints have increased limits</li>
                     </ul>
                   </div>
                 </div>
@@ -656,8 +893,9 @@ if result:
                     code={`const axios = require('axios');
 
 class VelinkAPI {
-  constructor(baseUrl = '${baseUrl || 'https://velink.me'}') {
+  constructor(baseUrl = '${baseUrl || 'https://velink.me'}', adminToken = null) {
     this.baseUrl = baseUrl;
+    this.adminToken = adminToken;
   }
 
   async shortenUrl(url, expiresIn = '30d') {
@@ -692,14 +930,82 @@ class VelinkAPI {
       throw error;
     }
   }
+
+  // Admin methods requiring authentication
+  getAuthHeaders() {
+    if (!this.adminToken) {
+      throw new Error('Admin token required for this operation');
+    }
+    return {
+      'Authorization': \`Bearer \${this.adminToken}\`,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  async checkForUpdates() {
+    try {
+      const response = await axios.get(\`\${this.baseUrl}/api/admin/update/check\`, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error checking for updates:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  async startUpdate(options = {}) {
+    const defaultOptions = {
+      createBackup: true,
+      restartServices: true,
+      maintenanceMode: true
+    };
+    
+    try {
+      const response = await axios.post(\`\${this.baseUrl}/api/admin/update/perform\`, {
+        ...defaultOptions,
+        ...options
+      }, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error starting update:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  async getUpdateStatus() {
+    try {
+      const response = await axios.get(\`\${this.baseUrl}/api/admin/update/status\`, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting update status:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  async getSystemHealth() {
+    try {
+      const response = await axios.get(\`\${this.baseUrl}/api/admin/system/health\`, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting system health:', error.response?.data || error.message);
+      throw error;
+    }
+  }
 }
 
-// Usage
-const api = new VelinkAPI();
+// Usage Examples
+const api = new VelinkAPI('${baseUrl || 'https://velink.me'}', 'your-admin-token');
 
-async function example() {
+async function basicExample() {
   try {
-    // Shorten a URL
+    // Public API - Shorten a URL
     const result = await api.shortenUrl('https://example.com/very-long-url');
     console.log('Shortened URL:', result.shortUrl);
     
@@ -711,11 +1017,218 @@ async function example() {
     const stats = await api.getStats();
     console.log('Total links:', stats.totalLinks);
   } catch (error) {
-    console.error('Example failed:', error);
+    console.error('Basic example failed:', error);
   }
 }
 
-example();`}
+async function adminExample() {
+  try {
+    // Admin API - Check system health
+    const health = await api.getSystemHealth();
+    console.log('System status:', health.status);
+    console.log('Uptime:', health.uptime);
+    
+    // Check for updates
+    const updateCheck = await api.checkForUpdates();
+    if (updateCheck.updateAvailable) {
+      console.log(\`Update available: \${updateCheck.latestVersion}\`);
+      
+      // Start update process
+      const updateResult = await api.startUpdate({
+        createBackup: true,
+        maintenanceMode: true
+      });
+      console.log('Update started:', updateResult.updateId);
+      
+      // Monitor update progress
+      const checkProgress = async () => {
+        const status = await api.getUpdateStatus();
+        console.log(\`Progress: \${status.progress}% - \${status.currentStep}\`);
+        
+        if (status.isUpdating) {
+          setTimeout(checkProgress, 5000); // Check every 5 seconds
+        } else {
+          console.log('Update completed!');
+        }
+      };
+      
+      checkProgress();
+    }
+  } catch (error) {
+    console.error('Admin example failed:', error);
+  }
+}
+
+// Run examples
+basicExample();
+// adminExample(); // Uncomment when you have admin token`}
+                  />
+                </div>
+
+                {/* Update System Management Example */}
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Update System Management</h3>
+                  <CodeBlock 
+                    id="update-system-example"
+                    language="javascript"
+                    code={`// Complete Update System Management Example
+class VelinkUpdateManager {
+  constructor(baseUrl, adminToken) {
+    this.baseUrl = baseUrl;
+    this.adminToken = adminToken;
+  }
+
+  async performFullSystemUpdate() {
+    try {
+      // 1. Check system health before update
+      console.log('🔍 Checking system health...');
+      const health = await this.getSystemHealth();
+      if (health.status !== 'healthy') {
+        throw new Error(\`System not healthy: \${health.status}\`);
+      }
+
+      // 2. Check for available updates
+      console.log('🔄 Checking for updates...');
+      const updateCheck = await this.checkForUpdates();
+      if (!updateCheck.updateAvailable) {
+        console.log('✅ System is already up to date');
+        return;
+      }
+
+      console.log(\`📦 Update available: v\${updateCheck.latestVersion}\`);
+
+      // 3. Create backup before update
+      console.log('💾 Creating backup...');
+      const backup = await this.createBackup({
+        name: \`pre-update-\${new Date().toISOString().split('T')[0]}\`,
+        includeDatabase: true,
+        description: \`Backup before updating to v\${updateCheck.latestVersion}\`
+      });
+      console.log(\`✅ Backup created: \${backup.backupId}\`);
+
+      // 4. Start update process
+      console.log('🚀 Starting update process...');
+      const updateResult = await this.startUpdate({
+        createBackup: false, // Already created manual backup
+        restartServices: true,
+        maintenanceMode: true,
+        updateBranch: 'main'
+      });
+
+      console.log(\`🔄 Update initiated: \${updateResult.updateId}\`);
+      console.log(\`⏱️  Estimated duration: \${updateResult.estimatedDuration}s\`);
+
+      // 5. Monitor update progress
+      await this.monitorUpdateProgress();
+
+      console.log('🎉 Update completed successfully!');
+
+    } catch (error) {
+      console.error('❌ Update failed:', error.message);
+      
+      // Attempt to restore from backup if update failed
+      try {
+        console.log('🔄 Attempting to restore from backup...');
+        await this.restoreFromBackup(backup.backupId);
+        console.log('✅ System restored from backup');
+      } catch (restoreError) {
+        console.error('❌ Restore failed:', restoreError.message);
+      }
+    }
+  }
+
+  async monitorUpdateProgress() {
+    return new Promise((resolve, reject) => {
+      const checkProgress = async () => {
+        try {
+          const status = await this.getUpdateStatus();
+          
+          console.log(\`📊 Progress: \${status.progress}% (\${status.currentStep})\`);
+          
+          if (status.stepProgress) {
+            console.log(\`   Step \${status.stepProgress.step}: \${status.stepProgress.name} - \${status.stepProgress.progress}%\`);
+          }
+
+          if (!status.isUpdating) {
+            resolve();
+          } else {
+            setTimeout(checkProgress, 3000); // Check every 3 seconds
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      checkProgress();
+    });
+  }
+
+  // Additional helper methods...
+  async getSystemHealth() {
+    const response = await fetch(\`\${this.baseUrl}/api/admin/system/health\`, {
+      headers: { 'Authorization': \`Bearer \${this.adminToken}\` }
+    });
+    return response.json();
+  }
+
+  async checkForUpdates() {
+    const response = await fetch(\`\${this.baseUrl}/api/admin/update/check\`, {
+      headers: { 'Authorization': \`Bearer \${this.adminToken}\` }
+    });
+    return response.json();
+  }
+
+  async startUpdate(options) {
+    const response = await fetch(\`\${this.baseUrl}/api/admin/update/perform\`, {
+      method: 'POST',
+      headers: {
+        'Authorization': \`Bearer \${this.adminToken}\`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(options)
+    });
+    return response.json();
+  }
+
+  async getUpdateStatus() {
+    const response = await fetch(\`\${this.baseUrl}/api/admin/update/status\`, {
+      headers: { 'Authorization': \`Bearer \${this.adminToken}\` }
+    });
+    return response.json();
+  }
+
+  async createBackup(options) {
+    const response = await fetch(\`\${this.baseUrl}/api/admin/update/backup\`, {
+      method: 'POST',
+      headers: {
+        'Authorization': \`Bearer \${this.adminToken}\`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(options)
+    });
+    return response.json();
+  }
+
+  async restoreFromBackup(backupId) {
+    const response = await fetch(\`\${this.baseUrl}/api/admin/update/restore\`, {
+      method: 'POST',
+      headers: {
+        'Authorization': \`Bearer \${this.adminToken}\`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ backupId, restartServices: true })
+    });
+    return response.json();
+  }
+}
+
+// Usage
+const updateManager = new VelinkUpdateManager('${baseUrl || 'https://velink.me'}', 'your-admin-token');
+
+// Perform full automated update
+updateManager.performFullSystemUpdate()
+  .then(() => console.log('Update process completed'))
+  .catch(error => console.error('Update failed:', error));`}
                   />
                 </div>
               </div>

@@ -1,25 +1,67 @@
 {
   "short_name": "Velink",
-  "name": "Velink - Beautiful URL Shortener",
+  "name": "Velink - Professional URL Shortener",
+  "description": "Transform long URLs into powerful, trackable short links with advanced analytics, QR codes, and enterprise-grade security.",
   "icons": [
     {
-      "src": "logo512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
     },
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
-      "src": "favicon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any"
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "theme_color": "#3b82f6",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["utilities", "productivity", "business"],
+  "lang": "en",
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Shorten URL",
+      "short_name": "Shorten",
+      "description": "Quickly shorten a URL",
+      "url": "/?action=shorten",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics", 
+      "description": "View link analytics",
+      "url": "/analytics",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }

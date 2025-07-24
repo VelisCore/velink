@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import MaintenanceMode from './MaintenanceMode';
 
 interface PrivacyGateProps {
     children: React.ReactNode;
@@ -8,6 +9,7 @@ interface PrivacyStatus {
     isPrivate: boolean;
     isMaintenanceMode: boolean;
     maintenanceMessage?: string;
+    estimatedCompletion?: string;
     hasAccess: boolean;
 }
 
@@ -28,8 +30,19 @@ const PrivacyGate: React.FC<PrivacyGateProps> = ({ children }) => {
     const checkPrivacyStatus = async () => {
         try {
             setLoading(true);
+            setError('');
+            
             // Check if the site responds normally or requires password
-            const response = await fetch('/api/health');
+            const response = await fetch('/api/health', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Include password if we have one stored
+                    ...(sessionStorage.getItem('websitePassword') && {
+                        'x-website-password': sessionStorage.getItem('websitePassword') || ''
+                    })
+                }
+            });
             
             if (response.status === 401) {
                 const data = await response.json();
@@ -46,17 +59,22 @@ const PrivacyGate: React.FC<PrivacyGateProps> = ({ children }) => {
                     isPrivate: false,
                     isMaintenanceMode: true,
                     maintenanceMessage: data.message,
+                    estimatedCompletion: data.estimatedCompletion,
                     hasAccess: false
                 });
-            } else {
+            } else if (response.ok) {
                 setPrivacyStatus({
                     isPrivate: false,
                     isMaintenanceMode: false,
                     hasAccess: true
                 });
+            } else {
+                // Handle other error statuses
+                throw new Error(`Server responded with status ${response.status}`);
             }
         } catch (error) {
             console.error('Error checking privacy status:', error);
+            // On network error, assume the site is accessible but log the error
             setPrivacyStatus({
                 isPrivate: false,
                 isMaintenanceMode: false,
@@ -135,21 +153,11 @@ const PrivacyGate: React.FC<PrivacyGateProps> = ({ children }) => {
 
     if (privacyStatus.isMaintenanceMode) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 flex items-center justify-center">
-                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4 text-center">
-                    <div className="text-6xl mb-4">🚧</div>
-                    <h1 className="text-2xl font-bold text-gray-800 mb-4">Maintenance Mode</h1>
-                    <p className="text-gray-600 mb-6">
-                        {privacyStatus.maintenanceMessage || 'Website is temporarily under maintenance. Please check back later.'}
-                    </p>
-                    <button 
-                        onClick={checkPrivacyStatus}
-                        className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-                    >
-                        Check Again
-                    </button>
-                </div>
-            </div>
+            <MaintenanceMode
+                message={privacyStatus.maintenanceMessage}
+                estimatedCompletion={privacyStatus.estimatedCompletion}
+                onRetry={checkPrivacyStatus}
+            />
         );
     }
 

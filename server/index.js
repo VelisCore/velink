@@ -109,24 +109,63 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
         }
         
         // Allow static assets
-        if (req.path.match(/\.(css|js|png|jpg|gif|ico|svg)$/)) {
+        if (req.path.match(/\.(css|js|png|jpg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
             return next();
         }
         
-        // Serve maintenance page for root
-        if (req.path === '/') {
-            const maintenancePage = path.join(__dirname, 'public', 'maintenance', 'index.html');
-            if (fs.existsSync(maintenancePage)) {
-                return res.sendFile(maintenancePage);
-            }
+        // Check if request expects JSON (API call)
+        const acceptsJson = req.headers.accept && req.headers.accept.includes('application/json');
+        const isApiCall = req.path.startsWith('/api/') || req.xhr || acceptsJson;
+        
+        if (isApiCall) {
+            // For API calls, return JSON response
+            return res.status(503).json({
+                error: 'Service Temporarily Unavailable',
+                message: 'System is currently under maintenance. Please try again later.',
+                maintenanceMode: true,
+                retryAfter: 3600 // 1 hour in seconds
+            });
         }
         
-        // Show maintenance message for API endpoints
-        return res.status(503).json({
-            error: 'Maintenance Mode',
-            message: process.env.MAINTENANCE_MESSAGE || 'Website is temporarily under maintenance. Please check back later.',
-            maintenanceMode: true
-        });
+        // For browser requests, serve the React app which will handle maintenance mode
+        const indexPath = path.join(__dirname, 'public', 'index.html');
+        if (fs.existsSync(indexPath)) {
+            return res.sendFile(indexPath);
+        }
+        
+        // Fallback maintenance HTML if React app not available
+        const maintenanceHtml = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>Velink - Under Maintenance</title>
+            <meta name="robots" content="noindex, nofollow" />
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                       margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                       color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+                .container { text-align: center; max-width: 500px; }
+                h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+                p { font-size: 1.1rem; margin-bottom: 2rem; opacity: 0.9; }
+                .spinner { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; 
+                          border-radius: 50%; width: 40px; height: 40px; margin: 20px auto;
+                          animation: spin 1s linear infinite; }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🚧 Under Maintenance</h1>
+                <p>Velink is currently undergoing scheduled maintenance to improve your experience.</p>
+                <div class="spinner"></div>
+                <p>We'll be back shortly!</p>
+            </div>
+        </body>
+        </html>`;
+        
+        return res.status(503).send(maintenanceHtml);
     }
     
     // Check if website is private
@@ -137,13 +176,31 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
         }
         
         // Allow static assets
-        if (req.path.match(/\.(css|js|png|jpg|gif|ico|svg)$/)) {
+        if (req.path.match(/\.(css|js|png|jpg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
             return next();
         }
         
         // Check for privacy password in header or query
         const providedPassword = req.headers['x-website-password'] || req.query.password;
         if (providedPassword !== process.env.WEBSITE_PASSWORD) {
+            // Check if request expects JSON (API call)
+            const acceptsJson = req.headers.accept && req.headers.accept.includes('application/json');
+            const isApiCall = req.path.startsWith('/api/') || req.xhr || acceptsJson;
+            
+            if (isApiCall) {
+                return res.status(401).json({
+                    error: 'Authentication Required',
+                    message: 'Access to this resource requires authentication.',
+                    requiresPassword: true
+                });
+            }
+            
+            // For browser requests, serve the React app which will handle the privacy gate
+            const indexPath = path.join(__dirname, 'public', 'index.html');
+            if (fs.existsSync(indexPath)) {
+                return res.sendFile(indexPath);
+            }
+            
             return res.status(401).json({
                 error: 'Private Website',
                 message: 'This website is private. Please provide the correct password.',
@@ -1030,7 +1087,7 @@ app.post('/api/admin/privacy-settings', verifyAdminToken, (req, res) => {
 // UPDATE SYSTEM ENDPOINTS
 // ==========================================
 
-// Check for updates
+// Check for updates with enhanced information
 app.get('/api/admin/update/check', verifyAdminToken, async (req, res) => {
   try {
     const { execSync } = require('child_process');
@@ -1040,6 +1097,9 @@ app.get('/api/admin/update/check', verifyAdminToken, async (req, res) => {
     let currentVersion = 'Unknown';
     let latestVersion = 'Unknown';
     let updateAvailable = false;
+    let systemHealth = 'Unknown';
+    let lastUpdateTime = 'Never';
+    let pendingRestart = false;
     
     try {
       // Get current version from package.json
@@ -1047,6 +1107,36 @@ app.get('/api/admin/update/check', verifyAdminToken, async (req, res) => {
       if (fs.existsSync(packagePath)) {
         const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
         currentVersion = packageJson.version || 'Unknown';
+      }
+      
+      // Check system health using update script
+      const updateScript = path.join(__dirname, '../update.sh');
+      if (fs.existsSync(updateScript)) {
+        try {
+          // Run health check
+          const healthOutput = execSync(`bash "${updateScript}" --health-check`, {
+            cwd: path.join(__dirname, '..'),
+            encoding: 'utf8',
+            timeout: 30000
+          });
+          
+          // Parse health check output
+          if (healthOutput.includes('EXCELLENT')) {
+            systemHealth = 'Excellent';
+          } else if (healthOutput.includes('GOOD')) {
+            systemHealth = 'Good';
+          } else if (healthOutput.includes('FAIR')) {
+            systemHealth = 'Fair';
+          } else if (healthOutput.includes('POOR')) {
+            systemHealth = 'Poor';
+          } else {
+            systemHealth = 'Unknown';
+          }
+          
+        } catch (healthError) {
+          log('warn', `Health check failed: ${healthError.message}`);
+          systemHealth = 'Check Failed';
+        }
       }
       
       // Check if we're in a git repository
@@ -1080,10 +1170,48 @@ app.get('/api/admin/update/check', verifyAdminToken, async (req, res) => {
         
         updateAvailable = localCommit !== remoteCommit;
         
+        // Get commit count difference
+        if (updateAvailable) {
+          try {
+            const commitCount = execSync(`git rev-list --count ${localCommit}..${remoteCommit}`, {
+              cwd: path.join(__dirname, '..'),
+              encoding: 'utf8'
+            }).trim();
+            latestVersion = `${latestVersion} (+${commitCount} commits)`;
+          } catch (countError) {
+            log('warn', `Failed to get commit count: ${countError.message}`);
+          }
+        }
+        
       } catch (gitError) {
         log('warn', `Git operations failed: ${gitError.message}`);
         latestVersion = 'Git not available';
       }
+      
+      // Check for last update time
+      const updateLogPath = path.join(__dirname, '../update.log');
+      if (fs.existsSync(updateLogPath)) {
+        try {
+          const logContent = fs.readFileSync(updateLogPath, 'utf8');
+          const lines = logContent.split('\n');
+          const lastSuccessfulUpdate = lines
+            .reverse()
+            .find(line => line.includes('[SUCCESS]') && line.includes('Update completed'));
+          
+          if (lastSuccessfulUpdate) {
+            const timeMatch = lastSuccessfulUpdate.match(/\[([\d-\s:]+)\]/);
+            if (timeMatch) {
+              lastUpdateTime = new Date(timeMatch[1]).toLocaleString();
+            }
+          }
+        } catch (logError) {
+          log('warn', `Failed to read update log: ${logError.message}`);
+        }
+      }
+      
+      // Check for pending restart
+      const pidFile = path.join(__dirname, '../.update.pid');
+      pendingRestart = fs.existsSync(pidFile);
       
     } catch (error) {
       log('error', `Error checking version: ${error.message}`);
@@ -1095,7 +1223,11 @@ app.get('/api/admin/update/check', verifyAdminToken, async (req, res) => {
       currentVersion,
       latestVersion,
       updateAvailable,
-      status
+      status,
+      systemHealth,
+      lastUpdateTime,
+      pendingRestart,
+      updateScriptAvailable: fs.existsSync(path.join(__dirname, '../update.sh'))
     });
     
   } catch (error) {
@@ -1104,61 +1236,198 @@ app.get('/api/admin/update/check', verifyAdminToken, async (req, res) => {
   }
 });
 
-// Perform system update
+// Get update progress/status
+app.get('/api/admin/update/status', verifyAdminToken, async (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    const maintenanceFile = path.join(__dirname, '.maintenance');
+    const updateLogPath = path.join(__dirname, '../update.log');
+    const pidFile = path.join(__dirname, '../.update.pid');
+    
+    let isUpdating = fs.existsSync(pidFile);
+    let maintenanceMode = fs.existsSync(maintenanceFile);
+    let logs = [];
+    let progress = 0;
+    
+    // Read recent update logs
+    if (fs.existsSync(updateLogPath)) {
+      try {
+        const logContent = fs.readFileSync(updateLogPath, 'utf8');
+        const lines = logContent.split('\n').filter(line => line.trim());
+        
+        // Get last 20 log entries
+        logs = lines.slice(-20).map(line => {
+          const timeMatch = line.match(/\[([\d-\s:]+)\]/);
+          const levelMatch = line.match(/\[(\w+)\]/g);
+          const level = levelMatch && levelMatch[1] ? levelMatch[1].replace(/[\[\]]/g, '') : 'INFO';
+          const message = line.replace(/\[[\d-\s:]+\]\s*\[\w+\]\s*/, '');
+          
+          return {
+            timestamp: timeMatch ? timeMatch[1] : new Date().toISOString(),
+            level: level,
+            message: message
+          };
+        });
+        
+        // Calculate progress based on log content
+        const totalSteps = 7; // From our update script
+        let completedSteps = 0;
+        
+        if (lines.some(line => line.includes('Prerequisites check completed'))) completedSteps++;
+        if (lines.some(line => line.includes('Backup created'))) completedSteps++;
+        if (lines.some(line => line.includes('Dependencies update completed'))) completedSteps++;
+        if (lines.some(line => line.includes('Application build completed'))) completedSteps++;
+        if (lines.some(line => line.includes('Database update completed'))) completedSteps++;
+        if (lines.some(line => line.includes('Health check completed'))) completedSteps++;
+        if (lines.some(line => line.includes('Update completed successfully'))) completedSteps++;
+        
+        progress = Math.round((completedSteps / totalSteps) * 100);
+        
+      } catch (logError) {
+        log('warn', `Failed to read update logs: ${logError.message}`);
+      }
+    }
+    
+    res.json({
+      isUpdating,
+      maintenanceMode,
+      progress,
+      logs,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    log('error', `Error getting update status: ${error.message}`);
+    res.status(500).json({ error: 'Failed to get update status' });
+  }
+});
+
+// Perform system update with enhanced options
 app.post('/api/admin/update/perform', verifyAdminToken, async (req, res) => {
   try {
     const { spawn } = require('child_process');
     const path = require('path');
+    const fs = require('fs');
     
-    log('info', 'Admin initiated system update');
+    const { 
+      skipBackup = false, 
+      forceUpdate = false, 
+      autoRestart = true,
+      updateSystem = false 
+    } = req.body;
     
-    // Enable maintenance mode immediately
-    const maintenanceFile = path.join(__dirname, '.maintenance');
-    require('fs').writeFileSync(maintenanceFile, new Date().toISOString());
-    log('info', 'Maintenance mode enabled for update');
+    log('info', 'Admin initiated system update with options:', { skipBackup, forceUpdate, autoRestart, updateSystem });
     
     // Check if update script exists
-    const updateScript = path.join(__dirname, '../velink-manage.sh');
-    if (!require('fs').existsSync(updateScript)) {
-      // Remove maintenance mode if script doesn't exist
-      require('fs').unlinkSync(maintenanceFile);
+    const updateScript = path.join(__dirname, '../update.sh');
+    if (!fs.existsSync(updateScript)) {
       return res.status(400).json({ 
-        error: 'Update script not found. Make sure velink-manage.sh exists in the project root.' 
+        error: 'Update script not found. Make sure update.sh exists in the project root.' 
       });
     }
     
+    // Check if another update is already running
+    const pidFile = path.join(__dirname, '../.update.pid');
+    if (fs.existsSync(pidFile)) {
+      return res.status(409).json({
+        error: 'Another update is already in progress. Please wait for it to complete.'
+      });
+    }
+    
+    // Enable maintenance mode
+    const maintenanceFile = path.join(__dirname, '.maintenance');
+    fs.writeFileSync(maintenanceFile, JSON.stringify({
+      enabled: true,
+      reason: 'System update in progress',
+      startTime: new Date().toISOString(),
+      estimatedDuration: '5-10 minutes'
+    }));
+    log('info', 'Maintenance mode enabled for update');
+    
+    // Build update command with options
+    let updateArgs = [];
+    
+    if (skipBackup) updateArgs.push('--skip-backup');
+    if (forceUpdate) updateArgs.push('--force');
+    if (autoRestart) updateArgs.push('--auto-start');
+    if (updateSystem) updateArgs.push('--update-system');
+    updateArgs.push('--verbose'); // Always use verbose for admin updates
+    
     res.json({ 
-      message: 'Update started successfully. Velink is now in maintenance mode and will restart automatically.',
+      message: 'Update started successfully. Velink is now in maintenance mode.',
       status: 'Update in progress - Maintenance mode active',
-      maintenanceMode: true
+      maintenanceMode: true,
+      options: { skipBackup, forceUpdate, autoRestart, updateSystem }
     });
     
     // Run update in background
     setTimeout(() => {
-      const updateProcess = spawn('bash', [updateScript, 'update'], {
+      const updateProcess = spawn('bash', [updateScript, ...updateArgs], {
         cwd: path.join(__dirname, '..'),
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, FORCE_UPDATE: 'true' }
+        env: { 
+          ...process.env, 
+          ADMIN_UPDATE: 'true',
+          UPDATE_SOURCE: 'admin_panel'
+        }
       });
+      
+      // Create update log specifically for this admin update
+      const adminUpdateLog = path.join(__dirname, '../admin-update.log');
+      const logStream = fs.createWriteStream(adminUpdateLog, { flags: 'a' });
       
       // Log update output
       updateProcess.stdout.on('data', (data) => {
-        log('info', `Update output: ${data.toString().trim()}`);
+        const output = data.toString().trim();
+        log('info', `Update output: ${output}`);
+        logStream.write(`${new Date().toISOString()} [STDOUT] ${output}\n`);
       });
       
       updateProcess.stderr.on('data', (data) => {
-        log('error', `Update error: ${data.toString().trim()}`);
+        const output = data.toString().trim();
+        log('error', `Update error: ${output}`);
+        logStream.write(`${new Date().toISOString()} [STDERR] ${output}\n`);
       });
       
       updateProcess.on('close', (code) => {
+        logStream.end();
+        
         if (code === 0) {
           log('info', 'Update completed successfully');
+          
+          // Update maintenance mode with completion status
+          if (fs.existsSync(maintenanceFile)) {
+            fs.writeFileSync(maintenanceFile, JSON.stringify({
+              enabled: false,
+              reason: 'Update completed successfully',
+              completedTime: new Date().toISOString(),
+              autoRestart: autoRestart
+            }));
+          }
+          
+          if (autoRestart) {
+            log('info', 'Auto-restart enabled, exiting for restart...');
+            setTimeout(() => {
+              process.exit(0);
+            }, 2000);
+          } else {
+            // Remove maintenance mode if not auto-restarting
+            try {
+              fs.unlinkSync(maintenanceFile);
+              log('info', 'Maintenance mode disabled - manual restart required');
+            } catch (err) {
+              log('error', `Failed to remove maintenance file: ${err.message}`);
+            }
+          }
         } else {
           log('error', `Update failed with exit code: ${code}`);
+          
           // Remove maintenance mode if update fails
           try {
-            require('fs').unlinkSync(maintenanceFile);
+            fs.unlinkSync(maintenanceFile);
             log('info', 'Maintenance mode disabled due to update failure');
           } catch (err) {
             log('error', `Failed to remove maintenance file: ${err.message}`);
@@ -1167,14 +1436,7 @@ app.post('/api/admin/update/perform', verifyAdminToken, async (req, res) => {
       });
       
       updateProcess.unref();
-      
       log('info', 'Update process started in background');
-      
-      // Exit current process after a delay to allow response to be sent
-      setTimeout(() => {
-        log('info', 'Exiting for update restart...');
-        process.exit(0);
-      }, 3000);
       
     }, 1000);
     
@@ -1182,8 +1444,8 @@ app.post('/api/admin/update/perform', verifyAdminToken, async (req, res) => {
     // Remove maintenance mode on error
     try {
       const maintenanceFile = path.join(__dirname, '.maintenance');
-      if (require('fs').existsSync(maintenanceFile)) {
-        require('fs').unlinkSync(maintenanceFile);
+      if (fs.existsSync(maintenanceFile)) {
+        fs.unlinkSync(maintenanceFile);
       }
     } catch (err) {
       log('error', `Failed to remove maintenance file: ${err.message}`);
@@ -1194,6 +1456,169 @@ app.post('/api/admin/update/perform', verifyAdminToken, async (req, res) => {
       error: 'Failed to perform update: ' + error.message,
       maintenanceMode: false
     });
+  }
+});
+
+// Cancel ongoing update
+app.post('/api/admin/update/cancel', verifyAdminToken, async (req, res) => {
+  try {
+    const { execSync } = require('child_process');
+    const fs = require('fs');
+    const path = require('path');
+    
+    const pidFile = path.join(__dirname, '../.update.pid');
+    const maintenanceFile = path.join(__dirname, '.maintenance');
+    
+    if (fs.existsSync(pidFile)) {
+      try {
+        // Kill update process
+        execSync(`pkill -f "update.sh"`, { stdio: 'pipe' });
+        fs.unlinkSync(pidFile);
+        log('info', 'Update process cancelled by admin');
+      } catch (killError) {
+        log('warn', `Failed to kill update process: ${killError.message}`);
+      }
+    }
+    
+    // Remove maintenance mode
+    if (fs.existsSync(maintenanceFile)) {
+      fs.unlinkSync(maintenanceFile);
+      log('info', 'Maintenance mode disabled - update cancelled');
+    }
+    
+    res.json({
+      message: 'Update cancelled successfully',
+      maintenanceMode: false
+    });
+    
+  } catch (error) {
+    log('error', `Error cancelling update: ${error.message}`);
+    res.status(500).json({ error: 'Failed to cancel update' });
+  }
+});
+
+// Create backup manually
+app.post('/api/admin/update/backup', verifyAdminToken, async (req, res) => {
+  try {
+    const { spawn } = require('child_process');
+    const path = require('path');
+    const fs = require('fs');
+    
+    const updateScript = path.join(__dirname, '../update.sh');
+    if (!fs.existsSync(updateScript)) {
+      return res.status(400).json({ 
+        error: 'Update script not found' 
+      });
+    }
+    
+    log('info', 'Admin initiated manual backup');
+    
+    const backupProcess = spawn('bash', [updateScript, '--backup-only'], {
+      cwd: path.join(__dirname, '..'),
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    
+    let output = '';
+    let error = '';
+    
+    backupProcess.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+    
+    backupProcess.stderr.on('data', (data) => {
+      error += data.toString();
+    });
+    
+    backupProcess.on('close', (code) => {
+      if (code === 0) {
+        log('info', 'Manual backup completed successfully');
+        res.json({
+          message: 'Backup created successfully',
+          output: output.trim()
+        });
+      } else {
+        log('error', `Manual backup failed with code: ${code}`);
+        res.status(500).json({
+          error: 'Backup failed',
+          details: error.trim() || output.trim()
+        });
+      }
+    });
+    
+    // Set timeout for backup process
+    setTimeout(() => {
+      if (!backupProcess.killed) {
+        backupProcess.kill();
+        res.status(408).json({ error: 'Backup process timed out' });
+      }
+    }, 120000); // 2 minutes timeout
+    
+  } catch (error) {
+    log('error', `Error creating backup: ${error.message}`);
+    res.status(500).json({ error: 'Failed to create backup' });
+  }
+});
+
+// Restore from backup
+app.post('/api/admin/update/restore', verifyAdminToken, async (req, res) => {
+  try {
+    const { spawn } = require('child_process');
+    const path = require('path');
+    const fs = require('fs');
+    
+    const updateScript = path.join(__dirname, '../update.sh');
+    if (!fs.existsSync(updateScript)) {
+      return res.status(400).json({ 
+        error: 'Update script not found' 
+      });
+    }
+    
+    log('info', 'Admin initiated backup restoration');
+    
+    const restoreProcess = spawn('bash', [updateScript, '--restore'], {
+      cwd: path.join(__dirname, '..'),
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    
+    let output = '';
+    let error = '';
+    
+    restoreProcess.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+    
+    restoreProcess.stderr.on('data', (data) => {
+      error += data.toString();
+    });
+    
+    restoreProcess.on('close', (code) => {
+      if (code === 0) {
+        log('info', 'Backup restoration completed successfully');
+        res.json({
+          message: 'Backup restored successfully. Please restart the service.',
+          output: output.trim(),
+          requiresRestart: true
+        });
+      } else {
+        log('error', `Backup restoration failed with code: ${code}`);
+        res.status(500).json({
+          error: 'Backup restoration failed',
+          details: error.trim() || output.trim()
+        });
+      }
+    });
+    
+    // Set timeout for restore process
+    setTimeout(() => {
+      if (!restoreProcess.killed) {
+        restoreProcess.kill();
+        res.status(408).json({ error: 'Restore process timed out' });
+      }
+    }, 120000); // 2 minutes timeout
+    
+  } catch (error) {
+    log('error', `Error restoring backup: ${error.message}`);
+    res.status(500).json({ error: 'Failed to restore backup' });
   }
 });
 
@@ -1480,8 +1905,9 @@ app.get('*', (req, res, next) => {
 
 // Initialize and generate sitemap
 const sitemapGenerator = new SitemapGenerator(
+  db,
   process.env.NODE_ENV === 'production' 
-    ? 'https://velink.me' 
+    ? 'https://velink.de' 
     : `http://localhost:${PORT}`
 );
 

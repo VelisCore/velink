@@ -10,17 +10,27 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>http://localhost:80/docs</loc>
+    <loc>http://localhost:80/features</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>http://localhost:80/terms</loc>
+    <loc>http://localhost:80/api-docs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>http://localhost:80/api/documentation</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>http://localhost:80/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://localhost:80/privacy</loc>
+    <loc>http://localhost:80/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -30,22 +40,32 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>http://localhost:80/admin</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>http://localhost:80/stats</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>http://localhost:80/6PpRmP</loc>
     <lastmod>2025-07-23</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>http://localhost:80/2UvBbs</loc>
     <lastmod>2025-07-23</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>http://localhost:80/XXLWgv</loc>
     <lastmod>2025-07-21</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>http://localhost:80/NQvkHe</loc>
@@ -57,6 +77,6 @@
     <loc>http://localhost:80/Q5eiQz</loc>
     <lastmod>2025-07-21</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
 </urlset>

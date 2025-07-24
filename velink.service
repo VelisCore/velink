@@ -1,0 +1,19 @@
+[Unit]
+Description=Velink URL Shortener
+After=network.target
+
+[Service]
+Type=simple
+User=velink
+WorkingDirectory=/home/velink
+Environment=NODE_ENV=production
+Environment=PORT=5002
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=velink
+
+[Install]
+WantedBy=multi-user.target

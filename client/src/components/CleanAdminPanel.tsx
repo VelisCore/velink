@@ -2202,7 +2202,7 @@ const CleanAdminPanel: React.FC = () => {
                   <div>
                     <h4 className="text-yellow-800 font-semibold mb-1">Important Update Information</h4>
                     <ul className="text-yellow-700 text-sm space-y-1">
-                      <li>• The update process will restart the VeLink service</li>
+                      <li>• The update process will restart the Velink service</li>
                       <li>• Your website will be briefly unavailable during the update</li>
                       <li>• All data and settings will be preserved</li>
                       <li>• The page will automatically refresh when the update is complete</li>

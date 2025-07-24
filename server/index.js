@@ -1128,7 +1128,7 @@ app.post('/api/admin/update/perform', verifyAdminToken, async (req, res) => {
     }
     
     res.json({ 
-      message: 'Update started successfully. VeLink is now in maintenance mode and will restart automatically.',
+      message: 'Update started successfully. Velink is now in maintenance mode and will restart automatically.',
       status: 'Update in progress - Maintenance mode active',
       maintenanceMode: true
     });

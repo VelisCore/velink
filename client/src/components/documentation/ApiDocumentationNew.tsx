@@ -177,7 +177,7 @@ const ApiDocumentation: React.FC = () => {
       method: 'POST',
       endpoint: '/api/shorten',
       description: 'Transform any long URL into a short, shareable link with extensive customization options.',
-      longDescription: 'This is the core endpoint of VeLink. It accepts a long URL and returns a shortened version with optional advanced features like password protection, custom aliases, expiration dates, and redirect delays. Perfect for social media sharing, email campaigns, and anywhere you need clean, trackable links.',
+      longDescription: 'This is the core endpoint of Velink. It accepts a long URL and returns a shortened version with optional advanced features like password protection, custom aliases, expiration dates, and redirect delays. Perfect for social media sharing, email campaigns, and anywhere you need clean, trackable links.',
       category: 'public',
       complexity: 'simple',
       version: '1.0',
@@ -673,7 +673,7 @@ fi`
       method: 'GET',
       endpoint: '/api/stats',
       description: 'Access comprehensive global statistics and platform-wide metrics.',
-      longDescription: 'Get an overview of the entire VeLink platform including total links created, click statistics, growth trends, and usage patterns. Perfect for dashboards, reports, and understanding platform adoption.',
+      longDescription: 'Get an overview of the entire Velink platform including total links created, click statistics, growth trends, and usage patterns. Perfect for dashboards, reports, and understanding platform adoption.',
       category: 'public',
       complexity: 'moderate',
       version: '1.0',
@@ -737,7 +737,7 @@ def generate_weekly_report():
     stats = requests.get("${baseUrl}/api/stats").json()
     
     report = f"""
-    VeLink Weekly Report - {datetime.now().strftime('%Y-%m-%d')}
+    Velink Weekly Report - {datetime.now().strftime('%Y-%m-%d')}
     
     📊 Platform Overview:
     • Total Links: {stats['totalLinks']:,}
@@ -1652,9 +1652,9 @@ def generate_weekly_report():
                 <div className="bg-primary-100 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
                   <Server className="h-10 w-10 text-primary-600" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to VeLink API</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to Velink API</h2>
                 <p className="text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                  VeLink provides a <strong>powerful, flexible, and secure</strong> URL shortening service with comprehensive analytics, 
+                  Velink provides a <strong>powerful, flexible, and secure</strong> URL shortening service with comprehensive analytics, 
                   advanced security features, and full GDPR compliance. Our RESTful API makes it incredibly easy to integrate 
                   URL shortening into any application, workflow, or automation system.
                 </p>
@@ -1716,7 +1716,7 @@ def generate_weekly_report():
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-3">Quick Start Guide</h2>
                 <p className="text-gray-600 max-w-2xl mx-auto">
-                  Get up and running with VeLink API in just a few minutes. Follow these simple steps to integrate URL shortening into your application.
+                  Get up and running with Velink API in just a few minutes. Follow these simple steps to integrate URL shortening into your application.
                 </p>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -1896,7 +1896,7 @@ def generate_weekly_report():
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-3">Authentication Guide</h2>
                 <p className="text-gray-600 max-w-3xl mx-auto">
-                  VeLink uses a two-tier authentication system: <strong>public endpoints</strong> for basic operations 
+                  Velink uses a two-tier authentication system: <strong>public endpoints</strong> for basic operations 
                   and <strong>JWT-based authentication</strong> for admin and sensitive operations.
                 </p>
               </div>
@@ -1908,7 +1908,7 @@ def generate_weekly_report():
                     Public Endpoints
                   </h3>
                   <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-                    Most VeLink features are available without authentication, making it perfect for quick integrations 
+                    Most Velink features are available without authentication, making it perfect for quick integrations 
                     and public-facing applications. These endpoints include URL shortening, analytics, and basic information retrieval.
                   </p>
                   <div className="bg-white border border-green-200 rounded-lg p-4 mb-4">
@@ -2031,7 +2031,7 @@ curl -X DELETE "${baseUrl}/api/admin/links/123" \\
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-3">Rate Limiting & Best Practices</h2>
                 <p className="text-gray-600 max-w-3xl mx-auto">
-                  VeLink implements intelligent rate limiting to ensure fair usage and optimal performance for all users. 
+                  Velink implements intelligent rate limiting to ensure fair usage and optimal performance for all users. 
                   Follow these guidelines to build robust and efficient integrations.
                 </p>
               </div>
@@ -2161,7 +2161,7 @@ curl -X DELETE "${baseUrl}/api/admin/links/123" \\
                   <CodeBlock 
                     code={`import { useState, useCallback } from 'react';
 
-export function useVeLink() {
+export function useVelink() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -2195,7 +2195,7 @@ export function useVeLink() {
 
 // Usage in component:
 function UrlShortener() {
-  const { shortenUrl, loading, error } = useVeLink();
+  const { shortenUrl, loading, error } = useVelink();
   const [url, setUrl] = useState('');
   const [result, setResult] = useState(null);
   
@@ -2249,7 +2249,7 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
-class VeLinkService {
+class VelinkService {
   constructor() {
     this.baseUrl = '${baseUrl}';
     this.adminToken = null;
@@ -2306,7 +2306,7 @@ class VeLinkService {
   }
 }
 
-const velink = new VeLinkService();
+const velink = new VelinkService();
 
 // Routes
 app.post('/shorten', async (req, res) => {

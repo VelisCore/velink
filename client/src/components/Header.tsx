@@ -51,7 +51,7 @@ const Header: React.FC = () => {
               to="/bug-report"
               className="text-gray-600 hover:text-primary-600 font-medium transition-colors duration-200"
             >
-              Report Bug
+              Report
             </Link>
             <a 
               href="https://github.com/velyzo/velink" 
@@ -111,7 +111,7 @@ const Header: React.FC = () => {
                 onClick={closeMobileMenu}
                 className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50 rounded-md transition-colors"
               >
-                Report Bug
+                Report
               </Link>
               <a
                 href="https://github.com/velyzo/velink"

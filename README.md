@@ -1,476 +1,350 @@
-# Velink - Beautiful Link Shortener## � Quick Start
+# 🔗 Velink - Advanced URL Shortener
 
-### Development Setup
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-19+-blue.svg)](https://reactjs.org/)
 
-1. **Install dependencies:**
-   ```bash
-   npm run install-all
-   ```
-
-2. **Start development:**
-   ```bash
-   npm run dev
-   ```
-
-3. **Build for production:**
-   ```bash
-   npm run build
-   ```
-
-### 🐧 Ubuntu Server Deployment
-
-For production deployment on Ubuntu server:
-
-1. **Upload your VeLink files to the server**
-2. **Run the automated setup script:**
-   ```bash
-   chmod +x ubuntu-setup.sh
-   sudo ./ubuntu-setup.sh
-   ```
-
-3. **Manage your VeLink installation:**
-   ```bash
-   chmod +x velink-manage.sh
-   ./velink-manage.sh status    # Check status
-   ./velink-manage.sh logs      # View logs
-   ./velink-manage.sh restart   # Restart service
-   ```
-
-The setup script automatically:
-- ✅ Installs Node.js 20 LTS
-- ✅ Sets up PM2 process manager
-- ✅ Configures SSL with Let's Encrypt
-- ✅ Creates system service with auto-startup
-- ✅ Sets up firewall and security
-- ✅ Configures log rotation and monitoring
-
-📖 **Full Ubuntu Setup Guide**: See [UBUNTU-SETUP.md](UBUNTU-SETUP.md) fast, and beautiful link shortening platform built with React and Node.js.
+A powerful, feature-rich URL shortener with advanced analytics, admin panel, and comprehensive API.
 
 ## ✨ Features
 
-- 🎨 Beautiful, responsive UI with smooth animations
-- ⚡ Fast link shortening with minimal database footprint
-- 🛡️ Rate limiting (1 link per minute per IP)
-- 🔍 SEO-optimized shortened links
-- 📱 Mobile-friendly design
-- 🌙 Clean, modern interface
-- 🔐 **NEW**: Comprehensive Admin Panel
-- 📊 **NEW**: Advanced Analytics & Reporting
-- 🚨 **NEW**: Security Enhancements & Vulnerability Fixes
-- 📤 **NEW**: Data Export Capabilities
-- 🍪 **NEW**: GDPR-Compliant Cookie Management
-- ⚖️ **NEW**: Complete Legal Framework
+### 🎯 Core Features
+- **URL Shortening** - Create short, memorable links
+- **QR Code Generation** - Automatic QR codes for all short links
+- **Custom Aliases** - Create branded short links
+- **Bulk Operations** - Shorten multiple URLs at once
+- **Link Expiration** - Set custom expiration dates
+- **Password Protection** - Secure links with passwords
 
-## 🔐 Security & Compliance
+### 📊 Analytics & Reporting
+- **Real-time Analytics** - Track clicks, referrers, and locations
+- **Comprehensive Dashboard** - Visual charts and statistics
+- **Click Tracking** - Detailed click analytics
+- **Export Data** - Export analytics in JSON/CSV formats
+- **Performance Metrics** - Server and database monitoring
 
-### Security Features
-- ✅ **Vulnerability Assessment**: All packages scanned and secured
-- ✅ **Admin Authentication**: Token-based admin panel access
-- ✅ **Rate Limiting**: IP-based request throttling
-- ✅ **Data Validation**: Input sanitization and validation
-- ✅ **HTTPS Ready**: SSL/TLS configuration support
+### 🛡️ Security & Privacy
+- **Rate Limiting** - Protect against abuse
+- **GDPR Compliance** - Privacy-first approach
+- **Admin Authentication** - Secure admin panel access
+- **Content Security** - Helmet.js security headers
+- **Environment Configuration** - Secure .env-based configuration
 
-### Legal Compliance
-- ✅ **GDPR Compliant**: Complete privacy policy and data handling
-- ✅ **Cookie Consent**: Interactive cookie management system
-- ✅ **Data Retention**: Automatic 12-month data deletion policy
-- ✅ **German Legal**: TMG § 5 compliant Impressum
-- ✅ **Terms of Service**: Comprehensive user agreements
+### 🔧 Admin Features
+- **Advanced Admin Panel** - Complete control interface
+- **Bug Report System** - Built-in issue tracking
+- **User Management** - Monitor and manage users
+- **System Monitoring** - Real-time system health
+- **Log Management** - Comprehensive logging system
+
+### 🚀 API & Integration
+- **RESTful API** - Complete API with documentation
+- **Interactive Playground** - Test API endpoints live
+- **Multiple SDKs** - JavaScript, Python, cURL examples
+- **Webhook Support** - Real-time notifications
 
 ## 🚀 Quick Start
 
-1. **Install dependencies:**
+### Prerequisites
+- **Node.js** 18+ 
+- **npm** or **yarn**
+- **Git**
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   npm run install-all
+   git clone https://github.com/velyzo/velink.git
+   cd velink
    ```
 
-2. **Start development:**
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment**
+   ```bash
+   # Copy and edit the environment file
+   cp server/.env.example server/.env
+   ```
+
+4. **Start development servers**
    ```bash
    npm run dev
    ```
 
-3. **Build for production:**
-   ```bash
-   npm run build
-   npm start
-   ```
+5. **Access the application**
+   - **Frontend**: http://localhost:3000
+   - **Backend**: http://localhost:80
+   - **Admin Panel**: http://localhost:3000/admin
+   - **API Docs**: http://localhost:3000/api-docs
 
-## 🏗️ Project Structure
+## ⚙️ Configuration
 
+### Environment Variables
+
+Create a `.env` file in the `server` directory:
+
+```env
+# Admin Authentication
+ADMIN_TOKEN=your-secure-admin-token-here
+
+# Server Configuration
+PORT=80
+NODE_ENV=development
+
+# Database Configuration
+DATABASE_PATH=./velink.db
+
+# Security Configuration
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# CORS Configuration
+CORS_ORIGIN=http://localhost:3000
+
+# SSL Configuration (optional)
+SSL_KEY_PATH=./ssl/private.key
+SSL_CERT_PATH=./ssl/certificate.crt
+
+# Logging Configuration
+LOG_LEVEL=info
+LOG_RETENTION_DAYS=7
+MAX_LOGS_IN_MEMORY=10000
+
+# Features Configuration
+ENABLE_ANALYTICS=true
+ENABLE_SITEMAP=true
+ENABLE_QR_CODES=true
+
+# Performance Configuration
+COMPRESSION_ENABLED=true
+STATIC_CACHE_MAX_AGE=86400
+
+# Maintenance Mode
+MAINTENANCE_MODE=false
+MAINTENANCE_MESSAGE=Velink is currently under maintenance.
 ```
-velink/
-├── client/          # React frontend
-├── server/          # Node.js backend
-├── README.md
-└── package.json
-```
 
-## 🛠️ Tech Stack
+### Admin Access
 
-- **Frontend**: React, TypeScript, Tailwind CSS, Framer Motion
-- **Backend**: Node.js, Express, SQLite
-- **Security**: JWT tokens, Rate limiting, Input validation
-- **Analytics**: Custom tracking, Export capabilities
-- **Legal**: GDPR compliance, Cookie management
+The admin token is configured in your `.env` file. Use this token to access:
+- **Admin Panel**: Enter the token at `/admin`
+- **API Calls**: Use as `Authorization: Bearer YOUR_TOKEN`
 
-## 🔧 Admin Panel
+## 📋 Scripts
 
-Access the powerful admin panel at `/admin` with your admin token.
-
-### Admin Features
-- 📊 **Dashboard**: Overview of links, clicks, and system health
-- 🔗 **Link Management**: Search, filter, edit, and delete links
-- 📈 **Analytics**: Detailed statistics and data visualization
-- 🖥️ **System Monitor**: Server health, memory usage, database size
-- ⚙️ **Settings**: Export data, manage preferences
-- 🗑️ **Bulk Actions**: Multi-select and batch operations
-
-### Setting Up Admin Access
-1. Set your admin token in environment variables:
-   ```bash
-   ADMIN_TOKEN=your-secure-admin-token-here
-   ```
-2. Access the admin panel at: `https://yoursite.com/admin`
-3. Enter your admin token to authenticate
-
-## 🔒 Security Vulnerabilities Fixed
-
-### Client-Side Security
-- ✅ **nth-check vulnerability**: Updated regex processing library
-- ✅ **PostCSS vulnerability**: Fixed line return parsing errors
-- ✅ **webpack-dev-server**: Patched source code exposure risks
-- ✅ **SVG processing**: Updated vulnerable SVGO dependencies
-- ✅ **CSS processing**: Resolved PostCSS security issues
-
-### Server-Side Security
-- ✅ **No vulnerabilities found**: All server packages are secure
-- ✅ **Input validation**: Comprehensive data sanitization
-- ✅ **SQL injection protection**: Parameterized queries
-- ✅ **XSS protection**: Output escaping and validation
-
-### Security Best Practices Implemented
-- 🔐 **Authentication**: Secure token-based admin access
-- 🚫 **Rate Limiting**: Prevents abuse and DOS attacks
-- 🛡️ **HTTPS Ready**: SSL/TLS configuration support
-- 📝 **Audit Logging**: Track admin actions and system events
-- 🔍 **Regular Scans**: Automated vulnerability monitoring
-
-## 📱 Screenshots
-
-Coming soon...
-
-## 🔧 Admin Panel
-
-Velink includes a secure admin panel for managing links and viewing statistics.
-
-### Access
-- Visit `/admin` on your deployed instance
-- Enter your admin token to authenticate
-- The admin panel provides full control over shortened links
-
-### Setup
-1. **Set Admin Token**: 
-   ```bash
-   # Create .env file based on .env.example
-   cp .env.example .env
-   
-   # Set your secure admin token
-   ADMIN_TOKEN=your-super-secure-token-here
-   ```
-
-2. **Admin Features**:
-   - 📊 Real-time statistics dashboard
-   - 🔗 View all shortened links
-   - 🗑️ Delete unwanted links
-   - 📈 Monitor click analytics
-   - 📋 Copy links to clipboard
-
-### Security
-- Token-based authentication
-- Admin access only
-- No user registration required
-- Environment variable configuration
-
-## 🍪 Cookie Compliance
-
-Velink includes GDPR-compliant cookie management:
-
-- **Essential Cookies**: Required for service functionality
-- **Analytics Cookies**: Optional, for usage insights
-- **User Control**: Users can accept all or essential only
-- **Data Retention**: 12-month automatic deletion policy
-- **IP Anonymization**: After 30 days
-
-## 📋 Legal Compliance
-
-- **GDPR Compliant**: Full European data protection compliance
-- **German Law**: Complies with TMG § 5 (Impressum)
-- **Data Deletion**: Automatic deletion after 12 months
-- **Privacy Policy**: Comprehensive data handling documentation
-- **Terms of Service**: Clear usage guidelines and contact information
-
-## 🌐 API Documentation
-
-Velink provides a comprehensive REST API for link management and analytics.
-
-### Public Endpoints
-
-#### Shorten Link
+### Development
 ```bash
-POST /api/shorten
-Content-Type: application/json
-
-{
-  "url": "https://example.com",
-  "description": "Optional description"
-}
+npm run dev          # Start both frontend and backend
+npm run server       # Start only backend server
+npm run client       # Start only frontend client
 ```
 
-**Response:**
-```json
-{
-  "shortCode": "abc123",
-  "originalUrl": "https://example.com",
-  "shortUrl": "https://yourdomain.com/abc123",
-  "description": "Optional description",
-  "createdAt": "2025-07-21T21:50:00.000Z"
-}
-```
-
-#### Get Link Info
+### Production
 ```bash
-GET /api/info/:shortCode
+npm run build        # Build for production
+npm run start        # Start production server
 ```
 
-**Response:**
-```json
-{
-  "shortCode": "abc123",
-  "originalUrl": "https://example.com",
-  "description": "Optional description",
-  "clicks": 42,
-  "createdAt": "2025-07-21T21:50:00.000Z",
-  "lastClicked": "2025-07-21T22:30:00.000Z"
-}
-```
-
-#### Get Public Statistics
+### Updates & Maintenance
 ```bash
-GET /api/stats
-GET /api/v1/stats
+# Windows
+.\update.bat         # Full update with backup
+.\update.bat --start # Update and auto-start
+
+# Linux/macOS
+./update.sh          # Full update with backup
+./update.sh --start  # Update and auto-start
 ```
 
-**Response:**
-```json
-{
-  "totalLinks": 1234,
-  "totalClicks": 5678,
-  "linksToday": 12,
-  "clicksToday": 89
-}
-```
-
-### Admin Endpoints
-
-All admin endpoints require the `Authorization: Bearer <token>` header.
-
-#### Admin Authentication
+### Utility Scripts
 ```bash
-POST /api/admin/verify
-Content-Type: application/json
+# Backup only
+.\update.bat --backup-only
 
-{
-  "token": "your-admin-token"
-}
+# Restore from backup
+.\update.bat --restore
+
+# Health check
+.\update.bat --health-check
+
+# Cleanup old files
+.\update.bat --cleanup
 ```
 
-#### Get All Links
+## 🔧 API Usage
+
+### Basic Examples
+
+#### Create Short URL
 ```bash
-GET /api/admin/links
-Authorization: Bearer <token>
+curl -X POST "http://localhost:80/api/shorten" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/very-long-url",
+    "expiresIn": "30d"
+  }'
 ```
 
-**Response:**
-```json
-[
-  {
-    "_id": "unique-id",
-    "shortCode": "abc123",
-    "originalUrl": "https://example.com",
-    "description": "Optional description",
-    "clicks": 42,
-    "createdAt": "2025-07-21T21:50:00.000Z",
-    "lastClicked": "2025-07-21T22:30:00.000Z",
-    "isActive": true
+#### Get Link Statistics
+```bash
+curl "http://localhost:80/api/info/abc123"
+```
+
+#### Admin Operations
+```bash
+curl -X GET "http://localhost:80/api/admin/links" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+### JavaScript SDK
+```javascript
+const VelinkAPI = {
+  baseUrl: 'http://localhost:80',
+  
+  async shortenUrl(url, options = {}) {
+    const response = await fetch(`${this.baseUrl}/api/shorten`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, ...options })
+    });
+    return response.json();
   }
-]
+};
+
+// Usage
+const result = await VelinkAPI.shortenUrl('https://example.com');
+console.log(result.shortUrl);
 ```
 
-#### Update Link
-```bash
-PUT /api/admin/links/:id
-Authorization: Bearer <token>
-Content-Type: application/json
+## 📊 Features Overview
 
-{
-  "description": "Updated description",
-  "isActive": true
-}
-```
+### Dashboard
+- Real-time statistics
+- Click analytics
+- Performance monitoring
+- User activity tracking
 
-#### Delete Link
-```bash
-DELETE /api/admin/links/:id
-Authorization: Bearer <token>
-```
+### Link Management
+- Bulk operations
+- Custom aliases
+- Expiration settings
+- Password protection
+- Active/inactive toggling
 
-#### Get Analytics
-```bash
-GET /api/admin/analytics
-Authorization: Bearer <token>
-```
+### Analytics
+- Geographic data
+- Referrer tracking
+- Device statistics
+- Browser analytics
+- Time-based metrics
 
-**Response:**
-```json
-{
-  "totalLinks": 1234,
-  "totalClicks": 5678,
-  "activeLinks": 890,
-  "linksToday": 12,
-  "clicksByDay": [
-    {
-      "date": "2025-07-21",
-      "links_created": 5,
-      "total_clicks": 23
-    }
-  ],
-  "topLinks": [
-    {
-      "shortCode": "abc123",
-      "originalUrl": "https://example.com",
-      "clicks": 42
-    }
-  ],
-  "referrerStats": [
-    {
-      "browser": "Chrome",
-      "count": 150
-    }
-  ],
-  "countryStats": [
-    {
-      "country": "Germany",
-      "count": 89
-    }
-  ]
-}
-```
+### Admin Panel
+- System monitoring
+- User management
+- Log viewing
+- Database management
+- Configuration updates
 
-#### Get System Information
-```bash
-GET /api/admin/system
-Authorization: Bearer <token>
-```
-
-**Response:**
-```json
-{
-  "uptime": 3600000,
-  "memoryUsage": {
-    "used": 123456789,
-    "total": 987654321
-  },
-  "diskUsage": {
-    "used": 1234567890,
-    "total": 9876543210
-  },
-  "dbSize": 1048576,
-  "activeConnections": 10,
-  "version": "1.0.0"
-}
-```
-
-#### Get Logs
-```bash
-GET /api/admin/logs?date=2025-07-21
-Authorization: Bearer <token>
-```
-
-**Response:**
-```json
-[
-  {
-    "timestamp": "2025-07-21T21:50:00.000Z",
-    "level": "info",
-    "message": "GET /api/stats - 200 (2ms)",
-    "method": "GET",
-    "url": "/api/stats",
-    "ip": "127.0.0.1"
-  }
-]
-```
-
-#### Export Data
-```bash
-GET /api/admin/export/links
-GET /api/admin/export/analytics
-Authorization: Bearer <token>
-```
-
-Returns CSV formatted data for download.
-
-#### Database Management
-```bash
-GET /api/admin/databases
-GET /api/admin/databases/:id
-Authorization: Bearer <token>
-```
-
-**Response:**
-```json
-{
-  "id": "main",
-  "name": "Main Database",
-  "size": 1048576,
-  "tables": [
-    {
-      "name": "short_urls",
-      "records": 1234,
-      "size": 524288
-    }
-  ]
-}
-```
+## 🛡️ Security Features
 
 ### Rate Limiting
+- Configurable request limits
+- Per-IP tracking
+- Sliding window algorithm
+- Graceful degradation
 
-- **Public endpoints**: 1 request per minute per IP
-- **Admin endpoints**: 100 requests per minute per token
-- **Static files**: No limits
+### Authentication
+- Bearer token authentication
+- Secure admin access
+- Session management
+- Token validation
 
-### Error Responses
+### Privacy
+- GDPR compliance
+- Data anonymization
+- Privacy controls
+- Consent management
 
-All endpoints return standardized error responses:
+## 🚀 Deployment
 
-```json
-{
-  "error": "Error message",
-  "code": "ERROR_CODE",
-  "timestamp": "2025-07-21T21:50:00.000Z"
-}
+### Docker Deployment
+```dockerfile
+# Dockerfile included for easy deployment
+docker build -t velink .
+docker run -p 80:80 velink
 ```
 
-**Common Error Codes:**
-- `400 Bad Request`: Invalid input data
-- `401 Unauthorized`: Missing or invalid admin token
-- `404 Not Found`: Resource not found
-- `429 Too Many Requests`: Rate limit exceeded
-- `500 Internal Server Error`: Server error
+### Manual Deployment
+1. Build the application: `npm run build`
+2. Configure environment variables
+3. Start the server: `npm start`
+4. Configure reverse proxy (nginx/Apache)
+
+### Environment-Specific Configurations
+- **Development**: Auto-reload, detailed logging
+- **Production**: Compression, caching, SSL
+- **Testing**: In-memory database, mock services
+
+## 📈 Performance
+
+### Optimizations
+- **Compression**: Gzip/Brotli compression
+- **Caching**: Static file caching
+- **Database**: SQLite with optimized queries
+- **CDN Ready**: Static asset optimization
+
+### Monitoring
+- **Health Endpoints**: `/api/health`
+- **Metrics**: Response times, error rates
+- **Logging**: Structured logging with rotation
+- **Alerts**: Error tracking and notifications
 
 ## 🤝 Contributing
 
-Feel free to submit issues and pull requests!
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+### Development Setup
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+### Bug Reports
+Use the built-in bug report system at `/bug-report` or create a GitHub issue.
 
 ## 📄 License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Documentation**: Complete API docs at `/api-docs`
+- **Bug Reports**: Built-in system at `/bug-report`
+- **Email**: [mail@velyzo.de](mailto:mail@velyzo.de)
+- **GitHub**: [Issues](https://github.com/velyzo/velink/issues)
+
+## 🔄 Changelog
+
+### v2.0.0 (Latest)
+- ✅ Complete .env configuration system
+- ✅ Advanced update scripts with fallbacks
+- ✅ Improved bug reporting system
+- ✅ Enhanced admin panel
+- ✅ Better error handling and logging
+- ✅ Performance optimizations
+
+### v1.0.0
+- ✅ Initial release
+- ✅ Basic URL shortening
+- ✅ Admin panel
+- ✅ API documentation
+
+---
+
+<div align="center">
+  <strong>Built with ❤️ by <a href="https://github.com/velyzo">Velyzo</a></strong>
+</div>

@@ -454,7 +454,7 @@ app.get('/api/analytics/:shortCode', async (req, res) => {
 });
 
 // Admin token for authentication
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'velink-admin-2025-secure-token';
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'velink-admin-2025-secure-token-v2';
 console.log('ðŸ”‘ Admin token loaded:', ADMIN_TOKEN ? 'Yes (length: ' + ADMIN_TOKEN.length + ')' : 'No');
 
 // Admin middleware to verify token

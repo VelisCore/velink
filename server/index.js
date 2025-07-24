@@ -1309,152 +1309,11 @@ app.get('/api/admin/system/health', verifyAdminToken, async (req, res) => {
     });
   }
 });
-  try {
-    const { execSync } = require('child_process');
-    const fs = require('fs');
-    const path = require('path');
-    
-    let currentVersion = 'Unknown';
-    let latestVersion = 'Unknown';
-    let updateAvailable = false;
-    let systemHealth = 'Unknown';
-    let lastUpdateTime = 'Never';
-    let pendingRestart = false;
-    
-    try {
-      // Get current version from package.json
-      const packagePath = path.join(__dirname, '../package.json');
-      if (fs.existsSync(packagePath)) {
-        const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-        currentVersion = packageJson.version || 'Unknown';
-      }
-      
-      // Check system health using update script
-      const updateScript = path.join(__dirname, '../update.sh');
-      if (fs.existsSync(updateScript)) {
-        try {
-          // Run health check
-          const healthOutput = execSync(`bash "${updateScript}" --health-check`, {
-            cwd: path.join(__dirname, '..'),
-            encoding: 'utf8',
-            timeout: 30000
-          });
-          
-          // Parse health check output
-          if (healthOutput.includes('EXCELLENT')) {
-            systemHealth = 'Excellent';
-          } else if (healthOutput.includes('GOOD')) {
-            systemHealth = 'Good';
-          } else if (healthOutput.includes('FAIR')) {
-            systemHealth = 'Fair';
-          } else if (healthOutput.includes('POOR')) {
-            systemHealth = 'Poor';
-          } else {
-            systemHealth = 'Unknown';
-          }
-          
-        } catch (healthError) {
-          log('warn', `Health check failed: ${healthError.message}`);
-          systemHealth = 'Check Failed';
-        }
-      }
-      
-      // Check if we're in a git repository
-      try {
-        const currentCommit = execSync('git rev-parse HEAD', { 
-          cwd: path.join(__dirname, '..'),
-          encoding: 'utf8' 
-        }).trim().substring(0, 7);
-        
-        currentVersion = `${currentVersion} (${currentCommit})`;
-        
-        // Fetch latest changes from remote
-        execSync('git fetch origin main', { 
-          cwd: path.join(__dirname, '..'),
-          stdio: 'pipe' 
-        });
-        
-        // Check if there are new commits
-        const localCommit = execSync('git rev-parse HEAD', { 
-          cwd: path.join(__dirname, '..'),
-          encoding: 'utf8' 
-        }).trim();
-        
-        const remoteCommit = execSync('git rev-parse origin/main', { 
-          cwd: path.join(__dirname, '..'),
-          encoding: 'utf8' 
-        }).trim();
-        
-        const latestCommitShort = remoteCommit.substring(0, 7);
-        latestVersion = `Latest (${latestCommitShort})`;
-        
-        updateAvailable = localCommit !== remoteCommit;
-        
-        // Get commit count difference
-        if (updateAvailable) {
-          try {
-            const commitCount = execSync(`git rev-list --count ${localCommit}..${remoteCommit}`, {
-              cwd: path.join(__dirname, '..'),
-              encoding: 'utf8'
-            }).trim();
-            latestVersion = `${latestVersion} (+${commitCount} commits)`;
-          } catch (countError) {
-            log('warn', `Failed to get commit count: ${countError.message}`);
-          }
-        }
-        
-      } catch (gitError) {
-        log('warn', `Git operations failed: ${gitError.message}`);
-        latestVersion = 'Git not available';
-      }
-      
-      // Check for last update time
-      const updateLogPath = path.join(__dirname, '../update.log');
-      if (fs.existsSync(updateLogPath)) {
-        try {
-          const logContent = fs.readFileSync(updateLogPath, 'utf8');
-          const lines = logContent.split('\n');
-          const lastSuccessfulUpdate = lines
-            .reverse()
-            .find(line => line.includes('[SUCCESS]') && line.includes('Update completed'));
-          
-          if (lastSuccessfulUpdate) {
-            const timeMatch = lastSuccessfulUpdate.match(/\[([\d-\s:]+)\]/);
-            if (timeMatch) {
-              lastUpdateTime = new Date(timeMatch[1]).toLocaleString();
-            }
-          }
-        } catch (logError) {
-          log('warn', `Failed to read update log: ${logError.message}`);
-        }
-      }
-      
-      // Check for pending restart
-      const pidFile = path.join(__dirname, '../.update.pid');
-      pendingRestart = fs.existsSync(pidFile);
-      
-    } catch (error) {
-      log('error', `Error checking version: ${error.message}`);
-    }
-    
-    const status = updateAvailable ? 'Update available' : 'Up to date';
-    
-    res.json({
-      currentVersion,
-      latestVersion,
-      updateAvailable,
-      status,
-      systemHealth,
-      lastUpdateTime,
-      pendingRestart,
-      updateScriptAvailable: fs.existsSync(path.join(__dirname, '../update.sh'))
-    });
-    
-  } catch (error) {
-    log('error', `Error checking for updates: ${error.message}`);
-    res.status(500).json({ error: 'Failed to check for updates' });
-  }
-});
+
+// Enhanced update endpoints using UpdateManager
+if (updateManager) {
+  // Enhanced update endpoints are defined later in the file
+}
 
 // Get update progress/status
 app.get('/api/admin/update/status', verifyAdminToken, async (req, res) => {
@@ -1874,6 +1733,89 @@ if (fs.existsSync(path.resolve(__dirname, '../client/build'))) {
 }
 
 console.log(`Serving static files from: ${clientBuildPath}`);
+
+// Enhanced Update System Endpoints (if available)
+try {
+  const UpdateManager = require('./update-manager');
+  const updateManager = new UpdateManager();
+  
+  // Enhanced update check endpoint
+  app.get('/api/admin/update/enhanced/check', verifyAdminToken, async (req, res) => {
+    try {
+      const updateInfo = await updateManager.checkForUpdates();
+      res.json(updateInfo);
+    } catch (error) {
+      log('error', `Enhanced update check failed: ${error.message}`);
+      res.status(500).json({ 
+        success: false,
+        error: 'Enhanced update check failed',
+        message: error.message 
+      });
+    }
+  });
+
+  // Enhanced update status endpoint
+  app.get('/api/admin/update/enhanced/status', verifyAdminToken, async (req, res) => {
+    try {
+      const status = await updateManager.getUpdateStatus();
+      res.json(status);
+    } catch (error) {
+      log('error', `Enhanced update status failed: ${error.message}`);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to get enhanced update status',
+        message: error.message 
+      });
+    }
+  });
+
+  // Enhanced update perform endpoint
+  app.post('/api/admin/update/enhanced/perform', verifyAdminToken, async (req, res) => {
+    try {
+      const options = {
+        createBackup: req.body.createBackup !== false,
+        restartServices: req.body.restartServices !== false,
+        updateSystem: req.body.updateSystem === true,
+        force: req.body.force === true,
+        verbose: true
+      };
+
+      log('info', 'Enhanced update initiated', { ip: req.ip, options });
+      const result = await updateManager.performUpdate(options);
+      res.json(result);
+    } catch (error) {
+      log('error', `Enhanced update failed: ${error.message}`, { ip: req.ip });
+      res.status(500).json({ 
+        success: false,
+        error: 'Enhanced update failed',
+        message: error.message 
+      });
+    }
+  });
+
+  // System health endpoint
+  app.get('/api/admin/system/enhanced/health', verifyAdminToken, async (req, res) => {
+    try {
+      const health = await updateManager.getSystemHealth();
+      res.json({
+        success: true,
+        ...health,
+        lastCheck: new Date().toISOString()
+      });
+    } catch (error) {
+      log('error', `Enhanced health check failed: ${error.message}`);
+      res.status(500).json({ 
+        success: false,
+        error: 'Enhanced health check failed',
+        message: error.message 
+      });
+    }
+  });
+
+  log('info', 'Enhanced update system endpoints registered');
+} catch (error) {
+  log('warn', `Enhanced update system not available: ${error.message}`);
+}
 
 // Set up API routes
 app.use('/api/v1', setupApiRoutes(db));

@@ -4,65 +4,65 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
-    <loc>https://velink.de</loc>
+    <loc>http://localhost:80</loc>
     <lastmod>2025-07-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://velink.de/features</loc>
+    <loc>http://localhost:80/features</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://velink.de/api-docs</loc>
+    <loc>http://localhost:80/api-docs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velink.de/api/documentation</loc>
+    <loc>http://localhost:80/api/documentation</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velink.de/privacy</loc>
+    <loc>http://localhost:80/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://velink.de/terms</loc>
+    <loc>http://localhost:80/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://velink.de/impressum</loc>
+    <loc>http://localhost:80/impressum</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://velink.de/admin</loc>
+    <loc>http://localhost:80/admin</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://velink.de/stats</loc>
+    <loc>http://localhost:80/stats</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velink.de/XXLWgv</loc>
+    <loc>http://localhost:80/XXLWgv</loc>
     <lastmod>2025-07-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://velink.de/NQvkHe</loc>
+    <loc>http://localhost:80/NQvkHe</loc>
     <lastmod>2025-07-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://velink.de/Q5eiQz</loc>
+    <loc>http://localhost:80/Q5eiQz</loc>
     <lastmod>2025-07-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

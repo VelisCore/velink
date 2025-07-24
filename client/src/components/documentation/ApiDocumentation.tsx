@@ -580,7 +580,7 @@ const ApiDocumentation: React.FC = () => {
           {endpoint.responseExample && (
             <div className="mt-6">
               <h4 className="text-sm font-medium text-gray-700 mb-2">Example Response:</h4>
-              <pre className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm overflow-x-auto">
+              <pre className="bg-slate-800 text-green-400 border border-slate-600 rounded-md p-4 text-sm overflow-x-auto">
                 {JSON.stringify(endpoint.responseExample, null, 2)}
               </pre>
             </div>
@@ -598,7 +598,7 @@ const ApiDocumentation: React.FC = () => {
                   {response.status}
                 </span>
               </div>
-              <pre className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm overflow-x-auto">
+              <pre className="bg-slate-800 text-cyan-300 border border-slate-600 rounded-md p-4 text-sm overflow-x-auto">
                 {JSON.stringify(response.data, null, 2)}
               </pre>
               {response.error && (

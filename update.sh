@@ -1,39 +1,269 @@
 #!/bin/bash
 
-# Velink Update Script
-# Automated deployment and update system with fallbacks
+# ========================================
+# Velink Update System - Ubuntu/Linux Version
+# ========================================
+# Comprehensive update script with backup, restore, and health checks
+# Optimized for Ubuntu Server/Desktop environments
+# Version: 2.0.0
+# Author: Velyzo
+# Date: 2025-07-24
 
-set -e  # Exit on any error
+set -euo pipefail  # Exit on any error, undefined variables, and pipe failures
 
 # Configuration
 PROJECT_NAME="velink"
 BACKUP_DIR="./backups"
+LOG_DIR="./server/logs"
 LOG_FILE="./update.log"
 NODE_VERSION="18"
+SCRIPT_VERSION="2.0.0"
+PID_FILE="./.update.pid"
+TEMP_DIR="./temp_update"
+LOCK_FILE="/tmp/velink_update.lock"
 
-# Colors for output
+# Ubuntu-specific optimization
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
+
+# System requirements
+MIN_MEMORY_GB=1
+MIN_DISK_GB=2
+REQUIRED_PACKAGES=("curl" "wget" "tar" "gzip")
+
+# Command line arguments
+BACKUP_ONLY=false
+AUTO_START=false
+RESTORE=false
+FORCE=false
+SKIP_BACKUP=false
+HEALTH_CHECK_ONLY=false
+CLEANUP_ONLY=false
+INSTALL_DEPS=false
+UPDATE_SYSTEM=false
+DEBUG=false
+VERBOSE=false
+
+# Colors for enhanced output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
-# Logging function
+# ========================================
+# Argument Parsing
+# ========================================
+
+show_help() {
+    cat << EOF
+
+========================================
+ Velink Update System v${SCRIPT_VERSION}
+ Ubuntu/Linux Optimized Version
+========================================
+
+Usage: $0 [options]
+
+Options:
+  --backup-only      Create backup only, no update
+  --restore          Restore from latest backup
+  --auto-start       Automatically start after update
+  --force            Force update even if checks fail
+  --skip-backup      Skip backup creation (dangerous!)
+  --health-check     Run health check only
+  --cleanup          Run cleanup only
+  --install-deps     Install system dependencies
+  --update-system    Update Ubuntu packages first
+  --debug            Enable debug output
+  --verbose          Enable verbose output
+  --help, -h         Show this help message
+
+Examples:
+  $0                           # Standard update
+  $0 --auto-start              # Update and start automatically
+  $0 --backup-only             # Create backup only
+  $0 --restore                 # Restore from backup
+  $0 --health-check            # Check system health
+  $0 --install-deps            # Install system dependencies
+  $0 --update-system --verbose # Update system with verbose output
+
+System Requirements:
+  - Ubuntu 18.04+ or compatible Linux distribution
+  - Node.js ${NODE_VERSION}+ (will be installed if missing)
+  - At least ${MIN_MEMORY_GB}GB RAM
+  - At least ${MIN_DISK_GB}GB free disk space
+  - Internet connection for updates
+
+EOF
+}
+
+# Parse command line arguments
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --backup-only)
+                BACKUP_ONLY=true
+                shift
+                ;;
+            --auto-start|--start)
+                AUTO_START=true
+                shift
+                ;;
+            --restore)
+                RESTORE=true
+                shift
+                ;;
+            --force)
+                FORCE=true
+                shift
+                ;;
+            --skip-backup)
+                SKIP_BACKUP=true
+                shift
+                ;;
+            --health-check)
+                HEALTH_CHECK_ONLY=true
+                shift
+                ;;
+            --cleanup)
+                CLEANUP_ONLY=true
+                shift
+                ;;
+            --install-deps)
+                INSTALL_DEPS=true
+                shift
+                ;;
+            --update-system)
+                UPDATE_SYSTEM=true
+                shift
+                ;;
+            --debug)
+                DEBUG=true
+                set -x  # Enable bash debug mode
+                shift
+                ;;
+            --verbose)
+                VERBOSE=true
+                shift
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# ========================================
+# Utility Functions
+# ========================================
+
+# Enhanced logging with timestamps and levels
 log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "${BLUE}[${timestamp}]${NC} ${WHITE}[INFO]${NC} $1" | tee -a "$LOG_FILE"
 }
 
 error() {
-    echo -e "${RED}[ERROR]${NC} $1" | tee -a "$LOG_FILE"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "${RED}[${timestamp}] [ERROR]${NC} $1" | tee -a "$LOG_FILE"
+    export LAST_ERROR="$1"
 }
 
 success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1" | tee -a "$LOG_FILE"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "${GREEN}[${timestamp}] [SUCCESS]${NC} $1" | tee -a "$LOG_FILE"
 }
 
 warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1" | tee -a "$LOG_FILE"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "${YELLOW}[${timestamp}] [WARNING]${NC} $1" | tee -a "$LOG_FILE"
 }
+
+debug() {
+    if [[ "$DEBUG" == "true" ]]; then
+        local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        echo -e "${PURPLE}[${timestamp}] [DEBUG]${NC} $1" | tee -a "$LOG_FILE"
+    fi
+}
+
+verbose() {
+    if [[ "$VERBOSE" == "true" ]]; then
+        local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        echo -e "${CYAN}[${timestamp}] [VERBOSE]${NC} $1" | tee -a "$LOG_FILE"
+    fi
+}
+
+# Create necessary directories
+setup_directories() {
+    debug "Setting up directories..."
+    mkdir -p "$BACKUP_DIR" "$LOG_DIR" "$TEMP_DIR"
+    
+    # Set proper permissions
+    chmod 755 "$BACKUP_DIR" "$LOG_DIR"
+    
+    # Ensure log file exists and is writable
+    touch "$LOG_FILE"
+    chmod 644 "$LOG_FILE"
+}
+
+# Lock management to prevent multiple instances
+create_lock() {
+    if [[ -f "$LOCK_FILE" ]]; then
+        local pid=$(cat "$LOCK_FILE" 2>/dev/null || echo "unknown")
+        if kill -0 "$pid" 2>/dev/null; then
+            error "Another update process is already running (PID: $pid)"
+            error "If you're sure no update is running, run: rm $LOCK_FILE"
+            exit 1
+        else
+            warning "Removing stale lock file"
+            rm -f "$LOCK_FILE"
+        fi
+    fi
+    
+    echo $$ > "$LOCK_FILE"
+    debug "Created lock file with PID $$"
+}
+
+cleanup_lock() {
+    if [[ -f "$LOCK_FILE" ]]; then
+        rm -f "$LOCK_FILE"
+        debug "Removed lock file"
+    fi
+}
+
+# Cleanup function called on script exit
+cleanup_on_exit() {
+    local exit_code=$?
+    debug "Script exiting with code: $exit_code"
+    cleanup_lock
+    
+    # Clean up temporary files
+    if [[ -d "$TEMP_DIR" ]]; then
+        rm -rf "$TEMP_DIR"
+        debug "Cleaned up temporary directory"
+    fi
+    
+    if [[ $exit_code -ne 0 ]]; then
+        error "Script failed with exit code: $exit_code"
+        if [[ -n "${LAST_ERROR:-}" ]]; then
+            error "Last error: $LAST_ERROR"
+        fi
+    fi
+}
+
+# Set up trap for cleanup
+trap cleanup_on_exit EXIT
+trap 'error "Script interrupted"; exit 130' INT TERM
 
 # Create backup function
 create_backup() {

@@ -20,6 +20,8 @@ interface StatsData {
   clicksThisMonth?: number;
   averageRedirectTime?: number;
   popularTimeOfDay?: string;
+  weeklyActivity?: number;
+  monthlyGrowth?: string;
 }
 
 const Stats: React.FC = () => {
@@ -64,17 +66,17 @@ const Stats: React.FC = () => {
             hourlyStats: detailedData.hourlyStats || [],
             recentActivity: detailedData.recentActivity || [],
             dailyAverage: detailedData.dailyAverage || 0,
-            // Calculate additional statistics from available data
             clicksToday: detailedData.clicksByDay && detailedData.clicksByDay[0] ? detailedData.clicksByDay[0].total_clicks : 0,
-            clicksThisWeek: detailedData.clicksByDay ? 
-              detailedData.clicksByDay.slice(0, 7).reduce((sum: number, day: any) => sum + (day.total_clicks || 0), 0) : 0,
+            clicksThisWeek: detailedData.weeklyClicks || 0,
             clicksThisMonth: detailedData.clicksByDay ? 
               detailedData.clicksByDay.slice(0, 30).reduce((sum: number, day: any) => sum + (day.total_clicks || 0), 0) : 0,
             averageRedirectTime: Math.round(Math.random() * 400 + 100), // Mock data - replace with real metrics
             popularTimeOfDay: detailedData.hourlyStats && detailedData.hourlyStats.length > 0 ? 
               detailedData.hourlyStats.reduce((prev: any, current: any) => 
                 (prev.links_created > current.links_created) ? prev : current
-              ).hour + ':00' : 'Unknown'
+              ).hour + ':00' : 'Unknown',
+            weeklyActivity: detailedData.weeklyActivity || 0,
+            monthlyGrowth: detailedData.monthlyGrowth || '0'
           });
           setUseDetailedStats(true);
           setError(null);
@@ -159,7 +161,7 @@ const Stats: React.FC = () => {
     {
       icon: TrendingUp,
       label: 'Weekly Activity',
-      value: useDetailedStats ? formatNumber(stats.clicksThisWeek || 0) : 
+      value: useDetailedStats ? formatNumber(stats.weeklyActivity || 0) : 
              (stats.totalLinks > 0 ? (stats.totalClicks / stats.totalLinks).toFixed(1) : '0'),
       subValue: useDetailedStats ? `${stats.linksToday || 0} links created today` : 'Avg clicks/link',
       color: 'from-purple-500 to-purple-600',
@@ -188,8 +190,8 @@ const Stats: React.FC = () => {
     {
       icon: TrendingUp,
       label: 'Monthly Growth',
-      value: useDetailedStats ? formatNumber(stats.clicksThisMonth || 0) : `${stats.dailyAverage || 0}/day`,
-      subValue: useDetailedStats ? 'clicks this month' : 'Daily average',
+      value: useDetailedStats ? `${stats.monthlyGrowth || '0'}%` : `${stats.dailyAverage || 0}/day`,
+      subValue: useDetailedStats ? 'growth from last month' : 'Daily average',
       color: 'from-teal-500 to-teal-600',
       bgColor: 'bg-teal-50',
       iconColor: 'text-teal-600'

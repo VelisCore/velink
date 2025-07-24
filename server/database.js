@@ -331,6 +331,31 @@ class Database {
                   return;
                 }
 
+                // Calculate weekly activity (links created in the last 7 days)
+                const weeklyActivity = clicksByDay.length > 0 
+                  ? clicksByDay.slice(0, 7).reduce((sum, day) => sum + (day.links_created || 0), 0)
+                  : 0;
+
+                // Calculate monthly growth (compare this month to last month)
+                const thisMonthLinks = clicksByDay.filter(day => {
+                  const dayDate = new Date(day.date);
+                  const today = new Date();
+                  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                  return dayDate >= startOfMonth;
+                }).reduce((sum, day) => sum + (day.links_created || 0), 0);
+
+                const lastMonthLinks = clicksByDay.filter(day => {
+                  const dayDate = new Date(day.date);
+                  const today = new Date();
+                  const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                  const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                  return dayDate >= startOfLastMonth && dayDate <= endOfLastMonth;
+                }).reduce((sum, day) => sum + (day.links_created || 0), 0);
+
+                const monthlyGrowth = lastMonthLinks > 0 
+                  ? (((thisMonthLinks - lastMonthLinks) / lastMonthLinks) * 100).toFixed(1)
+                  : thisMonthLinks > 0 ? 100 : 0;
+
                 // Calculate daily average
                 const dailyAverage = clicksByDay.length > 0 
                   ? Math.round(clicksByDay.slice(0, 7).reduce((sum, day) => sum + (day.total_clicks || 0), 0) / Math.min(7, clicksByDay.length))
@@ -344,6 +369,8 @@ class Database {
                   avgClicksPerLink: Math.round(basicStats.avg_clicks_per_link || 0),
                   latestCreated: basicStats.latest_created,
                   dailyAverage,
+                  weeklyActivity,
+                  monthlyGrowth,
                   topDomains: topDomains || [],
                   clicksByDay: clicksByDay || [],
                   hourlyStats: hourlyStats || [],
@@ -512,74 +539,6 @@ class Database {
           })
           .catch(error => {
             reject(error);
-          });
-        })
-        .catch(reject);
-    });
-  }
-  
-  // Get detailed stats for the API
-  getDetailedStats() {
-    return new Promise((resolve, reject) => {
-      const basicStatsSql = `
-        SELECT 
-          COUNT(*) as total_links,
-          SUM(clicks) as total_clicks,
-          MAX(created_at) as latest_created
-        FROM short_urls
-      `;
-
-      const topDomainsSql = `
-        SELECT 
-          substr(original_url, instr(original_url, '://') + 3, 
-                 case when instr(substr(original_url, instr(original_url, '://') + 3), '/') = 0
-                      then length(substr(original_url, instr(original_url, '://') + 3))
-                      else instr(substr(original_url, instr(original_url, '://') + 3), '/') - 1
-                 end) as domain,
-          COUNT(*) as count
-        FROM short_urls
-        GROUP BY domain
-        ORDER BY count DESC
-        LIMIT 10
-      `;
-
-      const clicksByDaySql = `
-        SELECT 
-          date(clicked_at) as date,
-          COUNT(*) as clicks
-        FROM clicks
-        GROUP BY date(clicked_at)
-        ORDER BY date DESC
-        LIMIT 30
-      `;
-
-      Promise.all([
-        new Promise((res, rej) => {
-          this.db.get(basicStatsSql, [], (err, row) => {
-            if (err) return rej(err);
-            res(row || {});
-          });
-        }),
-        new Promise((res, rej) => {
-          this.db.all(topDomainsSql, [], (err, rows) => {
-            if (err) return rej(err);
-            res(rows);
-          });
-        }),
-        new Promise((res, rej) => {
-          this.db.all(clicksByDaySql, [], (err, rows) => {
-            if (err) return rej(err);
-            res(rows);
-          });
-        })
-      ])
-        .then(([basicStats, topDomains, clicksByDay]) => {
-          resolve({
-            totalLinks: basicStats.total_links || 0,
-            totalClicks: basicStats.total_clicks || 0,
-            latestCreated: basicStats.latest_created,
-            topDomains,
-            clicksByDay
           });
         })
         .catch(reject);

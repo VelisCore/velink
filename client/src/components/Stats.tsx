@@ -72,9 +72,13 @@ const Stats: React.FC = () => {
               detailedData.clicksByDay.slice(0, 30).reduce((sum: number, day: any) => sum + (day.total_clicks || 0), 0) : 0,
             averageRedirectTime: Math.round(Math.random() * 400 + 100), // Mock data - replace with real metrics
             popularTimeOfDay: detailedData.hourlyStats && detailedData.hourlyStats.length > 0 ? 
-              detailedData.hourlyStats.reduce((prev: any, current: any) => 
-                (prev.links_created > current.links_created) ? prev : current
-              ).hour + ':00' : 'Unknown',
+              (() => {
+                const peakHour = detailedData.hourlyStats.reduce((prev: any, current: any) => 
+                  (prev.links_created > current.links_created) ? prev : current
+                );
+                const hour = parseInt(peakHour.hour);
+                return hour >= 12 ? `${hour === 12 ? 12 : hour - 12}:00 PM` : `${hour === 0 ? 12 : hour}:00 AM`;
+              })() : 'No data',
             weeklyActivity: detailedData.weeklyActivity || 0,
             monthlyGrowth: detailedData.monthlyGrowth || '0'
           });
@@ -82,7 +86,7 @@ const Stats: React.FC = () => {
           setError(null);
           setLastUpdate(new Date());
         } catch (detailedErr) {
-          console.log('Detailed stats not available, falling back to basic stats');
+          // Fall back to basic stats if detailed stats aren't available
           
           // Fallback to basic stats if detailed stats aren't available
           const response = await axios.get('/api/stats');
@@ -118,7 +122,7 @@ const Stats: React.FC = () => {
     if (num >= 1000) {
       return (num / 1000).toFixed(1) + 'K';
     }
-    return num.toLocaleString('de-DE');
+    return num.toLocaleString('en-US');
   };
 
   const formatRelativeTime = (dateString: string | null) => {
@@ -130,12 +134,12 @@ const Stats: React.FC = () => {
     const diffDays = Math.floor(diffHours / 24);
     
     if (diffDays > 0) {
-      return `${diffDays} Tag${diffDays > 1 ? 'e' : ''} ago`;
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
     } else if (diffHours > 0) {
-      return `${diffHours}h ago (${date.toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })})`;
+      return `${diffHours}h ago (${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })})`;
     } else {
       const diffMins = Math.floor(diffMs / (1000 * 60));
-      return `${diffMins}m ago`;
+      return diffMins > 0 ? `${diffMins}m ago` : 'Just now';
     }
   };
 

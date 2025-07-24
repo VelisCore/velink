@@ -442,7 +442,6 @@ const CleanAdminPanel: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Raw links data:', data); // Debug log
         
         // Ensure data is an array and has proper structure
         if (Array.isArray(data)) {
@@ -459,7 +458,6 @@ const CleanAdminPanel: React.FC = () => {
             password: link.password || null
           }));
           
-          console.log('Validated links:', validatedLinks); // Debug log
           setLinks(validatedLinks);
         } else {
           console.error('Invalid links data format:', data);

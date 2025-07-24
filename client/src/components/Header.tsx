@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Github, Menu, X } from 'lucide-react';
-import logo from '../logo.svg';
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -21,7 +20,7 @@ const Header: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group" onClick={closeMobileMenu}>
             <div className="transition-all duration-300 group-hover:scale-105">
-              <img src={logo} alt="Velink Logo" className="h-10 w-10" />
+              <img src="/logo512.png" alt="Velink Logo" className="h-10 w-10" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
               Velink

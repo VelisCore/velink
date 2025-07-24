@@ -1517,7 +1517,7 @@ def generate_weekly_report():
     { id: 'admin', name: 'Admin API', icon: <Shield className="h-4 w-4" />, description: 'Admin-only endpoints' }
   ];
 
-  const filteredEndpoints = apiEndpoints.filter(endpoint => endpoint.category === selectedCategory);
+  const filteredEndpoints = selectedCategory === 'overview' ? [] : apiEndpoints.filter(endpoint => endpoint.category === selectedCategory);
 
   const CodeBlock: React.FC<{ code: string; language?: string; id: string }> = ({ code, language = 'bash', id }) => (
     <div className="relative bg-gray-900 rounded-lg p-4 overflow-x-auto">

@@ -4,7 +4,6 @@ import { ArrowLeft, Play, Copy, Check, AlertCircle, BarChart3, Globe, ChevronUp 
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import logo from '../../logo.svg';
 
 interface PlaygroundRequest {
   url: string;
@@ -230,7 +229,7 @@ const NewApiDocumentation: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center space-x-3 group">
               <div className="transition-all duration-300 group-hover:scale-105">
-                <img src={logo} alt="Velink Logo" className="h-10 w-10" />
+                <img src="/logo512.png" alt="Velink Logo" className="h-10 w-10" />
               </div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">

@@ -4,57 +4,57 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
-    <loc>http://localhost:5000</loc>
+    <loc>https://velink.me</loc>
     <lastmod>2025-07-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/docs</loc>
+    <loc>https://velink.me/docs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/terms</loc>
+    <loc>https://velink.me/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/privacy</loc>
+    <loc>https://velink.me/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/impressum</loc>
+    <loc>https://velink.me/impressum</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/6PpRmP</loc>
+    <loc>https://velink.me/6PpRmP</loc>
     <lastmod>2025-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/2UvBbs</loc>
+    <loc>https://velink.me/2UvBbs</loc>
     <lastmod>2025-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/XXLWgv</loc>
+    <loc>https://velink.me/XXLWgv</loc>
     <lastmod>2025-07-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/NQvkHe</loc>
+    <loc>https://velink.me/NQvkHe</loc>
     <lastmod>2025-07-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>http://localhost:5000/Q5eiQz</loc>
+    <loc>https://velink.me/Q5eiQz</loc>
     <lastmod>2025-07-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

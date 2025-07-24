@@ -1,4 +1,4 @@
-// Load environment variables
+﻿// Load environment variables
 require('dotenv').config({ path: './.env' });
 
 const express = require('express');
@@ -156,7 +156,7 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
 };
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 80;
 
 // Trust proxy for accurate IP detection (required for DigitalOcean)
 app.set('trust proxy', 1);
@@ -455,7 +455,7 @@ app.get('/api/analytics/:shortCode', async (req, res) => {
 
 // Admin token for authentication
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'velink-admin-2025-secure-token';
-console.log('🔑 Admin token loaded:', ADMIN_TOKEN ? 'Yes (length: ' + ADMIN_TOKEN.length + ')' : 'No');
+console.log('ðŸ”‘ Admin token loaded:', ADMIN_TOKEN ? 'Yes (length: ' + ADMIN_TOKEN.length + ')' : 'No');
 
 // Admin middleware to verify token
 const verifyAdminToken = (req, res, next) => {
@@ -1178,273 +1178,6 @@ app.post('/api/admin/update/perform', verifyAdminToken, async (req, res) => {
   }
 });
 
-// ==========================================
-// GDPR DATA ACCESS ENDPOINTS
-// ==========================================
-
-// Rate limiting for GDPR requests
-const gdprLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // 5 requests per minute per IP
-  message: {
-    error: 'Too many GDPR requests. Please wait before trying again.',
-    resetTime: 60
-  }
-});
-
-// GDPR: Get user data by short codes they created
-app.post('/api/gdpr/my-data', gdprLimiter, async (req, res) => {
-  try {
-    const { shortCodes } = req.body;
-    
-    if (!Array.isArray(shortCodes) || shortCodes.length === 0) {
-      return res.status(400).json({ 
-        error: 'Please provide an array of short codes you created' 
-      });
-    }
-
-    if (shortCodes.length > 50) {
-      return res.status(400).json({ 
-        error: 'Maximum 50 short codes allowed per request' 
-      });
-    }
-
-    const userData = await db.getUserDataByShortCodes(shortCodes);
-    
-    if (userData.links.length === 0) {
-      return res.status(404).json({ 
-        error: 'No data found for the provided short codes' 
-      });
-    }
-
-    // Format response according to GDPR requirements
-    const gdprResponse = {
-      dataController: {
-        name: 'Devin Oldenburg',
-        email: 'devin.oldenburg@icloud.com',
-        phone: '+49 15733791807'
-      },
-      dataSubject: {
-        estimatedLinks: userData.links.length,
-        totalClicks: userData.totalClicks,
-        dataRetentionPolicy: '12 months automatic deletion'
-      },
-      personalData: {
-        links: userData.links.map(link => ({
-          shortCode: link.short_code,
-          originalUrl: link.original_url,
-          createdAt: link.created_at,
-          expiresAt: link.expires_at,
-          clicks: link.clicks,
-          description: link.description,
-          isActive: link.is_active !== false,
-          lastAccessed: link.last_accessed
-        })),
-        analytics: userData.analytics.map(click => ({
-          shortCode: click.short_code,
-          clickedAt: click.clicked_at,
-          referrer: click.referrer,
-          country: click.country,
-          deviceType: click.device_type,
-          browser: click.browser,
-          ipAddress: click.ip_address ? '[ANONYMIZED]' : null
-        }))
-      },
-      rights: {
-        access: 'You can request your data anytime using this endpoint',
-        rectification: 'Contact us to correct any inaccurate information',
-        erasure: 'Use the delete endpoint or contact us for immediate deletion',
-        portability: 'Data provided in JSON format for easy export',
-        objection: 'Contact us to object to data processing'
-      },
-      generatedAt: new Date().toISOString(),
-      requestSource: req.ip || 'unknown'
-    };
-
-    res.json(gdprResponse);
-    
-  } catch (error) {
-    console.error('Error fetching GDPR data:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// GDPR: Delete user data by short codes
-app.delete('/api/gdpr/delete-my-data', gdprLimiter, async (req, res) => {
-  try {
-    const { shortCodes, creationSecrets, confirmDeletion } = req.body;
-    
-    if (!confirmDeletion) {
-      return res.status(400).json({ 
-        error: 'Please confirm deletion by setting confirmDeletion to true' 
-      });
-    }
-
-    if (!Array.isArray(shortCodes) || shortCodes.length === 0) {
-      return res.status(400).json({ 
-        error: 'Please provide an array of short codes to delete' 
-      });
-    }
-
-    if (!Array.isArray(creationSecrets) || creationSecrets.length === 0) {
-      return res.status(400).json({ 
-        error: 'Please provide creation secrets to verify ownership of the links' 
-      });
-    }
-
-    if (shortCodes.length !== creationSecrets.length) {
-      return res.status(400).json({ 
-        error: 'Number of short codes must match number of creation secrets' 
-      });
-    }
-
-    if (shortCodes.length > 50) {
-      return res.status(400).json({ 
-        error: 'Maximum 50 short codes allowed per request' 
-      });
-    }
-
-    // Verify ownership before deletion
-    const verification = await db.verifyShortCodeOwnership(shortCodes, creationSecrets);
-    
-    if (!verification.isFullyVerified) {
-      return res.status(403).json({ 
-        error: 'Ownership verification failed',
-        details: `Could not verify ownership of: ${verification.unverified.join(', ')}`,
-        verified: verification.verified,
-        unverified: verification.unverified
-      });
-    }
-
-    const deletionResults = await db.deleteUserDataByShortCodes(verification.verified);
-    
-    res.json({
-      success: true,
-      deleted: {
-        links: deletionResults.linksDeleted,
-        analytics: deletionResults.analyticsDeleted
-      },
-      verifiedCodes: verification.verified,
-      message: 'Your data has been permanently deleted',
-      deletedAt: new Date().toISOString(),
-      dataRetentionCompliance: 'All associated data has been removed from our systems'
-    });
-    
-  } catch (error) {
-    console.error('Error deleting GDPR data:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// GDPR: Request data rectification
-app.patch('/api/gdpr/rectify-data', gdprLimiter, async (req, res) => {
-  try {
-    const { shortCode, corrections } = req.body;
-    
-    if (!shortCode || !corrections) {
-      return res.status(400).json({ 
-        error: 'Please provide shortCode and corrections object' 
-      });
-    }
-
-    // Only allow updating description and active status
-    const allowedFields = ['description'];
-    const updateData = {};
-    
-    for (const field of allowedFields) {
-      if (corrections[field] !== undefined) {
-        updateData[field] = corrections[field];
-      }
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ 
-        error: 'No valid corrections provided. You can only update: description' 
-      });
-    }
-
-    const updated = await db.rectifyUserData(shortCode, updateData);
-    
-    if (!updated) {
-      return res.status(404).json({ 
-        error: 'Short code not found or you do not have permission to modify it' 
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Data has been corrected',
-      shortCode,
-      correctedFields: Object.keys(updateData),
-      correctedAt: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('Error rectifying GDPR data:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// GDPR: Export user data in portable format
-app.post('/api/gdpr/export-data', gdprLimiter, async (req, res) => {
-  try {
-    const { shortCodes, format = 'json' } = req.body;
-    
-    if (!Array.isArray(shortCodes) || shortCodes.length === 0) {
-      return res.status(400).json({ 
-        error: 'Please provide an array of short codes you created' 
-      });
-    }
-
-    const userData = await db.getUserDataByShortCodes(shortCodes);
-    
-    if (userData.links.length === 0) {
-      return res.status(404).json({ 
-        error: 'No data found for the provided short codes' 
-      });
-    }
-
-    if (format === 'csv') {
-      // Export as CSV
-      const csvHeader = 'Short Code,Original URL,Created At,Clicks,Description,Status\n';
-      const csvData = userData.links.map(link => 
-        `"${link.short_code}","${link.original_url}","${link.created_at}","${link.clicks}","${link.description || ''}","${link.is_active !== false ? 'Active' : 'Inactive'}"`
-      ).join('\n');
-      
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="velink-my-data-${Date.now()}.csv"`);
-      res.send(csvHeader + csvData);
-      
-    } else {
-      // Export as JSON (default)
-      const exportData = {
-        exportInfo: {
-          dataController: 'Devin Oldenburg',
-          exportedAt: new Date().toISOString(),
-          totalLinks: userData.links.length,
-          totalClicks: userData.totalClicks,
-          format: 'JSON'
-        },
-        links: userData.links,
-        analytics: userData.analytics,
-        gdprCompliance: {
-          dataRetentionPeriod: '12 months',
-          automaticDeletion: true,
-          rightsInformation: 'Contact devin.oldenburg@icloud.com for any questions'
-        }
-      };
-      
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename="velink-my-data-${Date.now()}.json"`);
-      res.json(exportData);
-    }
-    
-  } catch (error) {
-    console.error('Error exporting GDPR data:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Track click endpoint for confirmation page
 app.post('/api/track/:shortCode', async (req, res) => {
   try {
@@ -1594,11 +1327,11 @@ app.get('/:shortCode', async (req, res, next) => {
         </head>
         <body>
           <div class="container">
-            <span class="icon">🔗</span>
+            <span class="icon">ðŸ”—</span>
             <h1>Link Not Found</h1>
             <p>The short link you're looking for doesn't exist or has expired.</p>
             <a href="/" class="back-link">
-              ← Back to Velink
+              â† Back to Velink
             </a>
           </div>
         </body>
@@ -1678,11 +1411,11 @@ app.get('/:shortCode', async (req, res, next) => {
         </head>
         <body>
           <div class="container">
-            <span class="icon">⏰</span>
+            <span class="icon">â°</span>
             <h1>Link Expired</h1>
             <p>This short link has expired and is no longer accessible.</p>
             <a href="/" class="back-link">
-              <span>←</span>
+              <span>â†</span>
               Back to Velink
             </a>
           </div>
@@ -2175,8 +1908,8 @@ app.post('/api/admin/privacy-settings', adminAuth, (req, res) => {
 const startServer = () => {
   // Start HTTP server
   http.createServer(app).listen(PORT, () => {
-    console.log(`🚀 Velink HTTP server running on port ${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`ðŸš€ Velink HTTP server running on port ${PORT}`);
+    console.log(`ðŸ“Š Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 
   // Start HTTPS server if SSL certificates are available
@@ -2188,10 +1921,10 @@ const startServer = () => {
   if (sslOptions.key && sslOptions.cert) {
     const HTTPS_PORT = process.env.HTTPS_PORT || 443;
     https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
-      console.log(`🔒 Velink HTTPS server running on port ${HTTPS_PORT}`);
+      console.log(`ðŸ”’ Velink HTTPS server running on port ${HTTPS_PORT}`);
     });
   } else {
-    console.log('⚠️ SSL certificates not found. HTTPS server not started.');
+    console.log('âš ï¸ SSL certificates not found. HTTPS server not started.');
     console.log('To enable HTTPS, set SSL_KEY_PATH and SSL_CERT_PATH environment variables.');
   }
 };

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Github, Twitter, Heart, Coffee } from 'lucide-react';
-import logo from '../logo.svg';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -13,7 +12,7 @@ const Footer: React.FC = () => {
           {/* Logo and Description */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
-              <img src={logo} alt="Velink Logo" className="h-8 w-8" />
+              <img src="/logo512.png" alt="Velink Logo" className="h-8 w-8" />
               <h3 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
                 Velink
               </h3>

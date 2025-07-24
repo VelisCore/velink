@@ -15,6 +15,7 @@ import LinkAnalytics from './components/analytics/LinkAnalytics';
 import CookieNotice from './components/CookieNotice';
 import AdminPanel from './components/CleanAdminPanel';
 import PrivacyGate from './components/PrivacyGate';
+import BugReport from './components/BugReport';
 import './App.css';
 
 // HomePage component to keep the main page structure

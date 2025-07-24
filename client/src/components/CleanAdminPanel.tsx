@@ -1575,7 +1575,7 @@ const CleanAdminPanel: React.FC = () => {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => toggleLinkStatus(link._id)}
+                              onClick={() => toggleLinkStatus(link.shortCode)}
                               className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 border ${
                                 link.isActive 
                                   ? 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100' 
@@ -1604,10 +1604,10 @@ const CleanAdminPanel: React.FC = () => {
                               <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
-                                onClick={() => setShowDeleteConfirm(link._id)}
+                                onClick={() => setShowDeleteConfirm(link.shortCode)}
                                 className="text-red-500 hover:text-red-600"
                                 title="Delete link"
-                                disabled={!link._id}
+                                disabled={!link.shortCode}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </motion.button>

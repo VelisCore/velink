@@ -1,105 +1,612 @@
-# 🔗 Velink - Advanced URL Shortener
+<div align="center">
+  <img src="client/public/logo512.png" alt="Velink Logo" width="120" height="120" />
+  
+  # 🔗 Velink
+  ### Professional URL Shortener & Analytics Platform
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+  [![Node.js](https://img.shields.io/badge/Node.js-18+-339933.svg?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+  [![React](https://img.shields.io/badge/React-19+-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6.svg?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Express](https://img.shields.io/badge/Express-4+-000000.svg?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-19+-blue.svg)](https://reactjs.org/)
+  **Transform long URLs into powerful, trackable short links with enterprise-grade analytics**
+  
+  [🚀 Quick Start](#-quick-start) • [📖 Documentation](#-api--documentation) • [🎯 Features](#-features) • [🛡️ Security](#-security--privacy)
+</div>
 
-A powerful, feature-rich URL shortener with advanced analytics, admin panel, and comprehensive API.
+---
 
-## ✨ Features
+## ✨ Why Choose Velink?
 
-### 🎯 Core Features
-- **URL Shortening** - Create short, memorable links
-- **QR Code Generation** - Automatic QR codes for all short links
-- **Custom Aliases** - Create branded short links
-- **Bulk Operations** - Shorten multiple URLs at once
-- **Link Expiration** - Set custom expiration dates
-- **Password Protection** - Secure links with passwords
+<table>
+<tr>
+<td width="50%">
 
-### 📊 Analytics & Reporting
-- **Real-time Analytics** - Track clicks, referrers, and locations
-- **Comprehensive Dashboard** - Visual charts and statistics
-- **Click Tracking** - Detailed click analytics
-- **Export Data** - Export analytics in JSON/CSV formats
-- **Performance Metrics** - Server and database monitoring
+### 🎯 **Powerful Features**
+- **Smart URL Shortening** with custom aliases
+- **Real-time Analytics** & comprehensive dashboards  
+- **QR Code Generation** for every short link
+- **Bulk Operations** for enterprise workflows
+- **Advanced Admin Panel** with full control
+- **RESTful API** with interactive documentation
 
-### 🛡️ Security & Privacy
-- **Rate Limiting** - Protect against abuse
-- **GDPR Compliance** - Privacy-first approach
-- **Admin Authentication** - Secure admin panel access
-- **Content Security** - Helmet.js security headers
-- **Environment Configuration** - Secure .env-based configuration
+</td>
+<td width="50%">
 
-### 🔧 Admin Features
-- **Advanced Admin Panel** - Complete control interface
-- **Bug Report System** - Built-in issue tracking
-- **User Management** - Monitor and manage users
-- **System Monitoring** - Real-time system health
-- **Log Management** - Comprehensive logging system
+### 🛡️ **Enterprise Ready**
+- **GDPR Compliant** with privacy controls
+- **Rate Limiting** & abuse protection
+- **Secure Authentication** with bearer tokens
+- **Comprehensive Logging** & audit trails
+- **Backup & Restore** automation
+- **SSL Support** & security headers
 
-### 🚀 API & Integration
-- **RESTful API** - Complete API with documentation
-- **Interactive Playground** - Test API endpoints live
-- **Multiple SDKs** - JavaScript, Python, cURL examples
-- **Webhook Support** - Real-time notifications
+</td>
+</tr>
+</table>
+
+---
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- **Node.js** 18+ 
-- **npm** or **yarn**
-- **Git**
+### � Prerequisites
+```bash
+# Required
+Node.js 18+    # JavaScript runtime
+npm/yarn       # Package manager
+Git            # Version control
 
-### Installation
+# Optional
+SSL Certificates  # For HTTPS (production)
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/velyzo/velink.git
-   cd velink
-   ```
+### ⚡ Installation & Setup
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+# 1️⃣ Clone the repository
+git clone https://github.com/velyzo/velink.git
+cd velink
 
-3. **Configure environment**
-   ```bash
-   # Copy and edit the environment file
-   cp server/.env.example server/.env
-   ```
+# 2️⃣ Install dependencies
+npm install
 
-4. **Start development servers**
-   ```bash
-   npm run dev
-   ```
+# 3️⃣ Configure environment (see configuration section)
+cp server/.env.example server/.env
+# Edit server/.env with your settings
 
-5. **Access the application**
-   - **Frontend**: http://localhost:3000
-   - **Backend**: http://localhost:80
-   - **Admin Panel**: http://localhost:3000/admin
-   - **API Docs**: http://localhost:3000/api-docs
+# 4️⃣ Start development servers
+npm run dev
+
+# 🎉 You're ready!
+# Frontend: http://localhost:3000
+# Backend:  http://localhost:80
+# Admin:    http://localhost:3000/admin
+```
+
+### 🔑 Admin Access
+```bash
+# Default admin token (change in production!)
+velink-admin-2025-secure-token-v2
+
+# Access admin panel at: /admin
+# API authentication: Authorization: Bearer YOUR_TOKEN
+```
+
+---
+
+## 🎯 Features
+
+<details>
+<summary><b>🔗 Core URL Management</b></summary>
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **URL Shortening** | Transform long URLs into short, memorable links | ✅ |
+| **Custom Aliases** | Create branded short links with custom names | ✅ |
+| **Bulk Operations** | Shorten multiple URLs simultaneously | ✅ |
+| **Link Expiration** | Set automatic expiration dates for links | ✅ |
+| **Password Protection** | Secure links with password requirements | ✅ |
+| **QR Code Generation** | Automatic QR codes for all short links | ✅ |
+
+</details>
+
+<details>
+<summary><b>� Analytics & Reporting</b></summary>
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Real-time Dashboard** | Live statistics and performance metrics | ✅ |
+| **Click Tracking** | Detailed analytics for every click | ✅ |
+| **Geographic Data** | Location-based click analytics | ✅ |
+| **Referrer Analysis** | Track traffic sources and referrers | ✅ |
+| **Device & Browser Stats** | Comprehensive device analytics | ✅ |
+| **Export Capabilities** | JSON/CSV export for all data | ✅ |
+
+</details>
+
+<details>
+<summary><b>🛡️ Security & Privacy</b></summary>
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **GDPR Compliance** | Privacy-first with consent management | ✅ |
+| **Rate Limiting** | Configurable request limiting | ✅ |
+| **Admin Authentication** | Secure bearer token authentication | ✅ |
+| **Security Headers** | Helmet.js security headers | ✅ |
+| **SSL Support** | HTTPS with custom certificates | ✅ |
+| **Audit Logging** | Comprehensive activity logging | ✅ |
+
+</details>
+
+<details>
+<summary><b>🔧 Admin & Management</b></summary>
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Advanced Admin Panel** | Complete management interface | ✅ |
+| **User Management** | Monitor and manage user activity | ✅ |
+| **System Monitoring** | Real-time system health metrics | ✅ |
+| **Log Management** | View and download system logs | ✅ |
+| **Bug Report System** | Built-in issue tracking | ✅ |
+| **Database Management** | Backup, restore, and maintenance | ✅ |
+
+</details>
+
+---
 
 ## ⚙️ Configuration
 
-### Environment Variables
+### 🔧 Environment Variables
 
-Create a `.env` file in the `server` directory:
+Create `server/.env` with your configuration:
+
+<details>
+<summary><b>📝 Complete Configuration Template</b></summary>
 
 ```env
-# Admin Authentication
-ADMIN_TOKEN=your-secure-admin-token-here
+# 🔐 Admin Authentication
+ADMIN_TOKEN=velink-admin-2025-secure-token-v2
 
-# Server Configuration
+# 🚀 Server Configuration
 PORT=80
 NODE_ENV=development
 
-# Database Configuration
+# 💾 Database Configuration
 DATABASE_PATH=./velink.db
 
-# Security Configuration
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
+# 🛡️ Security Configuration
+RATE_LIMIT_WINDOW_MS=900000      # 15 minutes
+RATE_LIMIT_MAX_REQUESTS=100      # Max requests per window
+
+# 🌐 CORS Configuration
+CORS_ORIGIN=http://localhost:3000
+
+# 🔒 SSL Configuration (Production)
+SSL_KEY_PATH=./ssl/private.key
+SSL_CERT_PATH=./ssl/certificate.crt
+
+# 📝 Logging Configuration
+LOG_LEVEL=info
+LOG_RETENTION_DAYS=7
+MAX_LOGS_IN_MEMORY=10000
+
+# ⚡ Features Configuration
+ENABLE_ANALYTICS=true
+ENABLE_SITEMAP=true
+ENABLE_QR_CODES=true
+
+# 🔧 Performance Configuration
+COMPRESSION_ENABLED=true
+STATIC_CACHE_MAX_AGE=86400
+
+# 🚧 Maintenance Mode
+MAINTENANCE_MODE=false
+MAINTENANCE_MESSAGE=Velink is currently under maintenance.
+```
+
+</details>
+
+### 📊 Configuration Levels
+
+| Level | Description | Use Case |
+|-------|-------------|----------|
+| **Development** | Full logging, auto-reload, debugging | Local development |
+| **Testing** | In-memory DB, mock services | Automated testing |
+| **Production** | Optimized performance, SSL, caching | Live deployment |
+
+---
+
+## 🚀 API & Documentation
+
+### 📖 Interactive Documentation
+Visit `/api-docs` for complete interactive API documentation with:
+- **Live API playground** - Test endpoints directly
+- **Code examples** in multiple languages
+- **Authentication guide** 
+- **Response schemas**
+
+### 🔥 Quick API Examples
+
+<details>
+<summary><b>🌐 JavaScript/Fetch</b></summary>
+
+```javascript
+// Shorten URL
+const response = await fetch('http://localhost:80/api/shorten', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    url: 'https://example.com/very-long-url',
+    expiresIn: '30d'
+  })
+});
+
+const data = await response.json();
+console.log('Short URL:', data.shortUrl);
+console.log('QR Code:', data.qrCode);
+```
+
+</details>
+
+<details>
+<summary><b>🐍 Python</b></summary>
+
+```python
+import requests
+
+# Shorten URL
+response = requests.post('http://localhost:80/api/shorten', json={
+    'url': 'https://example.com/very-long-url',
+    'expiresIn': '30d'
+})
+
+data = response.json()
+print(f"Short URL: {data['shortUrl']}")
+print(f"QR Code: {data['qrCode']}")
+```
+
+</details>
+
+<details>
+<summary><b>💻 cURL</b></summary>
+
+```bash
+# Shorten URL
+curl -X POST "http://localhost:80/api/shorten" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/very-long-url", "expiresIn": "30d"}'
+
+# Get statistics
+curl "http://localhost:80/api/info/abc123"
+
+# Admin operations
+curl -X GET "http://localhost:80/api/admin/links" \
+  -H "Authorization: Bearer velink-admin-2025-secure-token-v2"
+```
+
+</details>
+
+### 🔗 API Endpoints Overview
+
+| Endpoint | Method | Description | Auth |
+|----------|--------|-------------|------|
+| `/api/shorten` | POST | Create short URL | ❌ |
+| `/api/info/:code` | GET | Get link information | ❌ |
+| `/api/stats` | GET | Global statistics | ❌ |
+| `/api/admin/links` | GET | List all links | ✅ |
+| `/api/admin/stats` | GET | Detailed analytics | ✅ |
+
+---
+
+## 📋 Available Scripts
+
+<div align="center">
+
+| Command | Description | Use Case |
+|---------|-------------|----------|
+| `npm run dev` | 🚀 Start development servers | Development |
+| `npm run build` | 📦 Build for production | Deployment |
+| `npm run start` | ▶️ Start production server | Production |
+| `.\update.bat` | 🔄 Update with backup | Maintenance |
+
+</div>
+
+### 🛠️ Advanced Scripts
+
+<details>
+<summary><b>🔄 Update & Maintenance</b></summary>
+
+```bash
+# Windows
+.\update.bat               # Full update with backup
+.\update.bat --start       # Update and auto-start
+.\update.bat --backup-only # Create backup only
+.\update.bat --restore     # Restore from backup
+.\update.bat --health-check # System health check
+
+# Linux/macOS
+./update.sh               # Full update with backup
+./update.sh --start       # Update and auto-start
+./update.sh --backup-only # Create backup only
+./update.sh --restore     # Restore from backup
+```
+
+</details>
+
+---
+
+## 🛡️ Security & Privacy
+
+### 🔒 Security Features
+
+<table>
+<tr>
+<td width="33%">
+
+**🛡️ Protection**
+- Rate limiting
+- CORS protection
+- Security headers
+- Input validation
+- SQL injection prevention
+
+</td>
+<td width="33%">
+
+**🔐 Authentication**
+- Bearer token auth
+- Secure admin access
+- Session management
+- Token validation
+- Role-based access
+
+</td>
+<td width="33%">
+
+**📊 Privacy**
+- GDPR compliance
+- Data anonymization
+- Consent management
+- Privacy controls
+- Data retention
+
+</td>
+</tr>
+</table>
+
+### 🔧 Security Configuration
+
+```env
+# Rate limiting
+RATE_LIMIT_WINDOW_MS=900000      # 15 minutes
+RATE_LIMIT_MAX_REQUESTS=100      # Max requests
+
+# SSL Configuration
+SSL_KEY_PATH=./ssl/private.key
+SSL_CERT_PATH=./ssl/certificate.crt
+
+# Security headers automatically applied via Helmet.js
+```
+
+---
+
+## 🚀 Deployment
+
+### 🐳 Docker Deployment
+
+<details>
+<summary><b>📦 Docker Setup</b></summary>
+
+```dockerfile
+# Dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 80
+CMD ["npm", "start"]
+```
+
+```bash
+# Build and run
+docker build -t velink .
+docker run -p 80:80 -v $(pwd)/data:/app/server velink
+```
+
+</details>
+
+### 🌐 Manual Deployment
+
+<details>
+<summary><b>⚙️ Production Setup</b></summary>
+
+```bash
+# 1. Build application
+npm run build
+
+# 2. Configure environment
+cp server/.env.example server/.env
+# Edit production settings
+
+# 3. Start production server
+npm start
+
+# 4. Configure reverse proxy (nginx example)
+server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+    
+    location / {
+        proxy_pass http://localhost:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+</details>
+
+### ☁️ Cloud Deployment
+
+| Platform | Guide | Difficulty |
+|----------|-------|------------|
+| **Vercel** | One-click deploy | 🟢 Easy |
+| **Netlify** | Git integration | 🟢 Easy |
+| **Railway** | Auto-deploy | 🟡 Medium |
+| **AWS** | EC2/ECS setup | 🔴 Advanced |
+| **DigitalOcean** | Droplet setup | 🟡 Medium |
+
+---
+
+## 📈 Performance & Monitoring
+
+### ⚡ Performance Features
+
+<div align="center">
+
+| Feature | Description | Benefit |
+|---------|-------------|---------|
+| **Compression** | Gzip/Brotli compression | 📉 Reduced bandwidth |
+| **Caching** | Static file caching | ⚡ Faster load times |
+| **Database Optimization** | Indexed queries | 🚀 Quick responses |
+| **CDN Ready** | Optimized assets | 🌍 Global performance |
+
+</div>
+
+### 📊 Monitoring & Metrics
+
+```bash
+# Health endpoint
+GET /api/health
+
+# Response:
+{
+  "status": "healthy",
+  "uptime": 86400,
+  "memory": { "used": 45.2, "total": 512 },
+  "database": "connected"
+}
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get started:
+
+<details>
+<summary><b>🛠️ Development Workflow</b></summary>
+
+```bash
+# 1. Fork the repository
+git fork https://github.com/velyzo/velink.git
+
+# 2. Create feature branch
+git checkout -b feature/amazing-feature
+
+# 3. Make changes and test
+npm run dev
+npm test
+
+# 4. Commit changes
+git commit -m "feat: add amazing feature"
+
+# 5. Push and create PR
+git push origin feature/amazing-feature
+```
+
+</details>
+
+### 🐛 Bug Reports
+
+Found a bug? Use our built-in bug report system:
+- 🌐 **Web Interface**: Visit `/bug-report`
+- 📧 **Email**: [mail@velyzo.de](mailto:mail@velyzo.de)
+- 🐛 **GitHub Issues**: [Create Issue](https://github.com/velyzo/velink/issues)
+
+---
+
+## 📄 License & Support
+
+<div align="center">
+
+### 📜 License
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) for details.
+
+### 🆘 Get Help
+
+<table>
+<tr>
+<td align="center" width="25%">
+  <img src="https://img.icons8.com/color/48/000000/api.png" width="32" /><br>
+  <b>API Docs</b><br>
+  <a href="/api-docs">Interactive Docs</a>
+</td>
+<td align="center" width="25%">
+  <img src="https://img.icons8.com/color/48/000000/bug.png" width="32" /><br>
+  <b>Bug Reports</b><br>
+  <a href="/bug-report">Report Issues</a>
+</td>
+<td align="center" width="25%">
+  <img src="https://img.icons8.com/color/48/000000/email.png" width="32" /><br>
+  <b>Email Support</b><br>
+  <a href="mailto:mail@velyzo.de">Contact Us</a>
+</td>
+<td align="center" width="25%">
+  <img src="https://img.icons8.com/color/48/000000/github.png" width="32" /><br>
+  <b>GitHub</b><br>
+  <a href="https://github.com/velyzo/velink">View Source</a>
+</td>
+</tr>
+</table>
+
+</div>
+
+---
+
+## 🎉 Changelog
+
+<details>
+<summary><b>🔄 Version History</b></summary>
+
+### 🚀 v2.0.0 (Current)
+- ✅ Complete .env configuration system
+- ✅ Advanced update scripts with fallbacks  
+- ✅ Enhanced bug reporting system
+- ✅ Improved admin panel with fixed actions
+- ✅ Better error handling and logging
+- ✅ Performance optimizations
+- ✅ Professional README with better styling
+- ✅ Fixed link deletion and admin actions
+
+### 📦 v1.0.0
+- ✅ Initial release
+- ✅ Basic URL shortening
+- ✅ Admin panel
+- ✅ API documentation
+
+</details>
+
+---
+
+<div align="center">
+  
+### 🌟 Star us on GitHub if Velink helped you!
+
+**Built with ❤️ by [Velyzo](https://github.com/velyzo)**
+
+*Transform your URLs, amplify your reach* 🚀
+
+---
+
+[![GitHub Stars](https://img.shields.io/github/stars/velyzo/velink?style=social)](https://github.com/velyzo/velink)
+[![GitHub Forks](https://img.shields.io/github/forks/velyzo/velink?style=social)](https://github.com/velyzo/velink)
+[![GitHub Issues](https://img.shields.io/github/issues/velyzo/velink?style=social)](https://github.com/velyzo/velink/issues)
+
+</div>
 
 # CORS Configuration
 CORS_ORIGIN=http://localhost:3000

@@ -511,16 +511,35 @@ app.get('/api/admin/stats', verifyAdminToken, async (req, res) => {
 app.delete('/api/admin/links/:id', verifyAdminToken, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.deleteLink(id);
+    
+    // The id parameter could be either the database ID or shortCode
+    // We need to find the shortCode first if we have a database ID
+    let shortCode = id;
+    
+    // If the id looks like a number, it might be a database ID
+    if (/^\d+$/.test(id)) {
+      // Get the link by database ID to find the shortCode
+      const links = await db.getLinks();
+      const link = links.find(l => l._id?.toString() === id || l.id?.toString() === id);
+      if (link) {
+        shortCode = link.shortCode;
+      } else {
+        return res.status(404).json({ error: 'Link not found' });
+      }
+    }
+    
+    // Delete using shortCode
+    await db.deleteLink(shortCode);
     
     // Generate sitemap after deleting link
     sitemapGenerator.generateSitemap().catch(err => {
       console.error('Failed to update sitemap after link deletion:', err);
     });
     
-    res.json({ success: true });
+    log('info', `Link deleted: ${shortCode}`, { ip: req.ip });
+    res.json({ success: true, message: 'Link deleted successfully' });
   } catch (error) {
-    console.error('Error deleting link:', error);
+    log('error', 'Error deleting link', { error: error.message, ip: req.ip });
     res.status(500).json({ error: 'Internal server error' });
   }
 });

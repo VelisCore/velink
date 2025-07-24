@@ -1464,319 +1464,6 @@ app.post('/api/track/:shortCode', async (req, res) => {
   }
 });
 
-// Redirect short URL
-app.get('/:shortCode', async (req, res) => {
-  try {
-    const { shortCode } = req.params;
-    
-    // Skip API routes and sitemap
-    if (shortCode.startsWith('api') || shortCode === 'sitemap.xml') {
-      return res.status(404).json({ error: 'Not found' });
-    }
-
-    const urlData = await db.findByShortCode(shortCode);
-    
-    if (!urlData) {
-      return res.status(404).send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Link Not Found - Velink</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-                   text-align: center; padding: 50px; background: #f8fafc; }
-            .container { max-width: 500px; margin: 0 auto; background: white; 
-                        border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            h1 { color: #e11d48; margin-bottom: 20px; }
-            p { color: #64748b; margin-bottom: 30px; }
-            a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
-            a:hover { text-decoration: underline; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>🔗 Link Not Found</h1>
-            <p>The short link you're looking for doesn't exist or has expired.</p>
-            <a href="/">← Back to Velink</a>
-          </div>
-        </body>
-        </html>
-      `);
-    }
-
-    // Check if the link has expired
-    if (urlData.expires_at && new Date(urlData.expires_at) < new Date()) {
-      return res.status(410).send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Link Expired - Velink</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-                   text-align: center; padding: 50px; background: #f8fafc; }
-            .container { max-width: 500px; margin: 0 auto; background: white; 
-                        border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            h1 { color: #e11d48; margin-bottom: 20px; }
-            p { color: #64748b; margin-bottom: 30px; }
-            a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
-            a:hover { text-decoration: underline; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>🔗 Link Expired</h1>
-            <p>This short link has expired and is no longer available.</p>
-            <a href="/">← Back to Velink</a>
-          </div>
-        </body>
-        </html>
-      `);
-    }
-
-    // Check if link is password protected
-    const customOptions = urlData.custom_options ? JSON.parse(urlData.custom_options) : {};
-    if (customOptions.password) {
-      // Check if password is provided in query or if it's verification step
-      const providedPassword = req.query.password;
-      if (!providedPassword) {
-        // Show password protection page
-        return res.send(`
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Protected Link - Velink</title>
-            <meta name="robots" content="noindex, nofollow">
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-                     text-align: center; padding: 50px; background: #f8fafc; }
-              .container { max-width: 500px; margin: 0 auto; background: white; 
-                          border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-              h1 { color: #1e293b; margin-bottom: 20px; }
-              p { color: #64748b; margin-bottom: 30px; }
-              .form-group { margin-bottom: 20px; text-align: left; }
-              label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
-              input[type="password"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; 
-                                     border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-              input[type="password"]:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
-              .btn { width: 100%; padding: 12px 24px; border-radius: 8px; border: none; 
-                     font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 16px; }
-              .btn-primary { background: #0ea5e9; color: white; }
-              .btn-primary:hover { background: #0284c7; }
-              .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
-              .error { background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; 
-                      padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-              .back-link { margin-top: 20px; }
-              .back-link a { color: #0ea5e9; text-decoration: none; font-size: 14px; }
-              .back-link a:hover { text-decoration: underline; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>🔒 Protected Link</h1>
-              <p>This link is password protected. Please enter the password to continue.</p>
-              
-              <div id="error-message" class="error" style="display: none;"></div>
-              
-              <form id="password-form" onsubmit="return submitPassword(event)">
-                <div class="form-group">
-                  <label for="password">Password</label>
-                  <input type="password" id="password" name="password" required 
-                         placeholder="Enter password" autocomplete="current-password">
-                </div>
-                <button type="submit" class="btn btn-primary" id="submit-btn">
-                  Access Link
-                </button>
-              </form>
-              
-              <div class="back-link">
-                <a href="/">← Back to Velink</a>
-              </div>
-            </div>
-            
-            <script>
-              async function submitPassword(event) {
-                event.preventDefault();
-                
-                const password = document.getElementById('password').value;
-                const submitBtn = document.getElementById('submit-btn');
-                const errorDiv = document.getElementById('error-message');
-                
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Verifying...';
-                errorDiv.style.display = 'none';
-                
-                try {
-                  const response = await fetch('/api/verify-password/${shortCode}', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ password })
-                  });
-                  
-                  const result = await response.json();
-                  
-                  if (response.ok && result.success) {
-                    // Track click and redirect
-                    try {
-                      await fetch('/api/track/${shortCode}', { method: 'POST' });
-                    } catch (e) {
-                      // Continue anyway if tracking fails
-                    }
-                    window.location.href = result.originalUrl;
-                  } else {
-                    errorDiv.textContent = result.error || 'Invalid password. Please try again.';
-                    errorDiv.style.display = 'block';
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Access Link';
-                  }
-                } catch (error) {
-                  errorDiv.textContent = 'An error occurred. Please try again.';
-                  errorDiv.style.display = 'block';
-                  submitBtn.disabled = false;
-                  submitBtn.textContent = 'Access Link';
-                }
-                
-                return false;
-              }
-            </script>
-          </body>
-          </html>
-        `);
-      } else {
-        // Verify the provided password
-        if (customOptions.password !== providedPassword) {
-          return res.status(401).send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Invalid Password - Velink</title>
-              <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-                       text-align: center; padding: 50px; background: #f8fafc; }
-                .container { max-width: 500px; margin: 0 auto; background: white; 
-                            border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-                h1 { color: #e11d48; margin-bottom: 20px; }
-                p { color: #64748b; margin-bottom: 30px; }
-                a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
-                a:hover { text-decoration: underline; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h1>🔒 Invalid Password</h1>
-                <p>The password you entered is incorrect.</p>
-                <a href="/${shortCode}">← Try Again</a>
-              </div>
-            </body>
-            </html>
-          `);
-        }
-        // Password is correct, continue to redirect below
-      }
-    }
-
-    // Check for confirmation parameter
-    const showConfirmation = req.query.confirm === 'true';
-    
-    if (showConfirmation) {
-      // Show confirmation page
-      res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Confirm Redirect - Velink</title>
-          <meta name="description" content="Confirm redirect to ${urlData.original_url}">
-          <meta name="robots" content="noindex, nofollow">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-                   text-align: center; padding: 50px; background: #f8fafc; }
-            .container { max-width: 600px; margin: 0 auto; background: white; 
-                        border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            h1 { color: #1e293b; margin-bottom: 20px; }
-            p { color: #64748b; margin-bottom: 20px; }
-            .url { background: #f1f5f9; padding: 15px; border-radius: 8px; 
-                   word-break: break-all; margin: 20px 0; font-family: monospace; }
-            .buttons { display: flex; gap: 15px; justify-content: center; margin-top: 30px; }
-            .btn { padding: 12px 24px; border-radius: 8px; border: none; 
-                   font-weight: 600; cursor: pointer; transition: all 0.2s; }
-            .btn-primary { background: #0ea5e9; color: white; }
-            .btn-primary:hover { background: #0284c7; }
-            .btn-secondary { background: #e2e8f0; color: #64748b; }
-            .btn-secondary:hover { background: #cbd5e1; }
-            .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; 
-                      border-radius: 8px; margin: 20px 0; color: #92400e; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>🔗 Redirect Confirmation</h1>
-            <p>You're about to visit an external website. This link will take you to:</p>
-            <div class="url">${urlData.original_url}</div>
-            <div class="warning">
-              <strong>Privacy Notice:</strong> By continuing, your visit will be logged for analytics purposes. 
-              This helps us understand link usage and improve our service.
-            </div>
-            <div class="buttons">
-              <button class="btn btn-primary" onclick="confirmRedirect()">
-                Continue to Website
-              </button>
-              <button class="btn btn-secondary" onclick="goBack()">
-                Go Back
-              </button>
-            </div>
-            <p style="margin-top: 30px; font-size: 14px; color: #9ca3af;">
-              Short link: ${req.protocol}://${req.get('host')}/${shortCode}
-            </p>
-          </div>
-          <script>
-            function confirmRedirect() {
-              // Increment click count before redirect
-              fetch('/api/track/${shortCode}', { method: 'POST' })
-                .then(() => {
-                  window.location.href = '${urlData.original_url}';
-                })
-                .catch(() => {
-                  // Redirect anyway if tracking fails
-                  window.location.href = '${urlData.original_url}';
-                });
-            }
-            
-            function goBack() {
-              if (window.history.length > 1) {
-                window.history.back();
-              } else {
-                window.location.href = '/';
-              }
-            }
-          </script>
-        </body>
-        </html>
-      `);
-    } else {
-      // Increment click count
-      await db.incrementClicks(shortCode);
-
-      // Direct redirect (fast mode)
-      res.redirect(302, urlData.original_url);
-    }
-
-  } catch (error) {
-    console.error('Error redirecting:', error);
-    res.status(500).send('Internal server error');
-  }
-});
-
 // Serve static files from React app
 let clientBuildPath;
 
@@ -1817,6 +1504,202 @@ app.get('/sitemap.xml', (req, res) => {
 
 // Serve static files
 app.use(express.static(clientBuildPath));
+
+// Redirect short URL (placed after static files to avoid conflicts with React routes)
+app.get('/:shortCode', async (req, res, next) => {
+  try {
+    const { shortCode } = req.params;
+    
+    // Skip API routes and sitemap
+    if (shortCode.startsWith('api') || shortCode === 'sitemap.xml') {
+      return next();
+    }
+
+    // Skip known React routes
+    const knownRoutes = ['admin', 'privacy', 'terms', 'impressum', 'analytics', 'docs'];
+    if (knownRoutes.includes(shortCode)) {
+      return next();
+    }
+
+    const urlData = await db.findByShortCode(shortCode);
+    
+    if (!urlData) {
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Link Not Found - Velink</title>
+          <style>
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+              background: #f8fafc; 
+              color: #1e293b; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              min-height: 100vh;
+            }
+            .container { 
+              max-width: 450px; 
+              margin: 20px auto; 
+              background: white; 
+              border-radius: 16px; 
+              padding: 48px 32px; 
+              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+              text-align: center;
+            }
+            .icon {
+              font-size: 4rem;
+              margin-bottom: 24px;
+              color: #e11d48;
+              display: block;
+            }
+            h1 { 
+              font-size: 1.875rem;
+              font-weight: 700;
+              color: #1e293b; 
+              margin: 0 0 16px 0;
+              line-height: 1.25;
+            }
+            p { 
+              color: #64748b; 
+              margin: 0 0 32px 0;
+              font-size: 1.125rem;
+              line-height: 1.6;
+            }
+            .back-link { 
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              color: #3b82f6; 
+              text-decoration: none; 
+              font-weight: 600;
+              font-size: 1rem;
+              padding: 12px 24px;
+              border-radius: 8px;
+              background: #eff6ff;
+              border: 1px solid #dbeafe;
+              transition: all 0.2s ease;
+            }
+            .back-link:hover { 
+              background: #dbeafe;
+              border-color: #93c5fd;
+              transform: translateY(-1px);
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <span class="icon">🔗</span>
+            <h1>Link Not Found</h1>
+            <p>The short link you're looking for doesn't exist or has expired.</p>
+            <a href="/" class="back-link">
+              ← Back to Velink
+            </a>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // Check if the link has expired
+    if (urlData.expires_at && new Date(urlData.expires_at) < new Date()) {
+      return res.status(410).send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Link Expired - Velink</title>
+          <style>
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+              background: #f8fafc; 
+              color: #1e293b; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              min-height: 100vh;
+            }
+            .container { 
+              max-width: 450px; 
+              margin: 20px auto; 
+              background: white; 
+              border-radius: 16px; 
+              padding: 48px 32px; 
+              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+              text-align: center;
+            }
+            .icon {
+              font-size: 4rem;
+              margin-bottom: 24px;
+              color: #f59e0b;
+              display: block;
+            }
+            h1 { 
+              font-size: 1.875rem;
+              font-weight: 700;
+              color: #1e293b; 
+              margin: 0 0 16px 0;
+              line-height: 1.25;
+            }
+            p { 
+              color: #64748b; 
+              margin: 0 0 32px 0;
+              font-size: 1.125rem;
+              line-height: 1.6;
+            }
+            .back-link { 
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              color: #3b82f6; 
+              text-decoration: none; 
+              font-weight: 600;
+              font-size: 1rem;
+              padding: 12px 24px;
+              border-radius: 8px;
+              background: #eff6ff;
+              border: 1px solid #dbeafe;
+              transition: all 0.2s ease;
+            }
+            .back-link:hover { 
+              background: #dbeafe;
+              border-color: #93c5fd;
+              transform: translateY(-1px);
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <span class="icon">⏰</span>
+            <h1>Link Expired</h1>
+            <p>This short link has expired and is no longer accessible.</p>
+            <a href="/" class="back-link">
+              <span>←</span>
+              Back to Velink
+            </a>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // Increment click count and redirect
+    await db.incrementClicks(shortCode);
+    res.redirect(302, urlData.original_url);
+
+  } catch (error) {
+    console.error('Error redirecting:', error);
+    res.status(500).send('Internal server error');
+  }
+});
 
 // For all routes except API and short URLs, serve the React app
 app.get('*', (req, res, next) => {

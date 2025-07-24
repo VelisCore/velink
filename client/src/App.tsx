@@ -10,7 +10,7 @@ import Footer from './components/Footer';
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
 import TermsOfService from './components/legal/TermsOfService';
 import Impressum from './components/legal/Impressum';
-import ApiDocumentation from './components/documentation/NewApiDocumentation';
+import ApiDocumentation from './components/documentation/ApiDocumentationNew';
 import LinkAnalytics from './components/analytics/LinkAnalytics';
 import CookieNotice from './components/CookieNotice';
 import AdminPanel from './components/CleanAdminPanel';

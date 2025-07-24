@@ -551,7 +551,7 @@ const CleanAdminPanel: React.FC = () => {
         setLatestVersion(data.latestVersion || 'Unknown');
         setUpdateAvailable(data.updateAvailable || false);
         setUpdateStatus(data.status || 'Up to date');
-        setSystemHealth(data.systemHealth || 'Unknown');
+        setSystemHealth(typeof data.systemHealth === 'object' ? data.systemHealth.status || 'Unknown' : data.systemHealth || 'Unknown');
         setLastUpdateTime(data.lastUpdateTime || 'Never');
         setPendingRestart(data.pendingRestart || false);
         setUpdateScriptAvailable(data.updateScriptAvailable || false);

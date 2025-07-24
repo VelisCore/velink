@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-interface LinkAnalytics {
+interface LinkAnalyticsData {
   shortCode: string;
   originalUrl: string;
   totalClicks: number;
@@ -18,7 +18,7 @@ interface LinkAnalytics {
 
 const LinkAnalytics: React.FC = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
-  const [analytics, setAnalytics] = useState<LinkAnalytics | null>(null);
+  const [analytics, setAnalytics] = useState<LinkAnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 

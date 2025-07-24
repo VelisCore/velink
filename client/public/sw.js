@@ -1,4 +1,4 @@
-// Service Worker for VeLink - Maximum PageSpeed optimization
+// Service Worker for Velink - Maximum PageSpeed optimization
 const CACHE_NAME = 'velink-v1.0.0';
 const STATIC_CACHE_NAME = `${CACHE_NAME}-static`;
 const DYNAMIC_CACHE_NAME = `${CACHE_NAME}-dynamic`;
@@ -156,7 +156,7 @@ async function networkFirstStrategy(request) {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>VeLink - Offline</title>
+          <title>Velink - Offline</title>
           <style>
             body { 
               font-family: Arial, sans-serif; 
@@ -196,7 +196,7 @@ async function networkFirstStrategy(request) {
         </head>
         <body>
           <div class="offline-container">
-            <h1>🔗 VeLink</h1>
+            <h1>🔗 Velink</h1>
             <h2>You're Offline</h2>
             <p>Please check your internet connection and try again.</p>
             <button class="retry-btn" onclick="window.location.reload()">
@@ -256,20 +256,20 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     
     const options = {
-      body: data.body || 'New notification from VeLink',
+      body: data.body || 'New notification from Velink',
       icon: '/favicon.svg',
       badge: '/favicon.svg',
       data: data.url || '/',
       actions: [
         {
           action: 'open',
-          title: 'Open VeLink'
+          title: 'Open Velink'
         }
       ]
     };
     
     event.waitUntil(
-      self.registration.showNotification(data.title || 'VeLink', options)
+      self.registration.showNotification(data.title || 'Velink', options)
     );
   }
 });
@@ -310,4 +310,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('🔧 VeLink Service Worker loaded successfully');
+console.log('🔧 Velink Service Worker loaded successfully');

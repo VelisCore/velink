@@ -71,7 +71,7 @@ class SitemapGenerator {
 
     try {
       this.isGenerating = true;
-      console.log('🗺️ Generating enhanced sitemap for VeLink...');
+      console.log('🗺️ Generating enhanced sitemap for Velink...');
 
       const [staticPages, links] = await Promise.all([
         this.getStaticPages(),

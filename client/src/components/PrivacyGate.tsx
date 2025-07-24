@@ -138,7 +138,7 @@ const PrivacyGate: React.FC<PrivacyGateProps> = ({ children }) => {
             })
             .catch(console.error);
         }
-    }, [privacyStatus.isPrivate]);
+    }, [privacyStatus.isPrivate, privacyStatus.hasAccess]);
 
     if (loading) {
         return (

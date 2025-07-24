@@ -10,7 +10,7 @@ import Footer from './components/Footer';
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
 import TermsOfService from './components/legal/TermsOfService';
 import Impressum from './components/legal/Impressum';
-import ApiDocumentation from './components/documentation/ApiDocumentationNew';
+import ApiDocumentation from './components/documentation/ApiDocumentationFixed';
 import LinkAnalytics from './components/analytics/LinkAnalytics';
 import CookieNotice from './components/CookieNotice';
 import AdminPanel from './components/CleanAdminPanel';
@@ -71,6 +71,8 @@ function App() {
             <Route path="/api-docs" element={<ApiDocumentation />} />
             <Route path="/analytics/:shortCode" element={<LinkAnalytics />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/bug-report" element={<BugReport />} />
+            <Route path="/bug-report" element={<BugReport />} />
           </Routes>
           
           <CookieNotice />

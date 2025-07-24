@@ -6,7 +6,7 @@ import {
   RefreshCw, Save, TrendingUp, Clock, Terminal, 
   Lock, Unlock, Eye, EyeOff, Construction,
   Trash2, Edit3, Copy, Search, FileText,
-  Globe, AlertTriangle,
+  Globe, AlertTriangle, Bug,
   CheckCircle, HardDrive,
   RotateCcw, Zap, Wifi
 } from 'lucide-react';
@@ -67,11 +67,36 @@ interface SystemInfo {
   version: string;
 }
 
+interface BugReport {
+  id: number;
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  type: 'bug' | 'feature' | 'improvement' | 'question';
+  email?: string;
+  steps?: string;
+  expected?: string;
+  actual?: string;
+  status: 'open' | 'in_progress' | 'closed' | 'resolved';
+  created_at: string;
+  updated_at?: string;
+}
+
+interface BugReportStats {
+  total: number;
+  open: number;
+  inProgress: number;
+  closed: number;
+  byType: Array<{ type: string; count: number }>;
+  bySeverity: Array<{ severity: string; count: number }>;
+  recent: Array<{ title: string; type: string; severity: string; created_at: string }>;
+}
+
 const CleanAdminPanel: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'links' | 'analytics' | 'system' | 'logs' | 'databases' | 'settings' | 'update'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'links' | 'analytics' | 'system' | 'logs' | 'databases' | 'settings' | 'update' | 'bug-reports'>('dashboard');
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   
   // Update management
@@ -91,6 +116,11 @@ const CleanAdminPanel: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [editingLink, setEditingLink] = useState<string | null>(null);
   const [editDescription, setEditDescription] = useState('');
+  
+  // Bug Reports
+  const [bugReports, setBugReports] = useState<BugReport[]>([]);
+  const [bugReportStats, setBugReportStats] = useState<BugReportStats | null>(null);
+  const [bugReportFilter, setBugReportFilter] = useState<string>('all');
   
   // Analytics
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -235,7 +265,9 @@ const CleanAdminPanel: React.FC = () => {
         loadSystemInfo(),
         loadAnalytics(),
         loadLogs(),
-        loadPrivacySettings()
+        loadPrivacySettings(),
+        loadBugReports(),
+        loadBugReportStats()
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -285,6 +317,70 @@ const CleanAdminPanel: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load privacy settings:', error);
+    }
+  };
+
+  const loadBugReports = async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch('/api/admin/bug-reports', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBugReports(data);
+      }
+    } catch (error) {
+      console.error('Failed to load bug reports:', error);
+    }
+  };
+
+  const loadBugReportStats = async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch('/api/admin/bug-report-stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBugReportStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to load bug report stats:', error);
+    }
+  };
+
+  const updateBugReportStatus = async (id: number, status: string) => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch(`/api/admin/bug-reports/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (response.ok) {
+        await loadBugReports();
+        await loadBugReportStats();
+        toast.success('Bug report status updated successfully');
+      } else {
+        toast.error('Failed to update bug report status');
+      }
+    } catch (error) {
+      console.error('Failed to update bug report status:', error);
+      toast.error('Failed to update bug report status');
     }
   };
 
@@ -813,6 +909,7 @@ const CleanAdminPanel: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'links', label: 'Links', icon: ExternalLink },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { id: 'bug-reports', label: 'Bug Reports', icon: Bug },
     { id: 'system', label: 'System', icon: Activity },
     { id: 'logs', label: 'Logs', icon: Terminal },
     { id: 'databases', label: 'Database', icon: Database },
@@ -1156,6 +1253,156 @@ const CleanAdminPanel: React.FC = () => {
                     {privacySettings.isMaintenanceMode ? 'Disable' : 'Enable'}
                   </motion.button>
                 </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Bug Reports Tab */}
+        {activeTab === 'bug-reports' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-6"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                <Bug className="w-6 h-6 mr-3 text-red-500" />
+                Bug Reports
+              </h2>
+              <div className="flex space-x-2">
+                <select
+                  value={bugReportFilter}
+                  onChange={(e) => setBugReportFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="all">All Reports</option>
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Bug Report Stats */}
+            {bugReportStats && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-gray-600 font-medium">Total Reports</h3>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{bugReportStats.total}</p>
+                    </div>
+                    <Bug className="w-8 h-8 text-gray-400" />
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-gray-600 font-medium">Open</h3>
+                      <p className="text-3xl font-bold text-red-600 mt-2">{bugReportStats.open}</p>
+                    </div>
+                    <AlertTriangle className="w-8 h-8 text-red-400" />
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-gray-600 font-medium">In Progress</h3>
+                      <p className="text-3xl font-bold text-yellow-600 mt-2">{bugReportStats.inProgress}</p>
+                    </div>
+                    <Clock className="w-8 h-8 text-yellow-400" />
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-gray-600 font-medium">Closed</h3>
+                      <p className="text-3xl font-bold text-green-600 mt-2">{bugReportStats.closed}</p>
+                    </div>
+                    <CheckCircle className="w-8 h-8 text-green-400" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bug Reports List */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Recent Bug Reports</h3>
+              </div>
+              
+              <div className="divide-y divide-gray-200">
+                {bugReports.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500">
+                    No bug reports found.
+                  </div>
+                ) : (
+                  bugReports
+                    .filter(report => bugReportFilter === 'all' || report.status === bugReportFilter)
+                    .map((report) => (
+                    <div key={report.id} className="p-6 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h4 className="text-lg font-medium text-gray-900">{report.title}</h4>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              report.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                              report.severity === 'high' ? 'bg-orange-100 text-orange-800' :
+                              report.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {report.severity}
+                            </span>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              report.type === 'bug' ? 'bg-red-100 text-red-800' :
+                              report.type === 'feature' ? 'bg-blue-100 text-blue-800' :
+                              report.type === 'improvement' ? 'bg-purple-100 text-purple-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {report.type}
+                            </span>
+                          </div>
+                          
+                          <p className="text-gray-600 mb-3">{report.description}</p>
+                          
+                          {report.steps && (
+                            <div className="mb-3">
+                              <h5 className="text-sm font-medium text-gray-900 mb-1">Steps to Reproduce:</h5>
+                              <p className="text-sm text-gray-600 whitespace-pre-wrap">{report.steps}</p>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>Created: {new Date(report.created_at).toLocaleDateString()}</span>
+                            {report.email && <span>Email: {report.email}</span>}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3 ml-4">
+                          <select
+                            value={report.status}
+                            onChange={(e) => updateBugReportStatus(report.id, e.target.value)}
+                            className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                              report.status === 'open' ? 'bg-red-50 text-red-700 border-red-200' :
+                              report.status === 'in_progress' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              'bg-green-50 text-green-700 border-green-200'
+                            }`}
+                          >
+                            <option value="open">Open</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="closed">Closed</option>
+                            <option value="resolved">Resolved</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </motion.div>

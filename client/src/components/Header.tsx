@@ -47,6 +47,12 @@ const Header: React.FC = () => {
             >
               API
             </Link>
+            <Link
+              to="/bug-report"
+              className="text-gray-600 hover:text-primary-600 font-medium transition-colors duration-200"
+            >
+              Report Bug
+            </Link>
             <a 
               href="https://github.com/velyzo/velink" 
               target="_blank" 
@@ -99,6 +105,13 @@ const Header: React.FC = () => {
                 className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50 rounded-md transition-colors"
               >
                 API Documentation
+              </Link>
+              <Link
+                to="/bug-report"
+                onClick={closeMobileMenu}
+                className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50 rounded-md transition-colors"
+              >
+                Report Bug
               </Link>
               <a
                 href="https://github.com/velyzo/velink"

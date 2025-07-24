@@ -1904,6 +1904,118 @@ app.post('/api/admin/privacy-settings', adminAuth, (req, res) => {
   }
 });
 
+// Bug Report Endpoints
+app.post('/api/bug-reports', [
+  body('title').notEmpty().trim().isLength({ min: 5, max: 200 }),
+  body('description').notEmpty().trim().isLength({ min: 10, max: 2000 }),
+  body('severity').optional().isIn(['low', 'medium', 'high', 'critical']),
+  body('type').optional().isIn(['bug', 'feature', 'improvement', 'question']),
+  body('email').optional().isEmail(),
+  body('steps').optional().isLength({ max: 1000 }),
+  body('expected').optional().isLength({ max: 1000 }),
+  body('actual').optional().isLength({ max: 1000 })
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const clientIp = req.headers['x-forwarded-for'] || 
+                     req.headers['x-real-ip'] || 
+                     req.connection.remoteAddress || 
+                     req.socket.remoteAddress || 
+                     (req.connection.socket ? req.connection.socket.remoteAddress : null);
+
+    const bugReportData = {
+      title: req.body.title,
+      description: req.body.description,
+      severity: req.body.severity || 'medium',
+      type: req.body.type || 'bug',
+      email: req.body.email || null,
+      steps: req.body.steps || null,
+      expected: req.body.expected || null,
+      actual: req.body.actual || null,
+      ip_address: clientIp,
+      user_agent: req.headers['user-agent']
+    };
+
+    const result = await db.createBugReport(bugReportData);
+    
+    log('info', `Bug report created: ${req.body.title}`, { 
+      id: result.id, 
+      type: req.body.type,
+      severity: req.body.severity,
+      ip: clientIp 
+    });
+
+    res.status(201).json({
+      success: true,
+      id: result.id,
+      message: 'Bug report submitted successfully'
+    });
+  } catch (error) {
+    log('error', 'Error creating bug report', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin route to get bug reports
+app.get('/api/admin/bug-reports', verifyAdminToken, async (req, res) => {
+  try {
+    const filters = {
+      status: req.query.status,
+      type: req.query.type,
+      severity: req.query.severity,
+      limit: req.query.limit ? parseInt(req.query.limit) : undefined
+    };
+
+    const bugReports = await db.getBugReports(filters);
+    res.json(bugReports);
+  } catch (error) {
+    log('error', 'Error fetching bug reports', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin route to update bug report status
+app.patch('/api/admin/bug-reports/:id', verifyAdminToken, [
+  body('status').isIn(['open', 'in_progress', 'closed', 'resolved'])
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const updated = await db.updateBugReportStatus(id, status);
+    
+    if (updated) {
+      log('info', `Bug report ${id} status updated to ${status}`);
+      res.json({ success: true, message: 'Bug report status updated' });
+    } else {
+      res.status(404).json({ error: 'Bug report not found' });
+    }
+  } catch (error) {
+    log('error', 'Error updating bug report status', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin route to get bug report statistics
+app.get('/api/admin/bug-report-stats', verifyAdminToken, async (req, res) => {
+  try {
+    const stats = await db.getBugReportStats();
+    res.json(stats);
+  } catch (error) {
+    log('error', 'Error fetching bug report stats', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Start the server
 const startServer = () => {
   // Start HTTP server

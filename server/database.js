@@ -55,12 +55,33 @@ class Database {
       )
     `;
 
+    const createBugReportsTableSQL = `
+      CREATE TABLE IF NOT EXISTS bug_reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        severity TEXT NOT NULL DEFAULT 'medium',
+        type TEXT NOT NULL DEFAULT 'bug',
+        email TEXT,
+        steps TEXT,
+        expected TEXT,
+        actual TEXT,
+        status TEXT DEFAULT 'open',
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME
+      )
+    `;
+
     const createIndexSQL = `
       CREATE INDEX IF NOT EXISTS idx_short_code ON short_urls(short_code);
       CREATE INDEX IF NOT EXISTS idx_original_url ON short_urls(original_url);
       CREATE INDEX IF NOT EXISTS idx_created_at ON short_urls(created_at);
       CREATE INDEX IF NOT EXISTS idx_clicks_short_code ON clicks(short_code);
       CREATE INDEX IF NOT EXISTS idx_clicks_clicked_at ON clicks(clicked_at);
+      CREATE INDEX IF NOT EXISTS idx_bug_reports_created_at ON bug_reports(created_at);
+      CREATE INDEX IF NOT EXISTS idx_bug_reports_status ON bug_reports(status);
     `;
 
     // Add new columns to existing tables if they don't exist
@@ -79,6 +100,7 @@ class Database {
     this.db.serialize(() => {
       this.db.run(createTableSQL);
       this.db.run(createClicksTableSQL);
+      this.db.run(createBugReportsTableSQL);
       this.db.run(createIndexSQL);
       
       // Add new columns if they don't exist (ignore errors for existing columns)
@@ -1252,6 +1274,172 @@ class Database {
           resolve(this.changes > 0);
         }
       });
+    });
+  }
+
+  // Bug Report Methods
+  createBugReport(data) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT INTO bug_reports (title, description, severity, type, email, steps, expected, actual, ip_address, user_agent)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      
+      this.db.run(sql, [
+        data.title,
+        data.description,
+        data.severity || 'medium',
+        data.type || 'bug',
+        data.email || null,
+        data.steps || null,
+        data.expected || null,
+        data.actual || null,
+        data.ip_address || null,
+        data.user_agent || null
+      ], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({
+            id: this.lastID,
+            success: true
+          });
+        }
+      });
+    });
+  }
+
+  getBugReports(filters = {}) {
+    return new Promise((resolve, reject) => {
+      let sql = `
+        SELECT id, title, description, severity, type, email, steps, expected, actual, 
+               status, created_at, updated_at
+        FROM bug_reports 
+      `;
+      
+      const conditions = [];
+      const params = [];
+      
+      if (filters.status) {
+        conditions.push('status = ?');
+        params.push(filters.status);
+      }
+      
+      if (filters.type) {
+        conditions.push('type = ?');
+        params.push(filters.type);
+      }
+      
+      if (filters.severity) {
+        conditions.push('severity = ?');
+        params.push(filters.severity);
+      }
+      
+      if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
+      }
+      
+      sql += ' ORDER BY created_at DESC';
+      
+      if (filters.limit) {
+        sql += ' LIMIT ?';
+        params.push(filters.limit);
+      }
+      
+      this.db.all(sql, params, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows || []);
+        }
+      });
+    });
+  }
+
+  updateBugReportStatus(id, status) {
+    return new Promise((resolve, reject) => {
+      const sql = 'UPDATE bug_reports SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+      
+      this.db.run(sql, [status, id], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this.changes > 0);
+        }
+      });
+    });
+  }
+
+  getBugReportStats() {
+    return new Promise((resolve, reject) => {
+      const queries = {
+        total: 'SELECT COUNT(*) as count FROM bug_reports',
+        open: 'SELECT COUNT(*) as count FROM bug_reports WHERE status = "open"',
+        inProgress: 'SELECT COUNT(*) as count FROM bug_reports WHERE status = "in_progress"',
+        closed: 'SELECT COUNT(*) as count FROM bug_reports WHERE status = "closed"',
+        byType: `
+          SELECT type, COUNT(*) as count 
+          FROM bug_reports 
+          GROUP BY type 
+          ORDER BY count DESC
+        `,
+        bySeverity: `
+          SELECT severity, COUNT(*) as count 
+          FROM bug_reports 
+          GROUP BY severity 
+          ORDER BY 
+            CASE severity 
+              WHEN 'critical' THEN 1 
+              WHEN 'high' THEN 2 
+              WHEN 'medium' THEN 3 
+              WHEN 'low' THEN 4 
+            END
+        `,
+        recent: `
+          SELECT title, type, severity, created_at 
+          FROM bug_reports 
+          ORDER BY created_at DESC 
+          LIMIT 5
+        `
+      };
+
+      const executeQueries = async () => {
+        const results = {};
+        
+        for (const [key, query] of Object.entries(queries)) {
+          try {
+            if (key === 'byType' || key === 'bySeverity' || key === 'recent') {
+              results[key] = await new Promise((res, rej) => {
+                this.db.all(query, [], (err, rows) => {
+                  if (err) rej(err);
+                  else res(rows || []);
+                });
+              });
+            } else {
+              const result = await new Promise((res, rej) => {
+                this.db.get(query, [], (err, row) => {
+                  if (err) rej(err);
+                  else res(row);
+                });
+              });
+              results[key] = result?.count || 0;
+            }
+          } catch (error) {
+            console.error(`Error executing bug report query ${key}:`, error);
+            if (key === 'byType' || key === 'bySeverity' || key === 'recent') {
+              results[key] = [];
+            } else {
+              results[key] = 0;
+            }
+          }
+        }
+        
+        return results;
+      };
+
+      executeQueries()
+        .then(resolve)
+        .catch(reject);
     });
   }
 

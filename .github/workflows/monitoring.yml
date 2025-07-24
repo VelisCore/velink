@@ -1,0 +1,424 @@
+name: 📊 Monitoring & Health Checks
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+    - cron: '0 */6 * * *'   # Every 6 hours for detailed checks
+  workflow_dispatch:
+    inputs:
+      check_type:
+        description: 'Type of health check'
+        required: true
+        default: 'basic'
+        type: choice
+        options:
+          - basic
+          - detailed
+          - performance
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  health-check:
+    name: 🔍 Basic Health Check
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '*/15 * * * *' || github.event.inputs.check_type == 'basic'
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 🔍 Repository health check
+      run: |
+        echo "## 🔍 Repository Health Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Check Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check essential files
+        echo "### 📁 Essential Files" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "package.json" ]; then
+          echo "- ✅ package.json" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ package.json missing" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "server/package.json" ]; then
+          echo "- ✅ server/package.json" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ server/package.json missing" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "client/package.json" ]; then
+          echo "- ✅ client/package.json" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ client/package.json missing" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "README.md" ]; then
+          echo "- ✅ README.md" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ README.md missing" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: 📦 Dependency health
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Dependencies Status" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for package-lock.json
+        if [ -f "package-lock.json" ]; then
+          echo "- ✅ Root dependencies locked" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ Root dependencies not locked" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "server/package-lock.json" ]; then
+          echo "- ✅ Server dependencies locked" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ Server dependencies not locked" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "client/package-lock.json" ]; then
+          echo "- ✅ Client dependencies locked" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ Client dependencies not locked" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: 🔧 Configuration health
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔧 Configuration Files" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "server/.env.example" ]; then
+          echo "- ✅ Environment template exists" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ No environment template" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f ".gitignore" ]; then
+          echo "- ✅ .gitignore present" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ .gitignore missing" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d ".github/workflows" ]; then
+          WORKFLOW_COUNT=$(ls -1 .github/workflows/*.yml 2>/dev/null | wc -l)
+          echo "- ✅ GitHub workflows ($WORKFLOW_COUNT files)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ No GitHub workflows" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  detailed-check:
+    name: 🔬 Detailed Health Check
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 */6 * * *' || github.event.inputs.check_type == 'detailed'
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 📥 Install dependencies
+      run: |
+        npm ci --prefer-offline
+        cd server && npm ci --prefer-offline
+        cd ../client && npm ci --prefer-offline
+
+    - name: 🔍 Detailed dependency analysis
+      run: |
+        echo "## 🔬 Detailed Health Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Analysis Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### 📊 Package Statistics" >> $GITHUB_STEP_SUMMARY
+        
+        # Root dependencies
+        ROOT_DEPS=$(cat package.json | jq -r '.dependencies // {} | keys | length')
+        ROOT_DEV_DEPS=$(cat package.json | jq -r '.devDependencies // {} | keys | length')
+        echo "- 📦 Root: $ROOT_DEPS dependencies, $ROOT_DEV_DEPS dev dependencies" >> $GITHUB_STEP_SUMMARY
+        
+        # Server dependencies
+        if [ -f "server/package.json" ]; then
+          SERVER_DEPS=$(cat server/package.json | jq -r '.dependencies // {} | keys | length')
+          SERVER_DEV_DEPS=$(cat server/package.json | jq -r '.devDependencies // {} | keys | length')
+          echo "- 🖥️ Server: $SERVER_DEPS dependencies, $SERVER_DEV_DEPS dev dependencies" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Client dependencies
+        if [ -f "client/package.json" ]; then
+          CLIENT_DEPS=$(cat client/package.json | jq -r '.dependencies // {} | keys | length')
+          CLIENT_DEV_DEPS=$(cat client/package.json | jq -r '.devDependencies // {} | keys | length')
+          echo "- 💻 Client: $CLIENT_DEPS dependencies, $CLIENT_DEV_DEPS dev dependencies" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: 🔒 Security analysis
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔒 Security Status" >> $GITHUB_STEP_SUMMARY
+        
+        # Run security audits
+        echo "#### Root Dependencies" >> $GITHUB_STEP_SUMMARY
+        if npm audit --audit-level=moderate > /dev/null 2>&1; then
+          echo "- ✅ No moderate+ vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        else
+          VULN_COUNT=$(npm audit --audit-level=moderate --json 2>/dev/null | jq -r '.metadata.vulnerabilities.total // 0')
+          echo "- ⚠️ $VULN_COUNT moderate+ vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "#### Server Dependencies" >> $GITHUB_STEP_SUMMARY
+        if cd server && npm audit --audit-level=moderate > /dev/null 2>&1; then
+          echo "- ✅ No moderate+ vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        else
+          VULN_COUNT=$(cd server && npm audit --audit-level=moderate --json 2>/dev/null | jq -r '.metadata.vulnerabilities.total // 0')
+          echo "- ⚠️ $VULN_COUNT moderate+ vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "#### Client Dependencies" >> $GITHUB_STEP_SUMMARY
+        if cd client && npm audit --audit-level=moderate > /dev/null 2>&1; then
+          echo "- ✅ No moderate+ vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        else
+          VULN_COUNT=$(cd client && npm audit --audit-level=moderate --json 2>/dev/null | jq -r '.metadata.vulnerabilities.total // 0')
+          echo "- ⚠️ $VULN_COUNT moderate+ vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: 🏗️ Build health check
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🏗️ Build Status" >> $GITHUB_STEP_SUMMARY
+        
+        # Test client build
+        if cd client && npm run build > /dev/null 2>&1; then
+          BUILD_SIZE=$(du -sh build 2>/dev/null | cut -f1 || echo "unknown")
+          echo "- ✅ Client builds successfully (size: $BUILD_SIZE)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ Client build failed" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: 📝 Code quality metrics
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📝 Code Quality Metrics" >> $GITHUB_STEP_SUMMARY
+        
+        # Count lines of code
+        if command -v cloc >/dev/null 2>&1; then
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cloc --exclude-dir=node_modules,build,.git . >> $GITHUB_STEP_SUMMARY || echo "Code analysis not available" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          # Basic file count
+          JS_FILES=$(find . -name "*.js" -not -path "*/node_modules/*" -not -path "*/build/*" | wc -l)
+          TS_FILES=$(find . -name "*.ts" -not -path "*/node_modules/*" -not -path "*/build/*" | wc -l)
+          TSX_FILES=$(find . -name "*.tsx" -not -path "*/node_modules/*" -not -path "*/build/*" | wc -l)
+          echo "- 📄 JavaScript files: $JS_FILES" >> $GITHUB_STEP_SUMMARY
+          echo "- 📄 TypeScript files: $TS_FILES" >> $GITHUB_STEP_SUMMARY
+          echo "- 📄 React TypeScript files: $TSX_FILES" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  performance-check:
+    name: ⚡ Performance Monitoring
+    runs-on: ubuntu-latest
+    if: github.event.inputs.check_type == 'performance'
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 📥 Install dependencies
+      run: |
+        npm ci --prefer-offline
+        cd server && npm ci --prefer-offline
+        cd ../client && npm ci --prefer-offline
+
+    - name: ⚡ Performance benchmarks
+      run: |
+        echo "## ⚡ Performance Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Analysis Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### 🏗️ Build Performance" >> $GITHUB_STEP_SUMMARY
+        
+        # Time the client build
+        cd client
+        BUILD_START=$(date +%s)
+        npm run build > /dev/null 2>&1
+        BUILD_END=$(date +%s)
+        BUILD_TIME=$((BUILD_END - BUILD_START))
+        
+        echo "- ⏱️ Client build time: ${BUILD_TIME}s" >> $GITHUB_STEP_SUMMARY
+        
+        # Analyze bundle sizes
+        if [ -d "build/static/js" ]; then
+          MAIN_JS=$(ls build/static/js/main.*.js 2>/dev/null | head -1)
+          if [ -f "$MAIN_JS" ]; then
+            MAIN_SIZE=$(ls -lh "$MAIN_JS" | awk '{print $5}')
+            echo "- 📦 Main bundle size: $MAIN_SIZE" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        
+        # Total build size
+        BUILD_SIZE=$(du -sh build 2>/dev/null | cut -f1 || echo "unknown")
+        echo "- 💾 Total build size: $BUILD_SIZE" >> $GITHUB_STEP_SUMMARY
+
+    - name: 🧪 Server performance test
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🖥️ Server Performance" >> $GITHUB_STEP_SUMMARY
+        
+        # Start server in background
+        cd server
+        timeout 30s npm start &
+        SERVER_PID=$!
+        sleep 5
+        
+        # Basic performance test
+        if curl -f http://localhost:3000/api/health 2>/dev/null; then
+          echo "- ✅ Server starts and responds to health checks" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ Server health check failed or timeout" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Cleanup
+        kill $SERVER_PID 2>/dev/null || true
+
+  uptime-monitoring:
+    name: 📈 Uptime & Availability
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📊 Repository availability check
+      run: |
+        echo "## 📈 Availability Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Check Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check GitHub API availability
+        if curl -f https://api.github.com/repos/velyzo/velink > /dev/null 2>&1; then
+          echo "- ✅ Repository accessible via GitHub API" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ Repository not accessible via GitHub API" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Check if repository is cloneable
+        TEMP_DIR=$(mktemp -d)
+        if git clone https://github.com/velyzo/velink.git "$TEMP_DIR/test-clone" > /dev/null 2>&1; then
+          echo "- ✅ Repository is cloneable" >> $GITHUB_STEP_SUMMARY
+          rm -rf "$TEMP_DIR"
+        else
+          echo "- ❌ Repository clone failed" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  alert-on-issues:
+    name: 🚨 Issue Detection & Alerting
+    runs-on: ubuntu-latest
+    needs: [health-check, detailed-check]
+    if: always()
+    
+    steps:
+    - name: 🚨 Check for critical issues
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const healthResult = '${{ needs.health-check.result }}';
+          const detailedResult = '${{ needs.detailed-check.result }}';
+          
+          if (healthResult === 'failure' || detailedResult === 'failure') {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Critical Health Check Failure',
+              body: `## 🚨 Health Check Alert
+              
+              A critical failure has been detected in the automated health checks.
+              
+              **Health Check Results:**
+              - Basic Health Check: ${healthResult}
+              - Detailed Health Check: ${detailedResult}
+              
+              **Action Required:**
+              Please review the workflow run and address any critical issues immediately.
+              
+              **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              
+              This alert was automatically generated by the monitoring system.`,
+              labels: ['critical', 'health-check', 'automated', 'urgent']
+            });
+          }
+
+  monitoring-summary:
+    name: 📋 Monitoring Summary
+    runs-on: ubuntu-latest
+    needs: [health-check, detailed-check, performance-check, uptime-monitoring]
+    if: always()
+    
+    steps:
+    - name: 📊 Generate monitoring report
+      run: |
+        echo "## 📊 Monitoring Dashboard" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Report Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "**Check Type**: ${{ github.event.inputs.check_type || 'scheduled' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔍 Check Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Check Type | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 🔍 Basic Health | ${{ needs.health-check.result || 'skipped' }} | Essential files and dependencies |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🔬 Detailed Analysis | ${{ needs.detailed-check.result || 'skipped' }} | Security and build analysis |" >> $GITHUB_STEP_SUMMARY
+        echo "| ⚡ Performance | ${{ needs.performance-check.result || 'skipped' }} | Build times and bundle sizes |" >> $GITHUB_STEP_SUMMARY
+        echo "| 📈 Uptime | ${{ needs.uptime-monitoring.result }} | Repository accessibility |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📈 Health Score" >> $GITHUB_STEP_SUMMARY
+        
+        # Calculate health score
+        PASSED=0
+        TOTAL=0
+        
+        if [ "${{ needs.health-check.result }}" = "success" ]; then PASSED=$((PASSED + 1)); fi
+        if [ "${{ needs.detailed-check.result }}" = "success" ]; then PASSED=$((PASSED + 1)); fi
+        if [ "${{ needs.performance-check.result }}" = "success" ]; then PASSED=$((PASSED + 1)); fi
+        if [ "${{ needs.uptime-monitoring.result }}" = "success" ]; then PASSED=$((PASSED + 1)); fi
+        
+        # Count total checks that ran
+        if [ "${{ needs.health-check.result }}" != "" ]; then TOTAL=$((TOTAL + 1)); fi
+        if [ "${{ needs.detailed-check.result }}" != "" ]; then TOTAL=$((TOTAL + 1)); fi
+        if [ "${{ needs.performance-check.result }}" != "" ]; then TOTAL=$((TOTAL + 1)); fi
+        if [ "${{ needs.uptime-monitoring.result }}" != "" ]; then TOTAL=$((TOTAL + 1)); fi
+        
+        if [ $TOTAL -gt 0 ]; then
+          SCORE=$((PASSED * 100 / TOTAL))
+          echo "**Overall Health Score**: $SCORE% ($PASSED/$TOTAL checks passed)" >> $GITHUB_STEP_SUMMARY
+          
+          if [ $SCORE -ge 90 ]; then
+            echo "🟢 **Status**: Excellent" >> $GITHUB_STEP_SUMMARY
+          elif [ $SCORE -ge 75 ]; then
+            echo "🟡 **Status**: Good" >> $GITHUB_STEP_SUMMARY
+          elif [ $SCORE -ge 50 ]; then
+            echo "🟠 **Status**: Needs Attention" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "🔴 **Status**: Critical Issues" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "**Overall Health Score**: No checks completed" >> $GITHUB_STEP_SUMMARY
+        fi

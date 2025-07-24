@@ -1,4 +1,4 @@
-name: Security Audit
+name: 🔒 Security Audit & Vulnerability Scanning
 
 on:
   push:
@@ -7,47 +7,294 @@ on:
     branches: [ main ]
   schedule:
     - cron: '0 2 * * 1'  # Run every Monday at 2 AM
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20.x'
 
 jobs:
-  security-audit:
+  dependency-audit:
+    name: 📦 Dependency Security Audit
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
     
-    - name: Use Node.js 18.x
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v4
       with:
-        node-version: '18.x'
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
     
-    - name: Install dependencies
-      run: npm ci
+    - name: 📥 Install dependencies
+      run: |
+        npm ci --prefer-offline
+        cd server && npm ci --prefer-offline
+        cd ../client && npm ci --prefer-offline
     
-    - name: Install client dependencies
-      run: cd client && npm ci
-    
-    - name: Run npm audit for server
+    - name: 🔒 Run npm audit for root
       run: |
         echo "## 🔒 Security Audit Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Server Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo "### Root Dependencies" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
-        npm audit --audit-level=low >> $GITHUB_STEP_SUMMARY || true
+        npm audit --audit-level=low >> $GITHUB_STEP_SUMMARY 2>&1 || echo "Vulnerabilities found" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
     
-    - name: Run npm audit for client
+    - name: 🔒 Run npm audit for server
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Server Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cd server && npm audit --audit-level=low >> $GITHUB_STEP_SUMMARY 2>&1 || echo "Vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+    
+    - name: 🔒 Run npm audit for client
       run: |
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Client Dependencies" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
-        cd client && npm audit --audit-level=low >> $GITHUB_STEP_SUMMARY || true
+        cd client && npm audit --audit-level=low >> $GITHUB_STEP_SUMMARY 2>&1 || echo "Vulnerabilities found" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
-    
-    - name: Check for hardcoded secrets
+
+    - name: 📊 Generate security report
       run: |
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔍 Secret Detection" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Security Summary" >> $GITHUB_STEP_SUMMARY
+        
+        # Count vulnerabilities
+        ROOT_VULNS=$(npm audit --audit-level=moderate --json 2>/dev/null | jq -r '.metadata.vulnerabilities.total // 0')
+        SERVER_VULNS=$(cd server && npm audit --audit-level=moderate --json 2>/dev/null | jq -r '.metadata.vulnerabilities.total // 0')
+        CLIENT_VULNS=$(cd client && npm audit --audit-level=moderate --json 2>/dev/null | jq -r '.metadata.vulnerabilities.total // 0')
+        
+        TOTAL_VULNS=$((ROOT_VULNS + SERVER_VULNS + CLIENT_VULNS))
+        
+        echo "- 📊 **Total Moderate+ Vulnerabilities**: $TOTAL_VULNS" >> $GITHUB_STEP_SUMMARY
+        echo "  - Root: $ROOT_VULNS" >> $GITHUB_STEP_SUMMARY
+        echo "  - Server: $SERVER_VULNS" >> $GITHUB_STEP_SUMMARY
+        echo "  - Client: $CLIENT_VULNS" >> $GITHUB_STEP_SUMMARY
+        
+        if [ $TOTAL_VULNS -eq 0 ]; then
+          echo "- ✅ **Status**: No moderate+ vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ **Status**: Vulnerabilities require attention" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  secret-scanning:
+    name: 🔍 Secret & Credential Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 🔍 Scan for hardcoded secrets
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔍 Secret Detection Results" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for common secret patterns
+        SECRET_PATTERNS=(
+          "password.*=.*['\"][^'\"]{8,}['\"]"
+          "secret.*=.*['\"][^'\"]{16,}['\"]"
+          "api.*key.*=.*['\"][^'\"]{16,}['\"]"
+          "token.*=.*['\"][^'\"]{16,}['\"]"
+          "private.*key"
+          "-----BEGIN.*PRIVATE KEY-----"
+        )
+        
+        SECRETS_FOUND=false
+        
+        for pattern in "${SECRET_PATTERNS[@]}"; do
+          if grep -r -i --include="*.js" --include="*.ts" --include="*.jsx" --include="*.tsx" --include="*.json" \
+             --exclude-dir=node_modules --exclude-dir=build --exclude-dir=.git \
+             "$pattern" . > /dev/null 2>&1; then
+            echo "- ⚠️ Potential secret pattern found: \`$pattern\`" >> $GITHUB_STEP_SUMMARY
+            SECRETS_FOUND=true
+          fi
+        done
+        
+        if [ "$SECRETS_FOUND" = false ]; then
+          echo "- ✅ No obvious hardcoded secrets detected" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: 🔒 Check for .env files in commits
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔒 Environment File Check" >> $GITHUB_STEP_SUMMARY
+        
+        # Check if .env files are accidentally committed
+        if find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" | grep -q .; then
+          echo "- ⚠️ .env files found in repository (should be gitignored)" >> $GITHUB_STEP_SUMMARY
+          find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ✅ No .env files found in repository" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Check .gitignore includes .env
+        if grep -q "^\.env$" .gitignore 2>/dev/null; then
+          echo "- ✅ .env is properly gitignored" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ .env should be added to .gitignore" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  code-security:
+    name: 🛡️ Code Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: 📥 Install dependencies
+      run: |
+        npm ci --prefer-offline
+        cd server && npm ci --prefer-offline
+        cd ../client && npm ci --prefer-offline
+    
+    - name: 🛡️ Security linting
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🛡️ Code Security Analysis" >> $GITHUB_STEP_SUMMARY
+        
+        # Install security linting tools
+        npm install -g eslint-plugin-security
+        
+        # Check for security issues in server code
+        echo "#### Server Code Security" >> $GITHUB_STEP_SUMMARY
+        if npx eslint server/ --ext .js,.ts --rule 'security/detect-object-injection: error' \
+           --rule 'security/detect-non-literal-regexp: error' \
+           --rule 'security/detect-non-literal-fs-filename: error' \
+           --rule 'security/detect-eval-with-expression: error' > security-report.txt 2>&1; then
+          echo "- ✅ No security issues detected in server code" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ Potential security issues found in server code" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          head -20 security-report.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Check for security issues in client code
+        echo "#### Client Code Security" >> $GITHUB_STEP_SUMMARY
+        if cd client && npx eslint src/ --ext .js,.jsx,.ts,.tsx \
+           --rule 'security/detect-object-injection: error' \
+           --rule 'security/detect-non-literal-regexp: error' \
+           --rule 'security/detect-eval-with-expression: error' > ../client-security-report.txt 2>&1; then
+          echo "- ✅ No security issues detected in client code" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ Potential security issues found in client code" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          head -20 client-security-report.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+  license-compliance:
+    name: 📄 License Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: 📥 Install dependencies
+      run: |
+        npm ci --prefer-offline
+        cd server && npm ci --prefer-offline
+        cd ../client && npm ci --prefer-offline
+    
+    - name: 📄 Check licenses
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📄 License Compliance" >> $GITHUB_STEP_SUMMARY
+        
+        # Install license checker
+        npm install -g license-checker
+        
+        # Check root dependencies
+        echo "#### Root Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        license-checker --summary >> $GITHUB_STEP_SUMMARY || echo "License check failed" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        
+        # Check for problematic licenses
+        PROBLEMATIC_LICENSES="GPL AGPL LGPL CPAL"
+        for license in $PROBLEMATIC_LICENSES; do
+          if license-checker --onlyAllow MIT --onlyAllow Apache --onlyAllow BSD --onlyAllow ISC --onlyAllow Unlicense --onlyAllow WTFPL > /dev/null 2>&1; then
+            continue
+          else
+            echo "- ⚠️ Check for restrictive licenses: $license" >> $GITHUB_STEP_SUMMARY
+            break
+          fi
+        done
+
+  security-summary:
+    name: 📋 Security Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, secret-scanning, code-security, license-compliance]
+    if: always()
+    
+    steps:
+    - name: 📊 Generate security dashboard
+      run: |
+        echo "## 🔒 Security Audit Dashboard" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Audit Date**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "**Triggered by**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔍 Audit Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Component | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 📦 Dependencies | ${{ needs.dependency-audit.result }} | Vulnerability scanning |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🔍 Secrets | ${{ needs.secret-scanning.result }} | Credential detection |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🛡️ Code Security | ${{ needs.code-security.result }} | Static analysis |" >> $GITHUB_STEP_SUMMARY
+        echo "| 📄 Licenses | ${{ needs.license-compliance.result }} | License compliance |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Calculate security score
+        PASSED=0
+        TOTAL=4
+        
+        if [ "${{ needs.dependency-audit.result }}" = "success" ]; then PASSED=$((PASSED + 1)); fi
+        if [ "${{ needs.secret-scanning.result }}" = "success" ]; then PASSED=$((PASSED + 1)); fi
+        if [ "${{ needs.code-security.result }}" = "success" ]; then PASSED=$((PASSED + 1)); fi
+        if [ "${{ needs.license-compliance.result }}" = "success" ]; then PASSED=$((PASSED + 1)); fi
+        
+        SCORE=$((PASSED * 100 / TOTAL))
+        
+        echo "### 🏆 Security Score: $SCORE%" >> $GITHUB_STEP_SUMMARY
+        echo "($PASSED/$TOTAL checks passed)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ $SCORE -eq 100 ]; then
+          echo "🟢 **Status**: Excellent Security Posture" >> $GITHUB_STEP_SUMMARY
+        elif [ $SCORE -ge 75 ]; then
+          echo "🟡 **Status**: Good Security (Minor Issues)" >> $GITHUB_STEP_SUMMARY
+        elif [ $SCORE -ge 50 ]; then
+          echo "🟠 **Status**: Security Needs Attention" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "🔴 **Status**: Critical Security Issues" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### � Security Resources" >> $GITHUB_STEP_SUMMARY
+        echo "- [Security Policy](SECURITY.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [Vulnerability Reporting](mailto:mail@velyzo.de)" >> $GITHUB_STEP_SUMMARY
+        echo "- [Security Best Practices](https://nodejs.org/en/docs/guides/security/)" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         # Check for potential secrets (basic patterns)
         grep -r -i "password\|secret\|key\|token" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" . | grep -v node_modules | grep -v ".git" | head -20 || echo "No obvious secrets found"

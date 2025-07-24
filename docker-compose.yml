@@ -1,0 +1,163 @@
+# 🐳 Docker Compose Configuration
+
+version: '3.8'
+
+services:
+  # Main Velink application
+  velink:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: velink-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+      - PORT=80
+      - DATABASE_PATH=/app/data/velink.db
+      - LOG_LEVEL=info
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - ENABLE_ANALYTICS=true
+      - ENABLE_QR_CODES=true
+      - COMPRESSION_ENABLED=true
+    volumes:
+      - velink_data:/app/data
+      - velink_logs:/app/server/logs
+      - ./server/.env:/app/server/.env:ro
+    networks:
+      - velink-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.velink.service=main"
+      - "com.velink.description=Velink URL Shortener"
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: velink-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - velink_redis:/data
+    networks:
+      - velink-network
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-velink123}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+    labels:
+      - "com.velink.service=cache"
+      - "com.velink.description=Redis Cache"
+
+  # Nginx reverse proxy (optional)
+  nginx:
+    image: nginx:alpine
+    container_name: velink-nginx
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/ssl/certs:ro
+      - velink_logs:/var/log/nginx
+    networks:
+      - velink-network
+    depends_on:
+      - velink
+    labels:
+      - "com.velink.service=proxy"
+      - "com.velink.description=Nginx Reverse Proxy"
+
+  # Database backup service
+  backup:
+    image: alpine:latest
+    container_name: velink-backup
+    restart: "no"
+    volumes:
+      - velink_data:/app/data:ro
+      - velink_backups:/backups
+    networks:
+      - velink-network
+    command: >
+      sh -c "
+        apk add --no-cache sqlite &&
+        mkdir -p /backups &&
+        if [ -f /app/data/velink.db ]; then
+          cp /app/data/velink.db /backups/velink-backup-$$(date +%Y%m%d-%H%M%S).db &&
+          echo 'Backup created successfully'
+        else
+          echo 'No database file found'
+        fi
+      "
+    labels:
+      - "com.velink.service=backup"
+      - "com.velink.description=Database Backup"
+
+  # Monitoring with basic health checks
+  monitor:
+    image: curlimages/curl:latest
+    container_name: velink-monitor
+    restart: unless-stopped
+    networks:
+      - velink-network
+    depends_on:
+      - velink
+    command: >
+      sh -c "
+        while true; do
+          if curl -f http://velink:80/api/health > /dev/null 2>&1; then
+            echo 'Health check passed at $$(date)'
+          else
+            echo 'Health check failed at $$(date)'
+          fi
+          sleep 300
+        done
+      "
+    labels:
+      - "com.velink.service=monitor"
+      - "com.velink.description=Health Monitor"
+
+# Networks
+networks:
+  velink-network:
+    driver: bridge
+    labels:
+      - "com.velink.network=main"
+
+# Volumes
+volumes:
+  velink_data:
+    driver: local
+    labels:
+      - "com.velink.volume=data"
+      - "com.velink.description=Application Data"
+  
+  velink_logs:
+    driver: local
+    labels:
+      - "com.velink.volume=logs"
+      - "com.velink.description=Application Logs"
+  
+  velink_redis:
+    driver: local
+    labels:
+      - "com.velink.volume=redis"
+      - "com.velink.description=Redis Data"
+  
+  velink_backups:
+    driver: local
+    labels:
+      - "com.velink.volume=backups"
+      - "com.velink.description=Database Backups"

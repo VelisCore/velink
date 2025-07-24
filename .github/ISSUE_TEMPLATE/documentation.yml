@@ -1,0 +1,68 @@
+name: 📚 Documentation
+description: Report an issue with documentation or suggest improvements
+title: "[Docs]: "
+labels: ["documentation", "needs-triage"]
+assignees:
+  - velyzo
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our documentation! 📖
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation is this about?
+      options:
+        - 📖 README
+        - 🚀 API Documentation
+        - 🔧 Setup & Installation
+        - ⚙️ Configuration Guide
+        - 🐳 Deployment Guide
+        - 💻 Code Examples
+        - 🎯 Tutorials
+        - 🔒 Security Documentation
+        - 📊 Analytics Guide
+        - 🛠️ Contributing Guide
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue Description
+      description: Describe the documentation issue or improvement needed
+      placeholder: The documentation is unclear about...
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Where is this documentation located? (URL, file path, etc.)
+      placeholder: https://github.com/velyzo/velink/blob/main/README.md
+    validations:
+      required: false
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Improvement
+      description: How would you improve this documentation?
+      placeholder: I suggest adding...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/velyzo/velink/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

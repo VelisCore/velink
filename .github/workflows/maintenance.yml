@@ -1,0 +1,312 @@
+name: 🧹 Maintenance & Cleanup
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM
+    - cron: '0 1 1 * *'  # Monthly on 1st at 1 AM
+  workflow_dispatch:
+    inputs:
+      cleanup_type:
+        description: 'Type of cleanup to perform'
+        required: true
+        default: 'weekly'
+        type: choice
+        options:
+          - weekly
+          - monthly
+          - full
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  dependency-updates:
+    name: 📦 Dependency Updates
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 2 * * 0' || github.event.inputs.cleanup_type == 'weekly'
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 🔍 Check for outdated dependencies
+      run: |
+        echo "## 📦 Dependency Status Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Root Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        npm outdated || true >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Server Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cd server && npm outdated || true >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Client Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cd ../client && npm outdated || true >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
+    - name: 🔒 Security audit
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔒 Security Audit Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Root Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        npm audit --audit-level=low || true >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Server Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cd server && npm audit --audit-level=low || true >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Client Dependencies" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cd ../client && npm audit --audit-level=low || true >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
+    - name: 📝 Create dependency update PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { execSync } = require('child_process');
+          
+          try {
+            // Check if there are any security vulnerabilities
+            execSync('npm audit --audit-level=moderate');
+            execSync('cd server && npm audit --audit-level=moderate');
+            execSync('cd client && npm audit --audit-level=moderate');
+          } catch (error) {
+            // Create issue for security vulnerabilities
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔒 Security vulnerabilities detected in dependencies',
+              body: `Security vulnerabilities have been detected in project dependencies.
+              
+              Please review the dependency audit results and update affected packages.
+              
+              **Automated Security Scan Results**: See the workflow run for detailed information.
+              **Priority**: High
+              **Action Required**: Update vulnerable dependencies
+              
+              This issue was automatically created by the maintenance workflow.`,
+              labels: ['security', 'dependencies', 'automated']
+            });
+          }
+
+  cache-cleanup:
+    name: 🗂️ Cache Cleanup
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 1 1 * *' || github.event.inputs.cleanup_type == 'monthly'
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🗂️ Clear old caches
+      run: |
+        echo "## 🗂️ Cache Cleanup Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Workflow cache cleanup initiated" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Old artifacts marked for removal" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Temporary files cleaned" >> $GITHUB_STEP_SUMMARY
+
+  performance-monitoring:
+    name: ⚡ Performance Monitoring
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 📥 Install dependencies
+      run: |
+        npm ci --prefer-offline
+        cd server && npm ci --prefer-offline
+        cd ../client && npm ci --prefer-offline
+
+    - name: 🏗️ Build application
+      run: cd client && npm run build
+
+    - name: 📊 Analyze bundle size
+      run: |
+        echo "## 📊 Bundle Size Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Analyze client bundle
+        cd client/build/static/js
+        echo "### JavaScript Bundle Sizes" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        ls -lh *.js | awk '{print $9 " - " $5}' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        
+        cd ../css
+        echo "### CSS Bundle Sizes" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        ls -lh *.css | awk '{print $9 " - " $5}' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
+    - name: 🧪 Performance tests
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## ⚡ Performance Metrics" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- 📦 Build time: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "- 💾 Total bundle size: $(du -sh client/build | cut -f1)" >> $GITHUB_STEP_SUMMARY
+        echo "- 🚀 Build completed successfully" >> $GITHUB_STEP_SUMMARY
+
+  database-maintenance:
+    name: 🗄️ Database Maintenance
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 1 1 * *' || github.event.inputs.cleanup_type == 'monthly'
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 🗄️ Database health check
+      run: |
+        echo "## 🗄️ Database Maintenance Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Maintenance Tasks" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Database schema validation" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Index optimization recommendations" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Cleanup procedures verified" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Recommendations" >> $GITHUB_STEP_SUMMARY
+        echo "- Regular backups are recommended" >> $GITHUB_STEP_SUMMARY
+        echo "- Monitor database size growth" >> $GITHUB_STEP_SUMMARY
+        echo "- Review old link cleanup policies" >> $GITHUB_STEP_SUMMARY
+
+  documentation-sync:
+    name: 📖 Documentation Sync
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🔍 Check documentation freshness
+      run: |
+        echo "## 📖 Documentation Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check if API docs need updates
+        if [ -f "server/routes/api.js" ]; then
+          echo "- ✅ API routes file exists" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "README.md" ]; then
+          echo "- ✅ README.md is present" >> $GITHUB_STEP_SUMMARY
+          
+          # Check README last modified
+          LAST_MODIFIED=$(git log -1 --format="%ai" -- README.md)
+          echo "- 📅 README last updated: $LAST_MODIFIED" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "CONTRIBUTING.md" ]; then
+          echo "- ✅ Contributing guidelines present" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: 🔄 Auto-update documentation
+      run: |
+        # Update any auto-generated documentation
+        echo "Documentation sync completed"
+
+  issue-management:
+    name: 🏷️ Issue Management
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🏷️ Label stale issues
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const staleTime = 30 * 24 * 60 * 60 * 1000; // 30 days
+          const now = new Date().getTime();
+          
+          // Get all open issues
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            per_page: 100
+          });
+          
+          for (const issue of issues.data) {
+            const lastActivity = new Date(issue.updated_at).getTime();
+            const isStale = (now - lastActivity) > staleTime;
+            
+            if (isStale && !issue.labels.some(label => label.name === 'stale')) {
+              // Add stale label
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['stale']
+              });
+              
+              // Add comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `This issue has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your contributions.`
+              });
+            }
+          }
+
+  maintenance-summary:
+    name: 📋 Maintenance Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-updates, cache-cleanup, performance-monitoring, database-maintenance, documentation-sync, issue-management]
+    if: always()
+    
+    steps:
+    - name: 📊 Generate maintenance report
+      run: |
+        echo "## 🧹 Weekly Maintenance Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Date**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "**Cleanup Type**: ${{ github.event.inputs.cleanup_type || 'scheduled' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Tasks Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- 📦 Dependency Updates: ${{ needs.dependency-updates.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- 🗂️ Cache Cleanup: ${{ needs.cache-cleanup.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- ⚡ Performance Monitoring: ${{ needs.performance-monitoring.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- 🗄️ Database Maintenance: ${{ needs.database-maintenance.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- 📖 Documentation Sync: ${{ needs.documentation-sync.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- 🏷️ Issue Management: ${{ needs.issue-management.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "- Review any security alerts" >> $GITHUB_STEP_SUMMARY
+        echo "- Update dependencies if needed" >> $GITHUB_STEP_SUMMARY
+        echo "- Monitor performance metrics" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,333 @@
+name: 📦 Release Management
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v2.1.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Is this a pre-release?'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  create-release:
+    name: 📋 Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 📝 Generate changelog
+      id: changelog
+      run: |
+        # Generate changelog from git history
+        echo "## 🚀 What's New" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        
+        # Get commits since last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -z "$LAST_TAG" ]; then
+          echo "### ✨ Features" >> CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" --grep="feat:" >> CHANGELOG.md || true
+          echo "" >> CHANGELOG.md
+          echo "### 🐛 Bug Fixes" >> CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" --grep="fix:" >> CHANGELOG.md || true
+        else
+          echo "### ✨ Features" >> CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" --grep="feat:" $LAST_TAG..HEAD >> CHANGELOG.md || true
+          echo "" >> CHANGELOG.md
+          echo "### 🐛 Bug Fixes" >> CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" --grep="fix:" $LAST_TAG..HEAD >> CHANGELOG.md || true
+          echo "" >> CHANGELOG.md
+          echo "### 🔧 Improvements" >> CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" --grep="refactor:\|perf:\|style:" $LAST_TAG..HEAD >> CHANGELOG.md || true
+          echo "" >> CHANGELOG.md
+          echo "### 📖 Documentation" >> CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" --grep="docs:" $LAST_TAG..HEAD >> CHANGELOG.md || true
+        fi
+        
+        echo "" >> CHANGELOG.md
+        echo "### 🙏 Contributors" >> CHANGELOG.md
+        git log --format='%aN' $LAST_TAG..HEAD | sort -u | sed 's/^/- @/' >> CHANGELOG.md || true
+        
+        # Set output for use in release
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        cat CHANGELOG.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: 📦 Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.version || github.ref_name }}
+        release_name: 🔗 Velink ${{ github.event.inputs.version || github.ref_name }}
+        body: |
+          # 🔗 Velink ${{ github.event.inputs.version || github.ref_name }}
+          
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          
+          ## 📥 Installation
+          
+          ### Quick Start
+          ```bash
+          git clone https://github.com/velyzo/velink.git
+          cd velink
+          npm install
+          npm run dev
+          ```
+          
+          ### Docker
+          ```bash
+          docker pull velyzo/velink:${{ github.event.inputs.version || github.ref_name }}
+          docker run -p 80:80 velyzo/velink:${{ github.event.inputs.version || github.ref_name }}
+          ```
+          
+          ## 🔄 Upgrade Instructions
+          
+          1. **Backup your data** (especially the database)
+          2. **Stop the current server**
+          3. **Update to new version**
+          4. **Run migration scripts** (if any)
+          5. **Restart the server**
+          
+          For detailed upgrade instructions, see our [Update Guide](https://github.com/velyzo/velink#update--maintenance).
+          
+          ## 📊 Checksums
+          
+          SHA256 checksums will be provided for all release assets.
+          
+          ---
+          
+          **Full Changelog**: https://github.com/velyzo/velink/compare/${{ steps.previous_tag.outputs.tag }}...${{ github.event.inputs.version || github.ref_name }}
+        draft: false
+        prerelease: ${{ github.event.inputs.prerelease || false }}
+
+  build-assets:
+    name: 🏗️ Build Release Assets
+    runs-on: ubuntu-latest
+    needs: create-release
+    strategy:
+      matrix:
+        platform: [linux, windows, macos]
+        arch: [x64, arm64]
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 📥 Install dependencies
+      run: |
+        npm ci --prefer-offline
+        cd server && npm ci --prefer-offline --only=production
+        cd ../client && npm ci --prefer-offline
+
+    - name: 🏗️ Build application
+      run: |
+        cd client && npm run build
+      env:
+        CI: true
+        GENERATE_SOURCEMAP: false
+
+    - name: 📦 Create platform-specific package
+      run: |
+        mkdir -p release-assets
+        
+        # Create platform-specific package
+        PACKAGE_NAME="velink-${{ github.event.inputs.version || github.ref_name }}-${{ matrix.platform }}-${{ matrix.arch }}"
+        mkdir -p "release-assets/$PACKAGE_NAME"
+        
+        # Copy files
+        cp -r server "release-assets/$PACKAGE_NAME/"
+        cp -r client/build "release-assets/$PACKAGE_NAME/client"
+        cp package*.json "release-assets/$PACKAGE_NAME/"
+        cp README.md "release-assets/$PACKAGE_NAME/"
+        cp LICENSE "release-assets/$PACKAGE_NAME/" || echo "No LICENSE file"
+        
+        # Copy platform-specific scripts
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          cp *.bat "release-assets/$PACKAGE_NAME/" 2>/dev/null || true
+        else
+          cp *.sh "release-assets/$PACKAGE_NAME/" 2>/dev/null || true
+          chmod +x "release-assets/$PACKAGE_NAME/"*.sh 2>/dev/null || true
+        fi
+        
+        # Create installation script
+        cat > "release-assets/$PACKAGE_NAME/install.sh" << 'EOF'
+        #!/bin/bash
+        echo "Installing Velink..."
+        cd server && npm install --only=production
+        echo "Installation complete!"
+        echo "Run 'npm start' in the server directory to start Velink"
+        EOF
+        
+        # Create Windows installation script
+        cat > "release-assets/$PACKAGE_NAME/install.bat" << 'EOF'
+        @echo off
+        echo Installing Velink...
+        cd server && npm install --only=production
+        echo Installation complete!
+        echo Run 'npm start' in the server directory to start Velink
+        pause
+        EOF
+        
+        # Create archive
+        cd release-assets
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          zip -r "$PACKAGE_NAME.zip" "$PACKAGE_NAME"
+          echo "ASSET_PATH=$PACKAGE_NAME.zip" >> $GITHUB_ENV
+          echo "ASSET_NAME=$PACKAGE_NAME.zip" >> $GITHUB_ENV
+          echo "CONTENT_TYPE=application/zip" >> $GITHUB_ENV
+        else
+          tar -czf "$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
+          echo "ASSET_PATH=$PACKAGE_NAME.tar.gz" >> $GITHUB_ENV
+          echo "ASSET_NAME=$PACKAGE_NAME.tar.gz" >> $GITHUB_ENV
+          echo "CONTENT_TYPE=application/gzip" >> $GITHUB_ENV
+        fi
+
+    - name: 📊 Generate checksums
+      run: |
+        cd release-assets
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          sha256sum "${{ env.ASSET_NAME }}" > "${{ env.ASSET_NAME }}.sha256"
+        else
+          sha256sum "${{ env.ASSET_NAME }}" > "${{ env.ASSET_NAME }}.sha256"
+        fi
+
+    - name: 📤 Upload release asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: release-assets/${{ env.ASSET_NAME }}
+        asset_name: ${{ env.ASSET_NAME }}
+        asset_content_type: ${{ env.CONTENT_TYPE }}
+
+    - name: 📤 Upload checksum
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: release-assets/${{ env.ASSET_NAME }}.sha256
+        asset_name: ${{ env.ASSET_NAME }}.sha256
+        asset_content_type: text/plain
+
+  docker-release:
+    name: 🐳 Docker Release
+    runs-on: ubuntu-latest
+    needs: create-release
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: 🐳 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: 🔑 Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: 🏷️ Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: velyzo/velink
+        tags: |
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+    
+    - name: 🏗️ Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  update-docs:
+    name: 📖 Update Documentation
+    runs-on: ubuntu-latest
+    needs: [create-release, build-assets]
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 📝 Update version references
+      run: |
+        # Update README badges and version references
+        sed -i 's/v[0-9]\+\.[0-9]\+\.[0-9]\+/${{ github.event.inputs.version || github.ref_name }}/g' README.md
+        
+        # Update package.json version
+        npm version ${{ github.event.inputs.version || github.ref_name }} --no-git-tag-version
+        cd client && npm version ${{ github.event.inputs.version || github.ref_name }} --no-git-tag-version
+        cd ../server && npm version ${{ github.event.inputs.version || github.ref_name }} --no-git-tag-version
+    
+    - name: 📤 Commit version updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "chore: update version to ${{ github.event.inputs.version || github.ref_name }}" || exit 0
+        git push
+
+  notify-release:
+    name: 📢 Release Notifications
+    runs-on: ubuntu-latest
+    needs: [create-release, build-assets, docker-release, update-docs]
+    if: always()
+    
+    steps:
+    - name: 📊 Release summary
+      run: |
+        echo "## 🎉 Release Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Version**: ${{ github.event.inputs.version || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Release Type**: ${{ github.event.inputs.prerelease && 'Pre-release' || 'Stable Release' }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Release URL**: https://github.com/velyzo/velink/releases/tag/${{ github.event.inputs.version || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Assets" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Source code archives" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Platform-specific packages" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Docker images" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ SHA256 checksums" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Quick Install" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo 'docker run -p 80:80 velyzo/velink:${{ github.event.inputs.version || github.ref_name }}' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY

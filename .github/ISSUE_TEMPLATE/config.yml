@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/velyzo/velink/discussions
+    about: Ask questions and discuss with the community
+  - name: 📧 Email Support
+    url: mailto:mail@velyzo.de
+    about: Contact us directly for private support
+  - name: 🌐 Bug Report (Web Interface)
+    url: https://velink.example.com/bug-report
+    about: Use our built-in bug reporting system
+  - name: 📖 Documentation
+    url: https://github.com/velyzo/velink#readme
+    about: Check our comprehensive documentation first

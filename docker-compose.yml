@@ -37,7 +37,7 @@ services:
       start_period: 40s
     labels:
       - "com.velink.service=main"
-      - "com.velink.description=Velink URL Shortener"
+      - "com.velink.mescription=Velink URL Shortener"
 
   # Redis for caching (optional)
   redis:
@@ -58,7 +58,7 @@ services:
       retries: 5
     labels:
       - "com.velink.service=cache"
-      - "com.velink.description=Redis Cache"
+      - "com.velink.mescription=Redis Cache"
 
   # Nginx reverse proxy (optional)
   nginx:
@@ -78,7 +78,7 @@ services:
       - velink
     labels:
       - "com.velink.service=proxy"
-      - "com.velink.description=Nginx Reverse Proxy"
+      - "com.velink.mescription=Nginx Reverse Proxy"
 
   # Database backup service
   backup:
@@ -103,7 +103,7 @@ services:
       "
     labels:
       - "com.velink.service=backup"
-      - "com.velink.description=Database Backup"
+      - "com.velink.mescription=Database Backup"
 
   # Monitoring with basic health checks
   monitor:
@@ -127,7 +127,7 @@ services:
       "
     labels:
       - "com.velink.service=monitor"
-      - "com.velink.description=Health Monitor"
+      - "com.velink.mescription=Health Monitor"
 
 # Networks
 networks:
@@ -142,22 +142,22 @@ volumes:
     driver: local
     labels:
       - "com.velink.volume=data"
-      - "com.velink.description=Application Data"
+      - "com.velink.mescription=Application Data"
   
   velink_logs:
     driver: local
     labels:
       - "com.velink.volume=logs"
-      - "com.velink.description=Application Logs"
+      - "com.velink.mescription=Application Logs"
   
   velink_redis:
     driver: local
     labels:
       - "com.velink.volume=redis"
-      - "com.velink.description=Redis Data"
+      - "com.velink.mescription=Redis Data"
   
   velink_backups:
     driver: local
     labels:
       - "com.velink.volume=backups"
-      - "com.velink.description=Database Backups"
+      - "com.velink.mescription=Database Backups"

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 class SitemapGenerator {
-  constructor(db, baseUrl = 'https://velink.de') {
+  constructor(db, baseUrl = 'https://velink.me') {
     this.db = db;
     this.baseUrl = baseUrl;
     this.sitemapPath = path.join(__dirname, 'public', 'sitemap.xml');

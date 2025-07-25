@@ -2069,7 +2069,7 @@ app.get('*', (req, res, next) => {
 const sitemapGenerator = new SitemapGenerator(
   db,
   process.env.NODE_ENV === 'production' 
-    ? 'https://velink.de' 
+    ? 'https://velink.me' 
     : `http://localhost:${PORT}`
 );
 

@@ -382,10 +382,6 @@ app.post('/api/shorten',
       .optional()
       .isIn(['1d', '7d', '30d', '365d', 'never'])
       .withMessage('Invalid expiration option'),
-    max: 50 })
-      .withMessage('Custom alias must be between 3 and 50 characters')
-      .matches(/^[a-zA-Z0-9\-_]+$/)
-      .withMessage('Custom alias can only contain letters, numbers, hyphens, and underscores')
   ],
   async (req, res) => {
     try {
@@ -415,43 +411,17 @@ app.post('/api/shorten',
       }
 
       // Check if URL already exists (optimization) - but skip if custom alias is provided
-      else {
-            return res.json({
-              shortUrl: `${req.protocol}://${req.get('host')}/${existing.short_code}`,
-              shortCode: existing.short_code,
-              originalUrl: existing.original_url,
-              clicks: existing.clicks,
-              expiresAt: existing.expires_at,
-              createdAt: existing.created_at,
-              customOptions: existing.custom_options ? JSON.parse(existing.custom_options) : null
-            });
-          }
-        }
-      }
-
       // Generate or use custom short code
+      // Generate unique short code
       let shortCode;
-      if (customAlias) {
-        // Check if custom alias is already taken
-        const aliasExists = await db.findByShortCode(customAlias);
-        if (aliasExists) {
-          return res.status(409).json({ 
-            error: 'Custom alias is already taken. Please choose a different one.' 
-          });
+      let attempts = 0;
+      do {
+        shortCode = generateShortCode();
+        attempts++;
+        if (attempts > 10) {
+          throw new Error('Failed to generate unique short code');
         }
-        shortCode = customAlias;
-      } else {
-        // Generate unique short code
-        let attempts = 0;
-        do {
-          shortCode = generateShortCode();
-          attempts++;
-          if (attempts > 10) {
-            throw new Error('Failed to generate unique short code');
-          }
-        } while (await db.findByShortCode(shortCode));
-      }
-
+      } while (await db.findByShortCode(shortCode));
       // Save to database
       const result = await db.createShortUrl({
         shortCode,
@@ -1882,22 +1852,6 @@ app.get('/:shortCode', async (req, res, next) => {
               box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
               text-align: center;
             }
-            .icon {
-              font-size: 4rem;
-              margin-bottom: 24px;
-              color: #e11d48;
-              display: block;
-            }
-            h1 { 
-              font-size: 1.875rem;
-              font-weight: 700;
-              color: #1e293b; 
-              margin: 0 0 16px 0;
-              line-height: 1.25;
-            }
-            p { 
-              color: #64748b; 
-              margin: 0 0 32px 0;
               font-size: 1.125rem;
               line-height: 1.6;
             }

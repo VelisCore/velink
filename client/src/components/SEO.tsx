@@ -18,8 +18,8 @@ interface SEOProps {
 
 const SEO: React.FC<SEOProps> = ({
   title = "Velink - Professional URL Shortener | Free Link Shortening Service",
-  description = "Transform long URLs into powerful, trackable short links with Velink. Advanced analytics, QR codes, custom aliases, bulk operations, and enterprise-grade security. Free forever!",
-  keywords = "url shortener, link shortener, short links, analytics, QR code generator, link management, click tracking, custom links, branded links, free url shortener, link analytics, bulk url shortener, enterprise link management, secure links, link expiration",
+  description = "Transform long URLs into powerful, trackable short links with Velink. Advanced analytics, QR codes, bulk operations, and enterprise-grade security. Free forever!",
+  keywords = "url shortener, link shortener, short links, analytics, QR code generator, link management, click tracking, branded links, free url shortener, link analytics, bulk url shortener, enterprise link management, secure links, link expiration",
   image = "/og-image-optimized.png",
   url,
   type = "website",
@@ -54,7 +54,6 @@ const SEO: React.FC<SEOProps> = ({
           "URL Shortening",
           "Link Analytics", 
           "QR Code Generation",
-          "Custom Aliases",
           "Bulk Operations",
           "Link Expiration",
           "Password Protection",

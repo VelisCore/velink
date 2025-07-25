@@ -1,4 +1,4 @@
-﻿// Load environment variables
+// Load environment variables
 require('dotenv').config({ path: './.env' });
 
 const express = require('express');
@@ -178,7 +178,7 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
         </head>
         <body>
             <div class="container">
-                <h1>🚧 Under Maintenance</h1>
+                <h1>?? Under Maintenance</h1>
                 <p>Velink is currently undergoing scheduled maintenance to improve your experience.</p>
                 <div class="spinner"></div>
                 <p>We'll be back shortly!</p>
@@ -382,9 +382,7 @@ app.post('/api/shorten',
       .optional()
       .isIn(['1d', '7d', '30d', '365d', 'never'])
       .withMessage('Invalid expiration option'),
-    body('customAlias')
-      .optional()
-      .isLength({ min: 3, max: 50 })
+    max: 50 })
       .withMessage('Custom alias must be between 3 and 50 characters')
       .matches(/^[a-zA-Z0-9\-_]+$/)
       .withMessage('Custom alias can only contain letters, numbers, hyphens, and underscores')
@@ -398,7 +396,7 @@ app.post('/api/shorten',
         });
       }
 
-      const { url, expiresIn, customOptions, customAlias } = req.body;
+      const { url, expiresIn, customOptions } = req.body;
       const ip = req.ip || req.connection.remoteAddress;
       
       // Calculate expiration date if provided
@@ -417,14 +415,7 @@ app.post('/api/shorten',
       }
 
       // Check if URL already exists (optimization) - but skip if custom alias is provided
-      if (!customAlias) {
-        const existing = await db.findByUrl(url);
-        if (existing) {
-          // If the URL exists but we want a different expiration, create a new one
-          if ((expiresAt && !existing.expires_at) || 
-              (expiresAt && existing.expires_at && new Date(expiresAt).getTime() !== new Date(existing.expires_at).getTime())) {
-            // Continue to create a new short URL with the new expiration
-          } else {
+      else {
             return res.json({
               shortUrl: `${req.protocol}://${req.get('host')}/${existing.short_code}`,
               shortCode: existing.short_code,
@@ -533,7 +524,7 @@ app.get('/api/analytics/:shortCode', async (req, res) => {
 
 // Admin token for authentication
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'velink-admin-2025-secure-token-v2';
-console.log('ðŸ”‘ Admin token loaded:', ADMIN_TOKEN ? 'Yes (length: ' + ADMIN_TOKEN.length + ')' : 'No');
+console.log('🔑 Admin token loaded:', ADMIN_TOKEN ? 'Yes (length: ' + ADMIN_TOKEN.length + ')' : 'No');
 
 // Admin middleware to verify token
 const verifyAdminToken = (req, res, next) => {
@@ -1933,11 +1924,11 @@ app.get('/:shortCode', async (req, res, next) => {
         </head>
         <body>
           <div class="container">
-            <span class="icon">ðŸ”—</span>
+            <span class="icon">🔗</span>
             <h1>Link Not Found</h1>
             <p>The short link you're looking for doesn't exist or has expired.</p>
             <a href="/" class="back-link">
-              â† Back to Velink
+              ← Back to Velink
             </a>
           </div>
         </body>
@@ -2017,11 +2008,11 @@ app.get('/:shortCode', async (req, res, next) => {
         </head>
         <body>
           <div class="container">
-            <span class="icon">â°</span>
+            <span class="icon">⏰</span>
             <h1>Link Expired</h1>
             <p>This short link has expired and is no longer accessible.</p>
             <a href="/" class="back-link">
-              <span>â†</span>
+              <span>←</span>
               Back to Velink
             </a>
           </div>
@@ -2627,8 +2618,8 @@ app.get('/api/admin/bug-report-stats', verifyAdminToken, async (req, res) => {
 const startServer = () => {
   // Start HTTP server
   http.createServer(app).listen(PORT, () => {
-    console.log(`ðŸš€ Velink HTTP server running on port ${PORT}`);
-    console.log(`ðŸ“Š Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🚀 Velink HTTP server running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 
   // Start HTTPS server if SSL certificates are available
@@ -2640,12 +2631,20 @@ const startServer = () => {
   if (sslOptions.key && sslOptions.cert) {
     const HTTPS_PORT = process.env.HTTPS_PORT || 443;
     https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
-      console.log(`ðŸ”’ Velink HTTPS server running on port ${HTTPS_PORT}`);
+      console.log(`🔒 Velink HTTPS server running on port ${HTTPS_PORT}`);
     });
   } else {
-    console.log('âš ï¸ SSL certificates not found. HTTPS server not started.');
+    console.log('⚠️ SSL certificates not found. HTTPS server not started.');
     console.log('To enable HTTPS, set SSL_KEY_PATH and SSL_CERT_PATH environment variables.');
   }
 };
 
 startServer();
+
+
+
+
+
+
+
+

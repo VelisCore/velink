@@ -1,6 +1,26 @@
 /* Fix for text visibility issues across the application */
 /* Detailed color analysis for perfect contrast ratios */
 
+/* ========== CRITICAL OVERRIDES ========== */
+/* Force text to be visible on all elements */
+* {
+  /* Ensure inherited colors work properly */
+  color: inherit !important;
+}
+
+/* Fix for invisible/transparent text problems */
+.text-transparent,
+*[class*="text-transparent"] {
+  color: #111827 !important; /* Gray-900 - Force visible */
+}
+
+.bg-clip-text,
+*[class*="bg-clip-text"] {
+  color: #111827 !important; /* Gray-900 - Disable clipping */
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+}
+
 /* ========== FORM ELEMENTS ========== */
 /* All form inputs - white backgrounds need dark text */
 input,
@@ -245,6 +265,68 @@ select {
 /* ========== OVERRIDE ANY INHERITED TRANSPARENCY ========== */
 .text-inherit {
   color: #0f172a !important; /* Gray-900 fallback */
+}
+
+/* ========== CRITICAL ERROR PAGE FIXES ========== */
+/* Error page numbers that were using bg-clip-text */
+.text-9xl.bg-clip-text,
+h1.text-9xl {
+  color: inherit !important; /* Use parent color */
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+}
+
+/* ========== INPUT VALIDATION STATES ========== */
+/* Error states for forms */
+input.border-red-300,
+input.border-red-500,
+textarea.border-red-300,
+textarea.border-red-500 {
+  color: #111827 !important; /* Gray-900 - Keep dark text even in error state */
+  background-color: #ffffff !important; /* White background */
+}
+
+/* Success states for forms */
+input.border-green-300,
+input.border-green-500,
+textarea.border-green-300,
+textarea.border-green-500 {
+  color: #111827 !important; /* Gray-900 - Keep dark text */
+  background-color: #ffffff !important; /* White background */
+}
+
+/* ========== NAVIGATION AND HEADER FIXES ========== */
+/* Ensure navigation text is always visible */
+nav,
+header,
+.nav,
+.header {
+  color: #111827 !important; /* Gray-900 default */
+}
+
+/* Dark navigation elements */
+nav.bg-gray-900,
+header.bg-gray-900,
+nav.bg-slate-900,
+header.bg-slate-900 {
+  color: #ffffff !important; /* White on dark backgrounds */
+}
+
+/* ========== FINAL SAFETY OVERRIDES ========== */
+/* Any element with problematic style attributes */
+*[style*="color: transparent"],
+*[style*="color:transparent"],
+*[style*="color: rgba(0,0,0,0)"],
+*[style*="color:rgba(0,0,0,0)"] {
+  color: #111827 !important; /* Gray-900 - Force visible */
+}
+
+/* Opacity overrides for text elements */
+span.opacity-0,
+div.opacity-0,
+p.opacity-0 {
+  opacity: 1 !important;
+  color: #111827 !important; /* Gray-900 */
 }
 
 /* ========== SPECIFIC COMPONENT OVERRIDES ========== */

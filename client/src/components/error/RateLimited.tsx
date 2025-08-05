@@ -47,7 +47,7 @@ const RateLimited: React.FC<RateLimitedProps> = ({ retryAfter, onRetry }) => {
           <div className="p-8">
             {/* 429 Number */}
             <div className="mb-8">
-              <h1 className="text-9xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent mb-2">429</h1>
+              <h1 className="text-9xl font-bold text-yellow-600 mb-2">429</h1>
               <div className="w-24 h-1 bg-gradient-to-r from-yellow-500 to-orange-500 mx-auto rounded-full"></div>
             </div>
 

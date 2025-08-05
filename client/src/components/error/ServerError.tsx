@@ -24,7 +24,7 @@ const ServerError: React.FC<ServerErrorProps> = ({
           <div className="p-8">
             {/* 500 Number */}
             <div className="mb-8">
-              <h1 className="text-9xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">500</h1>
+              <h1 className="text-9xl font-bold text-orange-600 mb-2">500</h1>
               <div className="w-24 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto rounded-full"></div>
             </div>
 

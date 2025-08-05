@@ -216,17 +216,225 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
                 });
             }
             
-            // For browser requests, serve the React app which will handle the privacy gate
-            const indexPath = path.join(__dirname, 'public', 'index.html');
-            if (fs.existsSync(indexPath)) {
-                return res.sendFile(indexPath);
-            }
+            // For browser requests, serve VeLink-styled private access page
+            const privateAccessHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Access - VeLink</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.6;
+            color: #1e293b;
+        }
+        .container {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 3rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2e8f0;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .logo-icon {
+            width: 4rem;
+            height: 4rem;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 2rem;
+        }
+        .logo-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(to right, #2563eb, #1d4ed8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #64748b;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .footer {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #9ca3af;
+        }
+        @media (max-width: 640px) {
+            .container { padding: 2rem; margin: 1rem; }
+            .logo-text { font-size: 2rem; }
+            h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon">V</div>
+            <span class="logo-text">VeLink</span>
+        </div>
+        
+        <div class="icon">🔒</div>
+        <h1>Private Access Required</h1>
+        <p>This VeLink instance is private and requires a password to access. Please enter the access password to continue.</p>
+        
+        <form id="accessForm">
+            <div class="form-group">
+                <label for="password">Access Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
             
-            return res.status(401).json({
-                error: 'Private Website',
-                message: 'This website is private. Please provide the correct password.',
-                requiresPassword: true
-            });
+            <div class="error-message" id="errorMessage">
+                Invalid password. Please try again.
+            </div>
+            
+            <button type="submit" class="btn">Access VeLink</button>
+        </form>
+        
+        <div class="footer">
+            <p>Secure access powered by VeLink</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('accessForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const submitBtn = e.target.querySelector('.btn');
+            
+            // Show loading state
+            submitBtn.textContent = 'Verifying...';
+            submitBtn.disabled = true;
+            errorMessage.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/check-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.valid) {
+                    // Store password and redirect to homepage
+                    sessionStorage.setItem('websitePassword', password);
+                    window.location.href = '/?password=' + encodeURIComponent(password);
+                } else {
+                    // Show error
+                    errorMessage.style.display = 'block';
+                    document.getElementById('password').focus();
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                errorMessage.textContent = 'Connection error. Please try again.';
+                errorMessage.style.display = 'block';
+            } finally {
+                // Restore button state
+                submitBtn.textContent = 'Access VeLink';
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // Focus password input on load
+        document.getElementById('password').focus();
+    </script>
+</body>
+</html>`;
+            
+            return res.status(401).send(privateAccessHtml);
         }
     }
     
@@ -1824,31 +2032,255 @@ try {
 app.use('/api/v1', setupApiRoutes(db));
 
 // Special routes that must be handled before static files
-// Sitemap route
+// Enhanced Sitemap route with Velink branding and design
 app.get('/sitemap.xml', (req, res) => {
   const sitemapPath = path.join(__dirname, 'public', 'sitemap.xml');
+  const acceptsHtml = req.headers.accept && req.headers.accept.includes('text/html');
   
+  // Function to serve the actual XML sitemap
+  const serveXmlSitemap = () => {
+    if (fs.existsSync(sitemapPath)) {
+      res.set({
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600',
+        'Last-Modified': fs.statSync(sitemapPath).mtime.toUTCString()
+      });
+      
+      // If browser request, add Velink-styled visual formatting
+      if (acceptsHtml) {
+        const xmlContent = fs.readFileSync(sitemapPath, 'utf8');
+        const styledXml = `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="data:text/xsl;base64,${Buffer.from(`
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:sm="http://www.sitemaps.org/schemas/sitemap/0.9">
+<xsl:output method="html" indent="yes" encoding="UTF-8"/>
+<xsl:template match="/">
+<html>
+<head>
+  <title>Velink Sitemap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; 
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh;
+      line-height: 1.6;
+      color: #1e293b;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+    
+    .header { 
+      background: white;
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 4rem;
+      padding: 0 1.5rem;
+    }
+    .logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+    .logo-icon { 
+      width: 2.5rem; height: 2.5rem; 
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 0.5rem;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: bold; font-size: 1.2rem;
+    }
+    .logo-text { 
+      font-size: 1.5rem; font-weight: bold; 
+      background: linear-gradient(to right, #2563eb, #1d4ed8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav { display: flex; gap: 2rem; }
+    .nav a { 
+      color: #64748b; text-decoration: none; font-weight: 500;
+      transition: color 0.2s; padding: 0.5rem 0;
+    }
+    .nav a:hover { color: #2563eb; }
+
+    .hero {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white; text-align: center; padding: 4rem 0;
+    }
+    .hero h1 { font-size: 3rem; font-weight: 300; margin-bottom: 1rem; }
+    .hero p { font-size: 1.25rem; opacity: 0.9; max-width: 600px; margin: 0 auto; }
+
+    .stats {
+      padding: 3rem 0;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem; margin-bottom: 2rem;
+    }
+    .stat {
+      background: white; padding: 2rem; border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center;
+      border: 1px solid #e2e8f0; transition: all 0.3s;
+    }
+    .stat:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .stat-value { font-size: 2.5rem; font-weight: bold; color: #2563eb; margin-bottom: 0.5rem; }
+    .stat-label { color: #64748b; font-weight: 500; }
+
+    .content { padding: 0 0 4rem 0; }
+    .url-grid {
+      background: white; border-radius: 1rem; overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+    }
+    .url-item {
+      padding: 1.5rem 2rem; border-bottom: 1px solid #f1f5f9;
+      transition: all 0.2s; position: relative;
+    }
+    .url-item:hover { background: #f8fafc; }
+    .url-item:last-child { border-bottom: none; }
+    .url-loc { 
+      font-weight: 600; color: #1e293b; margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+    }
+    .url-loc a { 
+      color: #2563eb; text-decoration: none; 
+      transition: color 0.2s; word-break: break-all;
+    }
+    .url-loc a:hover { color: #1d4ed8; text-decoration: underline; }
+    .url-meta {
+      display: flex; gap: 1.5rem; flex-wrap: wrap;
+      font-size: 0.875rem; color: #64748b;
+    }
+    .meta-item {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: #f1f5f9; padding: 0.25rem 0.75rem; border-radius: 0.5rem;
+    }
+    .priority-1 { background: #dcfce7; color: #166534; }
+    .priority-09 { background: #fef3c7; color: #d97706; }
+    .priority-08 { background: #fee2e2; color: #dc2626; }
+
+    .footer {
+      background: #1e293b; color: white; text-align: center;
+      padding: 3rem 0; margin-top: 4rem;
+    }
+    .footer a { color: #60a5fa; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      .header-content { padding: 0 1rem; }
+      .nav { display: none; }
+      .hero h1 { font-size: 2rem; }
+      .stats { grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .url-item { padding: 1rem; }
+      .url-meta { gap: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <a href="/" class="logo">
+          <div class="logo-icon">V</div>
+          <span class="logo-text">Velink</span>
+        </a>
+        <nav class="nav">
+          <a href="/">Home</a>
+          <a href="/features">Features</a>
+          <a href="/api-docs">API</a>
+          <a href="/robots.txt">Robots</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="container">
+      <h1>🗺️ XML Sitemap</h1>
+      <p>Complete listing of all indexed pages and URLs for search engines</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value"><xsl:value-of select="count(//sm:url)"/></div>
+        <div class="stat-label">Total URLs</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value"><xsl:value-of select="count(//sm:url[sm:priority >= 0.8])"/></div>
+        <div class="stat-label">High Priority</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value"><xsl:value-of select="count(//sm:url[sm:changefreq='daily'])"/></div>
+        <div class="stat-label">Daily Updates</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value"><xsl:value-of select="count(//sm:url[contains(sm:loc, '/api')])"/></div>
+        <div class="stat-label">API Endpoints</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="url-grid">
+        <xsl:for-each select="//sm:url">
+          <div class="url-item">
+            <div class="url-loc">
+              <a href="{sm:loc}"><xsl:value-of select="sm:loc"/></a>
+            </div>
+            <div class="url-meta">
+              <div class="meta-item">
+                📅 <xsl:value-of select="sm:lastmod"/>
+              </div>
+              <div class="meta-item">
+                🔄 <xsl:value-of select="sm:changefreq"/>
+              </div>
+              <div class="meta-item">
+                <xsl:attribute name="class">
+                  meta-item priority-<xsl:choose>
+                    <xsl:when test="sm:priority = 1.0">1</xsl:when>
+                    <xsl:when test="sm:priority >= 0.9">09</xsl:when>
+                    <xsl:otherwise>08</xsl:otherwise>
+                  </xsl:choose>
+                </xsl:attribute>
+                ⭐ <xsl:value-of select="sm:priority"/>
+              </div>
+            </div>
+          </div>
+        </xsl:for-each>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="container">
+      <p>Generated by <strong>Velink</strong> • <a href="/">Return to Home</a> • <a href="/robots.txt">View Robots.txt</a></p>
+    </div>
+  </div>
+</body>
+</html>
+</xsl:template>
+</xsl:stylesheet>
+`).toString('base64')}"?>
+${xmlContent.replace('<?xml version="1.0" encoding="UTF-8"?>', '')}`;
+        
+        res.set('Content-Type', 'application/xml; charset=utf-8');
+        res.send(styledXml);
+      } else {
+        res.sendFile(sitemapPath);
+      }
+    } else {
+      res.status(404).send('Sitemap not found');
+    }
+  };
+
   if (fs.existsSync(sitemapPath)) {
-    res.set({
-      'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
-      'Last-Modified': fs.statSync(sitemapPath).mtime.toUTCString()
-    });
-    res.sendFile(sitemapPath);
+    serveXmlSitemap();
   } else {
     // Generate sitemap on the fly if it doesn't exist
     sitemapGenerator.generateSitemap()
       .then(() => {
-        if (fs.existsSync(sitemapPath)) {
-          res.set({
-            'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
-            'Last-Modified': fs.statSync(sitemapPath).mtime.toUTCString()
-          });
-          res.sendFile(sitemapPath);
-        } else {
-          res.status(404).send('Sitemap not found');
-        }
+        serveXmlSitemap();
       })
       .catch(err => {
         console.error('Error generating sitemap:', err);
@@ -1857,10 +2289,11 @@ app.get('/sitemap.xml', (req, res) => {
   }
 });
 
-// Robots.txt route
+// Enhanced Robots.txt route with Velink branding and design
 app.get('/robots.txt', (req, res) => {
-  res.set('Content-Type', 'text/plain; charset=utf-8');
-  res.send(`User-agent: *
+  const acceptsHtml = req.headers.accept && req.headers.accept.includes('text/html');
+  
+  const robotsContent = `User-agent: *
 Allow: /
 Allow: /features
 Allow: /api-docs
@@ -1875,8 +2308,227 @@ Disallow: /analytics/
 # Sitemap location
 Sitemap: https://velink.me/sitemap.xml
 
-# Crawl delay for bots
-Crawl-delay: 1`);
+# Optimized for fast indexing - no crawl delay`;
+
+  if (acceptsHtml) {
+    // Serve Velink-styled HTML version for browsers
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velink Robots.txt</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh;
+      line-height: 1.6;
+      color: #1e293b;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+    
+    .header { 
+      background: white;
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 4rem;
+      padding: 0 1.5rem;
+    }
+    .logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+    .logo-icon { 
+      width: 2.5rem; height: 2.5rem; 
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 0.5rem;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: bold; font-size: 1.2rem;
+    }
+    .logo-text { 
+      font-size: 1.5rem; font-weight: bold; 
+      background: linear-gradient(to right, #2563eb, #1d4ed8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav { display: flex; gap: 2rem; }
+    .nav a { 
+      color: #64748b; text-decoration: none; font-weight: 500;
+      transition: color 0.2s; padding: 0.5rem 0;
+    }
+    .nav a:hover { color: #2563eb; }
+
+    .hero {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white; text-align: center; padding: 4rem 0;
+    }
+    .hero h1 { font-size: 3rem; font-weight: 300; margin-bottom: 1rem; }
+    .hero p { font-size: 1.25rem; opacity: 0.9; max-width: 600px; margin: 0 auto; }
+
+    .content { padding: 3rem 0 4rem 0; }
+    .robots-section {
+      background: white; border-radius: 1rem; padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+      margin-bottom: 2rem;
+    }
+    .robots-section h2 { 
+      color: #1e293b; margin-bottom: 1.5rem; font-size: 1.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .robots-content {
+      background: #1e293b; color: #e2e8f0; padding: 2rem; border-radius: 0.75rem;
+      font-family: 'Courier New', Courier, monospace; font-size: 0.875rem;
+      line-height: 1.6; overflow-x: auto; white-space: pre-wrap;
+      border-left: 4px solid #2563eb;
+    }
+
+    .rules-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem; margin-top: 2rem;
+    }
+    .rule-card {
+      background: white; padding: 1.5rem; border-radius: 0.75rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+      transition: all 0.3s;
+    }
+    .rule-card:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1); 
+    }
+    .rule-type {
+      font-weight: bold; font-size: 1.1rem; margin-bottom: 0.75rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .rule-type.allowed { color: #059669; }
+    .rule-type.disallowed { color: #dc2626; }
+    .rule-type.sitemap { color: #2563eb; }
+    .rule-type.crawl { color: #d97706; }
+    .rule-desc { color: #64748b; line-height: 1.5; }
+    .rule-paths {
+      background: #f8fafc; padding: 1rem; border-radius: 0.5rem;
+      margin-top: 0.75rem; border-left: 3px solid #2563eb;
+    }
+    .rule-paths code {
+      font-family: 'Courier New', Courier, monospace;
+      color: #1e293b; font-size: 0.875rem;
+    }
+
+    .footer {
+      background: #1e293b; color: white; text-align: center;
+      padding: 3rem 0; margin-top: 4rem;
+    }
+    .footer a { color: #60a5fa; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      .header-content { padding: 0 1rem; }
+      .nav { display: none; }
+      .hero h1 { font-size: 2rem; }
+      .rules-grid { grid-template-columns: 1fr; }
+      .robots-content { font-size: 0.8rem; padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <a href="/" class="logo">
+          <div class="logo-icon">V</div>
+          <span class="logo-text">Velink</span>
+        </a>
+        <nav class="nav">
+          <a href="/">Home</a>
+          <a href="/features">Features</a>
+          <a href="/api-docs">API</a>
+          <a href="/sitemap.xml">Sitemap</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="container">
+      <h1>🤖 Robots.txt</h1>
+      <p>Web crawler instructions and SEO directives for search engines</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="content">
+      <div class="robots-section">
+        <h2>📄 Raw Robots.txt Content</h2>
+        <div class="robots-content">${robotsContent}</div>
+      </div>
+
+      <div class="robots-section">
+        <h2>📋 Crawler Rules Explained</h2>
+        <div class="rules-grid">
+          <div class="rule-card">
+            <div class="rule-type allowed">✅ Allowed Paths</div>
+            <div class="rule-desc">Search engines are permitted to crawl and index these areas of the website</div>
+            <div class="rule-paths">
+              <code>/ (homepage)<br/>
+              /features<br/>
+              /api-docs<br/>
+              /privacy<br/>
+              /terms<br/>
+              /impressum</code>
+            </div>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-type disallowed">🚫 Disallowed Paths</div>
+            <div class="rule-desc">These areas are blocked from search engine indexing for privacy and security</div>
+            <div class="rule-paths">
+              <code>/admin (admin panel)<br/>
+              /analytics/ (analytics data)</code>
+            </div>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-type sitemap">🗺️ Sitemap Location</div>
+            <div class="rule-desc">Points search engines to our comprehensive XML sitemap</div>
+            <div class="rule-paths">
+              <code><a href="/sitemap.xml" style="color: #2563eb;">velink.me/sitemap.xml</a></code>
+            </div>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-type allowed">🚀 Fast Indexing</div>
+            <div class="rule-desc">No crawl delay specified - optimized for maximum crawling speed and faster SEO indexing</div>
+            <div class="rule-paths">
+              <code>Unrestricted crawl rate<br/>
+              Faster page discovery<br/>
+              Improved SEO performance</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="container">
+      <p>Generated by <strong>Velink</strong> • <a href="/">Return to Home</a> • <a href="/sitemap.xml">View Sitemap</a></p>
+    </div>
+  </div>
+</body>
+</html>`);
+  } else {
+    // Serve plain text version for crawlers and API requests
+    res.set('Content-Type', 'text/plain; charset=utf-8');
+    res.send(robotsContent);
+  }
 });
 
 // Serve static files

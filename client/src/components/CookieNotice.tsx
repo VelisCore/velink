@@ -46,9 +46,9 @@ const CookieNotice: React.FC = () => {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-md"
       >
-        <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white/95 backdrop-blur-sm border border-blue-200 rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-white/20 rounded-lg">
                 <Cookie className="w-5 h-5 text-white" />
@@ -88,9 +88,9 @@ const CookieNotice: React.FC = () => {
                   transition={{ duration: 0.3 }}
                   className="mb-4 overflow-hidden"
                 >
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="bg-blue-50 rounded-lg p-4 space-y-3">
                     <div className="flex items-start space-x-3">
-                      <Shield className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <Shield className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                       <div>
                         <div className="font-medium text-sm text-gray-900">Essential Cookies</div>
                         <div className="text-xs text-gray-600">Required for basic functionality, security, and rate limiting</div>
@@ -128,15 +128,15 @@ const CookieNotice: React.FC = () => {
               </button>
               <button
                 onClick={acceptAllCookies}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Accept All
               </button>
             </div>
 
             {/* Data Retention Notice */}
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-800">
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-800">
                 <strong>Data Retention:</strong> All personal data is automatically deleted after 12 months. IP addresses are anonymized after 30 days.
               </p>
             </div>

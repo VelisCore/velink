@@ -23,13 +23,13 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$SCRIPT_DIR"
 BACKUP_DIR="$PROJECT_DIR/backups"
 LOG_FILE="$PROJECT_DIR/update.log"
 PROGRESS_FILE="$PROJECT_DIR/.update_progress"
 PID_FILE="$PROJECT_DIR/.update.pid"
 MAINTENANCE_FILE="$PROJECT_DIR/server/.maintenance"
-HEALTH_CHECK_URL="https://velink.me/api/health"
+HEALTH_CHECK_URL="https://velink.me/api/stats"
 SERVICE_NAME="velink"
 MAX_ROLLBACK_ATTEMPTS=3
 UPDATE_TIMEOUT=1800 # 30 minutes

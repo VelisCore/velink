@@ -54,9 +54,9 @@ This project and everyone participating in it is governed by the [Velink Code of
    ```
 
 5. **Verify setup**
-   - Frontend: http://localhost:3000
-   - Backend: http://localhost:80
-   - Admin Panel: http://localhost:3000/admin
+   - Frontend: https://velink.me
+   - Backend: https://velink.me
+   - Admin Panel: https://velink.me/admin
 
 ## 🤝 How Can I Contribute?
 

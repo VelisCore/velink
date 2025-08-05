@@ -84,8 +84,8 @@ echo   npm run dev     - Start development server
 echo   npm run server  - Start production server
 echo   npm run client  - Start client only
 echo.
-echo Admin panel: http://localhost/admin
-echo API docs: http://localhost/api-docs
+echo Admin panel: https://velink.me/admin
+echo API docs: https://velink.me/api-docs
 echo ========================================
 
 pause

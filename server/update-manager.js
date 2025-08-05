@@ -145,7 +145,7 @@ class UpdateManager extends EventEmitter {
 
     async checkSystemHealth() {
         try {
-            const response = await fetch('http://localhost:80/api/stats');
+            const response = await fetch('https://velink.me/api/stats');
             return response.ok;
         } catch (error) {
             return false;

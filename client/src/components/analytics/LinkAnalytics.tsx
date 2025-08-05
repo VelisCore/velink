@@ -148,7 +148,7 @@ const LinkAnalytics: React.FC = () => {
                 <div className="font-medium">{formatDate(analytics.createdAt)}</div>
               </div>
               <a
-                href={`http://localhost:5000/${shortCode}`}
+                href={`https://velink.me/${shortCode}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary"

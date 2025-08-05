@@ -15,12 +15,12 @@ module.exports = {
       // Environment configuration
       env: {
         NODE_ENV: 'development',
-        PORT: 3001,
+        PORT: 80,
         LOG_LEVEL: 'debug'
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 3000,
+        PORT: 80,
         LOG_LEVEL: 'info',
         MAX_MEMORY_RESTART: '512M'
       },

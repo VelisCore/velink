@@ -346,10 +346,24 @@
     
     <!-- Performance Monitoring -->
     <script>
-      // Performance monitoring
+      // Performance monitoring with proper timing checks
       window.addEventListener('load', function() {
         if ('performance' in window && 'measure' in performance) {
-          performance.measure('pageload', 'navigationStart', 'loadEventEnd');
+          // Wait for load event to complete before measuring
+          setTimeout(function() {
+            try {
+              const navigationStart = performance.timing.navigationStart;
+              const loadEventEnd = performance.timing.loadEventEnd;
+              
+              if (navigationStart && loadEventEnd && loadEventEnd > navigationStart) {
+                const loadTime = loadEventEnd - navigationStart;
+                console.log('Page load time:', loadTime + 'ms');
+              }
+            } catch (error) {
+              // Silently handle cross-origin timing restrictions
+              console.log('Performance timing not available due to security restrictions');
+            }
+          }, 100);
         }
       });
     </script>

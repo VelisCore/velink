@@ -30,7 +30,7 @@ services:
     networks:
       - velink-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/api/health"]
+      test: ["CMD", "curl", "-f", "https://velink.me/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

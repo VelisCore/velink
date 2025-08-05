@@ -119,7 +119,7 @@ We aim to respond to security reports according to the following timeline:
 # Security Configuration
 RATE_LIMIT_WINDOW_MS=900000      # 15 minutes
 RATE_LIMIT_MAX_REQUESTS=100      # Max requests per window
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=https://velink.me
 SSL_KEY_PATH=./ssl/private.key
 SSL_CERT_PATH=./ssl/certificate.crt
 ```

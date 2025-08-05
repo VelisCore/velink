@@ -44,7 +44,7 @@ const ApiDocumentation: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [copiedCode, setCopiedCode] = useState<string>('');
 
-  const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:80' : '';
+  const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:80' : 'https://velink.me';
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -1856,118 +1856,270 @@ const ApiDocumentation: React.FC = () => {
       case 'overview':
         return (
           <div className="space-y-12">
-            {/* Welcome Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-8">
-              <div className="text-center mb-8">
-                <div className="bg-primary-100 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                  <Server className="h-10 w-10 text-primary-600" />
+            {/* Hero Section */}
+            <div className="bg-gradient-to-br from-primary-50 via-white to-blue-50 rounded-2xl border border-gray-200 p-12">
+              <div className="text-center mb-10">
+                <div className="bg-gradient-to-r from-primary-500 to-blue-500 p-6 rounded-2xl w-24 h-24 mx-auto mb-6 flex items-center justify-center shadow-lg">
+                  <Server className="h-12 w-12 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">Velink API Documentation</h2>
-                <p className="text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                  Welcome to the Velink API! Our RESTful API provides powerful URL shortening capabilities 
-                  with comprehensive analytics, security features, and easy integration.
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6">
+                  Velink API Documentation
+                </h1>
+                <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-8">
+                  Build powerful applications with our comprehensive RESTful API. Get lightning-fast URL shortening, 
+                  real-time analytics, enterprise security, and seamless integration capabilities.
                 </p>
+                
+                {/* Feature highlights */}
+                <div className="flex flex-wrap justify-center gap-4 mb-8">
+                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <Check className="h-4 w-4 mr-2" />
+                    RESTful Design
+                  </span>
+                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Lightning Fast
+                  </span>
+                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Enterprise Security
+                  </span>
+                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                    <Play className="h-4 w-4 mr-2" />
+                    Interactive Testing
+                  </span>
+                </div>
+                
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button 
+                    onClick={() => setActiveTab('public')}
+                    className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
+                  >
+                    <Globe className="h-5 w-5 mr-2" />
+                    Start with Public API
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('examples')}
+                    className="inline-flex items-center px-8 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transform hover:scale-105 transition-all duration-200 shadow-lg"
+                  >
+                    <Code className="h-5 w-5 mr-2" />
+                    View Code Examples
+                  </button>
+                </div>
               </div>
-              
-              {/* Quick Stats */}
+            </div>
+
+            {/* API Stats Dashboard */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">API Endpoints Overview</h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="bg-blue-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                    <Globe className="h-8 w-8 text-blue-600" />
+                <motion.div 
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className="relative text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 cursor-pointer"
+                  onClick={() => setActiveTab('public')}
+                >
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <Globe className="h-8 w-8 text-white" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{apiEndpoints.filter(e => e.category === 'public').length}</div>
-                  <div className="text-sm text-gray-600">Public Endpoints</div>
+                  <div className="text-3xl font-bold text-blue-900 mb-1">{apiEndpoints.filter(e => e.category === 'public').length}</div>
+                  <div className="text-sm font-medium text-blue-700 mb-2">Public Endpoints</div>
+                  <div className="text-xs text-blue-600">No authentication required</div>
+                </motion.div>
+                
+                <motion.div 
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className="relative text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 cursor-pointer"
+                  onClick={() => setActiveTab('admin')}
+                >
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <Shield className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold text-purple-900 mb-1">{apiEndpoints.filter(e => e.category === 'admin').length}</div>
+                  <div className="text-sm font-medium text-purple-700 mb-2">Admin Endpoints</div>
+                  <div className="text-xs text-purple-600">Secure admin operations</div>
+                </motion.div>
+                
+                <motion.div 
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className="relative text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 cursor-pointer"
+                  onClick={() => setActiveTab('mobile')}
+                >
+                  <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <Smartphone className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold text-green-900 mb-1">{apiEndpoints.filter(e => e.category === 'mobile').length}</div>
+                  <div className="text-sm font-medium text-green-700 mb-2">Mobile API</div>
+                  <div className="text-xs text-green-600">Third-party app development</div>
+                </motion.div>
+                
+                <motion.div 
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className="relative text-center p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 cursor-pointer"
+                  onClick={() => setActiveTab('system')}
+                >
+                  <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <Server className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold text-orange-900 mb-1">{apiEndpoints.filter(e => e.category === 'system').length}</div>
+                  <div className="text-sm font-medium text-orange-700 mb-2">System Endpoints</div>
+                  <div className="text-xs text-orange-600">Health & infrastructure</div>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Quick Start Guide */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+              <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Quick Start Guide</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-center p-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200"
+                >
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-4 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg">
+                    <span className="text-3xl font-bold text-white">1</span>
+                  </div>
+                  <h4 className="text-xl font-semibold text-gray-900 mb-4">Choose Your API</h4>
+                  <p className="text-gray-600 leading-relaxed">
+                    Start with our <strong>Public API</strong> for basic URL shortening, or use the <strong>Admin API</strong> 
+                    for advanced features like analytics, bulk operations, and system management.
+                  </p>
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-center p-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200"
+                >
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg">
+                    <span className="text-3xl font-bold text-white">2</span>
+                  </div>
+                  <h4 className="text-xl font-semibold text-gray-900 mb-4">Test Interactively</h4>
+                  <p className="text-gray-600 leading-relaxed">
+                    Use our <strong>interactive playground</strong> to test endpoints in real-time. See request/response 
+                    examples, try different parameters, and understand the API behavior.
+                  </p>
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-center p-8 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-200"
+                >
+                  <div className="bg-gradient-to-r from-purple-500 to-violet-500 p-4 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg">
+                    <span className="text-3xl font-bold text-white">3</span>
+                  </div>
+                  <h4 className="text-xl font-semibold text-gray-900 mb-4">Integrate & Deploy</h4>
+                  <p className="text-gray-600 leading-relaxed">
+                    Copy our <strong>code examples</strong> in multiple languages, follow best practices, 
+                    and integrate Velink seamlessly into your applications.
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Key Features */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+              <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Why Developers Love Velink API</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
+                  <div className="bg-blue-500 p-3 rounded-lg w-12 h-12 mb-4 flex items-center justify-center">
+                    <Zap className="h-6 w-6 text-white" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Lightning Fast</h4>
+                  <p className="text-gray-600 text-sm">Sub-100ms response times with optimized caching and CDN integration</p>
                 </div>
                 
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="bg-purple-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                    <Shield className="h-8 w-8 text-purple-600" />
+                <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                  <div className="bg-green-500 p-3 rounded-lg w-12 h-12 mb-4 flex items-center justify-center">
+                    <Shield className="h-6 w-6 text-white" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{apiEndpoints.filter(e => e.category === 'admin').length}</div>
-                  <div className="text-sm text-gray-600">Admin Endpoints</div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Enterprise Security</h4>
+                  <p className="text-gray-600 text-sm">Rate limiting, authentication, and comprehensive security headers</p>
                 </div>
                 
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="bg-green-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                    <Server className="h-8 w-8 text-green-600" />
+                <div className="p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-200">
+                  <div className="bg-purple-500 p-3 rounded-lg w-12 h-12 mb-4 flex items-center justify-center">
+                    <Book className="h-6 w-6 text-white" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{apiEndpoints.filter(e => e.category === 'system').length}</div>
-                  <div className="text-sm text-gray-600">System Endpoints</div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Developer-Friendly</h4>
+                  <p className="text-gray-600 text-sm">Clear documentation, code examples, and interactive testing tools</p>
                 </div>
                 
-                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                  <div className="bg-orange-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                    <Zap className="h-8 w-8 text-orange-600" />
+                <div className="p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl border border-orange-200">
+                  <div className="bg-orange-500 p-3 rounded-lg w-12 h-12 mb-4 flex items-center justify-center">
+                    <ExternalLink className="h-6 w-6 text-white" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{apiEndpoints.length}</div>
-                  <div className="text-sm text-gray-600">Total Endpoints</div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Advanced Analytics</h4>
+                  <p className="text-gray-600 text-sm">Real-time tracking, geographic data, and detailed performance metrics</p>
+                </div>
+                
+                <div className="p-6 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl border border-pink-200">
+                  <div className="bg-pink-500 p-3 rounded-lg w-12 h-12 mb-4 flex items-center justify-center">
+                    <Smartphone className="h-6 w-6 text-white" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Mobile-First</h4>
+                  <p className="text-gray-600 text-sm">Dedicated mobile API with 20+ endpoints for app development</p>
+                </div>
+                
+                <div className="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-200">
+                  <div className="bg-indigo-500 p-3 rounded-lg w-12 h-12 mb-4 flex items-center justify-center">
+                    <Server className="h-6 w-6 text-white" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">99.9% Uptime</h4>
+                  <p className="text-gray-600 text-sm">Reliable infrastructure with health monitoring and automatic failover</p>
                 </div>
               </div>
             </div>
 
-            {/* Getting Started */}
-            <div className="bg-white rounded-xl border border-gray-200 p-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Getting Started</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-6 bg-gray-50 rounded-lg">
-                  <div className="bg-blue-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-blue-600">1</span>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Choose API Type</h4>
-                  <p className="text-gray-600 text-sm">
-                    Start with Public API for basic URL shortening or use Admin API for advanced features
-                  </p>
-                </div>
-                
-                <div className="text-center p-6 bg-gray-50 rounded-lg">
-                  <div className="bg-green-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-green-600">2</span>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Make API Calls</h4>
-                  <p className="text-gray-600 text-sm">
-                    Use our interactive playground to test endpoints and see real responses
-                  </p>
-                </div>
-                
-                <div className="text-center p-6 bg-gray-50 rounded-lg">
-                  <div className="bg-purple-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-purple-600">3</span>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Integrate</h4>
-                  <p className="text-gray-600 text-sm">
-                    Use our code examples to integrate Velink into your application
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Rate Limits */}
-            <div className="bg-white rounded-xl border border-gray-200 p-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Rate Limits</h3>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="h-6 w-6 text-amber-600 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-lg font-semibold text-amber-800 mb-2">Current Limits</h4>
-                    <ul className="text-amber-700 space-y-1">
-                      <li>• <strong>Public API:</strong> Maximum 1 request per 0.5 seconds</li>
-                      <li>• <strong>Daily Limit:</strong> 1000 new links per day per IP address</li>
-                      <li>• <strong>Admin API:</strong> Higher limits for authenticated admin operations</li>
-                      <li>• <strong>Update Operations:</strong> No rate limits during maintenance windows</li>
-                      <li>• <strong>Read Operations:</strong> Statistics and info endpoints have increased limits</li>
-                    </ul>
+            {/* Rate Limits & Base URL */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Rate Limits */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                  <AlertCircle className="h-6 w-6 text-amber-500 mr-3" />
+                  Rate Limits
+                </h3>
+                <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200">
+                      <span className="font-medium text-gray-900">Public API</span>
+                      <span className="text-sm text-amber-700 bg-amber-100 px-3 py-1 rounded-full">1 req/0.5s</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200">
+                      <span className="font-medium text-gray-900">Daily Limit</span>
+                      <span className="text-sm text-amber-700 bg-amber-100 px-3 py-1 rounded-full">500 links/day</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200">
+                      <span className="font-medium text-gray-900">Admin API</span>
+                      <span className="text-sm text-green-700 bg-green-100 px-3 py-1 rounded-full">Higher limits</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Base URL */}
-            <div className="bg-white rounded-xl border border-gray-200 p-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Base URL</h3>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <code className="font-mono text-lg text-gray-800">
-                  {baseUrl || 'https://velink.me'}
-                </code>
+              {/* Base URL */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                  <Globe className="h-6 w-6 text-blue-500 mr-3" />
+                  Base URL
+                </h3>
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-xl p-6">
+                  <div className="text-center">
+                    <div className="bg-white rounded-lg p-4 border border-gray-300 shadow-sm">
+                      <code className="font-mono text-lg text-gray-800 break-all">
+                        {baseUrl}
+                      </code>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-3">
+                      All API endpoints are relative to this base URL
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2066,7 +2218,7 @@ const ApiDocumentation: React.FC = () => {
                     code={`// Basic URL shortening
 async function shortenUrl(url) {
   try {
-    const response = await fetch('${baseUrl || 'https://velink.me'}/api/shorten', {
+    const response = await fetch('${baseUrl}/api/shorten', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2098,7 +2250,7 @@ async function shortenUrl(url) {
                     id="curl-example"
                     language="bash"
                     code={`# Shorten a URL
-curl -X POST "${baseUrl || 'https://velink.me'}/api/shorten" \\
+curl -X POST "${baseUrl}/api/shorten" \\
   -H "Content-Type: application/json" \\
   -d '{
     "url": "https://example.com/very-long-url",
@@ -2106,10 +2258,10 @@ curl -X POST "${baseUrl || 'https://velink.me'}/api/shorten" \\
   }'
 
 # Get link statistics
-curl -X GET "${baseUrl || 'https://velink.me'}/api/info/abc123"
+curl -X GET "${baseUrl}/api/info/abc123"
 
 # Admin: Get all links (requires auth)
-curl -X GET "${baseUrl || 'https://velink.me'}/api/admin/links" \\
+curl -X GET "${baseUrl}/api/admin/links" \\
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN"`}
                   />
                 </div>
@@ -2124,7 +2276,7 @@ curl -X GET "${baseUrl || 'https://velink.me'}/api/admin/links" \\
 import json
 
 class VelinkAPI:
-    def __init__(self, base_url="${baseUrl || 'https://velink.me'}"):
+    def __init__(self, base_url="${baseUrl}"):
         self.base_url = base_url
         
     def shorten_url(self, url, expires_in="30d"):
@@ -2173,7 +2325,7 @@ if result:
                     code={`const axios = require('axios');
 
 class VelinkAPI {
-  constructor(baseUrl = '${baseUrl || 'https://velink.me'}', adminToken = null) {
+  constructor(baseUrl = '${baseUrl}', adminToken = null) {
     this.baseUrl = baseUrl;
     this.adminToken = adminToken;
   }

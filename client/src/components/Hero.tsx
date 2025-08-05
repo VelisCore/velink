@@ -20,7 +20,7 @@ const Hero: React.FC = () => {
           >
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6">
               Shorten Links,{' '}
-              <span className="bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+              <span className="text-primary-600">
                 Amplify Impact
               </span>
             </h1>

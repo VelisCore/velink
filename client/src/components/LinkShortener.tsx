@@ -188,7 +188,7 @@ const LinkShortener: React.FC = () => {
                       }
                     }}
                     placeholder="https://example.com/very-long-url-here"
-                    className={`input-primary pl-10 ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    className={`input-primary pl-10 text-gray-900 bg-white ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                     disabled={isLoading}
                   />
                 </div>
@@ -230,7 +230,7 @@ const LinkShortener: React.FC = () => {
                   id="expires"
                   value={expiresIn}
                   onChange={(e) => setExpiresIn(e.target.value)}
-                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white text-gray-900 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                   disabled={isLoading}
                 >
                   <option value="never">Never expire</option>
@@ -258,7 +258,7 @@ const LinkShortener: React.FC = () => {
                       value={customPassword}
                       onChange={(e) => setCustomPassword(e.target.value)}
                       placeholder="Enter a password"
-                      className="input-primary"
+                      className="input-primary text-gray-900 bg-white"
                       disabled={isLoading}
                     />
                     {customPassword && (
@@ -276,7 +276,7 @@ const LinkShortener: React.FC = () => {
                       id="redirectDelay"
                       value={redirectDelay}
                       onChange={(e) => setRedirectDelay(Number(e.target.value))}
-                      className="input-primary"
+                      className="input-primary text-gray-900 bg-white"
                       disabled={isLoading}
                     >
                       <option value={0}>Instant redirect</option>

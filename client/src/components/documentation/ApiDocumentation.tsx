@@ -1862,7 +1862,7 @@ const ApiDocumentation: React.FC = () => {
                 <div className="bg-gradient-to-r from-primary-500 to-blue-500 p-6 rounded-2xl w-24 h-24 mx-auto mb-6 flex items-center justify-center shadow-lg">
                   <Server className="h-12 w-12 text-white" />
                 </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-6">
+                <h1 className="text-4xl font-bold text-gray-900 mb-6">
                   Velink API Documentation
                 </h1>
                 <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-8">
@@ -2684,7 +2684,7 @@ updateManager.performFullSystemUpdate()
                 <img src="/logo512.png" alt="Velink Logo" className="h-10 w-10" />
               </div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold text-primary-600">
                   Velink
                 </h1>
                 <span className="text-gray-500">API</span>

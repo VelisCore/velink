@@ -251,7 +251,7 @@ const Stats: React.FC = () => {
                   </div>
                   <span className="text-gray-600 font-medium">{item.label}</span>
                 </div>
-                <div className={`text-3xl font-bold bg-gradient-to-r ${item.color} bg-clip-text text-transparent`}>
+                <div className={`text-3xl font-bold text-primary-600`}>
                   {item.value}
                 </div>
                 {item.subValue && (

@@ -1,5 +1,8 @@
 /* Custom animations and styles for Velink */
 
+/* Import text visibility fixes */
+@import './fix-text-visibility.css';
+
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
@@ -143,4 +146,14 @@ html {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  /* Fallback color for browsers that don't support background-clip */
+  color: #3b82f6;
+}
+
+/* Fix for browsers that don't support -webkit-text-fill-color */
+@supports not (-webkit-text-fill-color: transparent) {
+  .gradient-text {
+    color: #3b82f6 !important;
+    background: none !important;
+  }
 }

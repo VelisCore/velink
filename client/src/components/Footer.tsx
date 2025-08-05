@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
               <img src="/logo512.png" alt="Velink Logo" className="h-8 w-8" />
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+              <h3 className="text-2xl font-bold text-primary-400">
                 Velink
               </h3>
             </div>

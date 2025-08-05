@@ -1,6 +1,7 @@
 /**
- * VeLink Ultra-Robust Update Manager
+ * Velink Cross-Platform Update Manager
  * Advanced update system with comprehensive error handling and rollback capabilities
+ * Supports both Windows and Linux/Ubuntu systems
  */
 
 const { spawn, exec } = require('child_process');
@@ -16,7 +17,22 @@ class UpdateManager extends EventEmitter {
         this.pidFile = path.join(this.projectDir, '.update.pid');
         this.maintenanceFile = path.join(__dirname, '.maintenance');
         this.logFile = path.join(this.projectDir, 'update.log');
-        this.updateScript = path.join(this.projectDir, 'update-ubuntu.sh');
+        
+        // Cross-platform configuration
+        this.isWindows = process.platform === 'win32';
+        this.isLinux = process.platform === 'linux';
+        this.isMacOS = process.platform === 'darwin';
+        
+        // Platform-specific update script and shell
+        if (this.isWindows) {
+            this.updateScript = path.join(this.projectDir, 'scripts', 'update-windows.bat');
+            this.shell = 'cmd';
+            this.shellArgs = ['/c'];
+        } else {
+            this.updateScript = path.join(this.projectDir, 'scripts', 'update-unix.sh');
+            this.shell = 'bash';
+            this.shellArgs = [];
+        }
         
         this.currentUpdate = null;
         this.updateTimeout = 30 * 60 * 1000; // 30 minutes
@@ -46,9 +62,18 @@ class UpdateManager extends EventEmitter {
 
     async checkDiskSpace() {
         try {
-            const { stdout } = await this.execPromise(`df "${this.projectDir}" | awk 'NR==2 {print $4}'`);
-            const availableKB = parseInt(stdout.trim());
-            return availableKB > 1048576; // 1GB in KB
+            if (this.isWindows) {
+                // Windows disk space check
+                const drive = this.projectDir.charAt(0);
+                const { stdout } = await this.execPromise(`powershell "Get-PSDrive ${drive} | Select-Object -ExpandProperty Free"`);
+                const availableBytes = parseInt(stdout.trim());
+                return availableBytes > 1073741824; // 1GB in bytes
+            } else {
+                // Linux disk space check
+                const { stdout } = await this.execPromise(`df "${this.projectDir}" | awk 'NR==2 {print $4}'`);
+                const availableKB = parseInt(stdout.trim());
+                return availableKB > 1048576; // 1GB in KB
+            }
         } catch (error) {
             return false;
         }
@@ -56,9 +81,23 @@ class UpdateManager extends EventEmitter {
 
     async checkMemory() {
         try {
-            const { stdout } = await this.execPromise("free -k | awk 'NR==2{print $7}'");
-            const availableKB = parseInt(stdout.trim());
-            return availableKB > 262144; // 256MB in KB
+            if (this.isWindows) {
+                // Windows memory check
+                const { stdout } = await this.execPromise('powershell "Get-ComputerInfo | Select-Object -ExpandProperty AvailablePhysicalMemory"');
+                const availableBytes = parseInt(stdout.trim());
+                return availableBytes > 268435456; // 256MB in bytes
+            } else {
+                // Linux memory check - more compatible across distributions
+                const { stdout } = await this.execPromise("free -m | awk 'NR==2{print $7}'");
+                const availableMB = parseInt(stdout.trim());
+                // If column 7 doesn't exist, try alternative format
+                if (isNaN(availableMB)) {
+                    const { stdout: stdout2 } = await this.execPromise("free -m | awk 'NR==2{print $4}'");
+                    const freeMB = parseInt(stdout2.trim());
+                    return freeMB > 256; // 256MB
+                }
+                return availableMB > 256; // 256MB
+            }
         } catch (error) {
             return false;
         }
@@ -189,10 +228,28 @@ class UpdateManager extends EventEmitter {
 
     async getSystemHealth() {
         try {
-            const uptime = await this.execPromise('uptime -p').then(result => result.stdout.trim()).catch(() => 'unknown');
-            const memoryInfo = await this.execPromise("free -h | awk 'NR==2{print $3\"/\"$2}'").then(result => result.stdout.trim()).catch(() => 'unknown');
-            const diskInfo = await this.execPromise(`df -h "${this.projectDir}" | awk 'NR==2{print $3\"/\"$2\" (\"$5\" used)\"}'`).then(result => result.stdout.trim()).catch(() => 'unknown');
-            const loadAvg = await this.execPromise("uptime | awk -F'load average:' '{print $2}'").then(result => result.stdout.trim()).catch(() => 'unknown');
+            let uptime, memoryInfo, diskInfo, loadAvg;
+            
+            if (this.isWindows) {
+                // Windows system health
+                uptime = await this.execPromise('powershell "(Get-Date) - (Get-CimInstance Win32_OperatingSystem).LastBootUpTime | Select-Object -ExpandProperty Days"')
+                    .then(result => `${result.stdout.trim()} days`).catch(() => 'unknown');
+                
+                memoryInfo = await this.execPromise('powershell "Get-ComputerInfo | Select-Object TotalPhysicalMemory,AvailablePhysicalMemory | ForEach-Object { \\"$([math]::Round($_.AvailablePhysicalMemory/1GB,1))GB/$([math]::Round($_.TotalPhysicalMemory/1GB,1))GB\\" }"')
+                    .then(result => result.stdout.trim()).catch(() => 'unknown');
+                
+                const drive = this.projectDir.charAt(0);
+                diskInfo = await this.execPromise(`powershell "Get-PSDrive ${drive} | ForEach-Object { \\"$([math]::Round(($_.Used)/1GB,1))GB/$([math]::Round(($_.Used + $_.Free)/1GB,1))GB\\" }"`)
+                    .then(result => result.stdout.trim()).catch(() => 'unknown');
+                
+                loadAvg = 'N/A on Windows';
+            } else {
+                // Linux system health
+                uptime = await this.execPromise('uptime -p').then(result => result.stdout.trim()).catch(() => 'unknown');
+                memoryInfo = await this.execPromise("free -h | awk 'NR==2{print $3\"/\"$2}'").then(result => result.stdout.trim()).catch(() => 'unknown');
+                diskInfo = await this.execPromise(`df -h "${this.projectDir}" | awk 'NR==2{print $3\"/\"$2\" (\"$5\" used)\"}'`).then(result => result.stdout.trim()).catch(() => 'unknown');
+                loadAvg = await this.execPromise("uptime | awk -F'load average:' '{print $2}'").then(result => result.stdout.trim()).catch(() => 'unknown');
+            }
 
             return {
                 status: 'healthy',
@@ -280,8 +337,8 @@ class UpdateManager extends EventEmitter {
             if (updateSystem) updateArgs.push('--update-system');
             if (updateBranch !== 'main') updateArgs.push('--branch', updateBranch);
 
-            // Start update process
-            const updateProcess = spawn('bash', [this.updateScript, ...updateArgs], {
+            // Start update process with cross-platform support
+            const updateProcess = spawn(this.shell, [...this.shellArgs, this.updateScript, ...updateArgs], {
                 cwd: this.projectDir,
                 detached: true,
                 stdio: ['ignore', 'pipe', 'pipe']
@@ -543,6 +600,13 @@ class UpdateManager extends EventEmitter {
         } catch (error) {
             throw new Error(`Failed to restore from backup: ${error.message}`);
         }
+    }
+
+    /**
+     * Set maintenance mode
+     */
+    async setMaintenanceMode(enabled, message = 'System maintenance in progress') {
+        return await this.toggleMaintenanceMode(enabled, { message });
     }
 
     /**

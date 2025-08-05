@@ -420,7 +420,7 @@ const EnhancedUpdateAdminPanel: React.FC = () => {
                   <RefreshCw className="h-6 w-6 text-blue-500 mr-3" />
                   <div>
                     <h4 className="font-semibold">Standard Update</h4>
-                    <p className="text-sm text-gray-600">Update VeLink application only</p>
+                    <p className="text-sm text-gray-600">Update Velink application only</p>
                   </div>
                 </div>
               </button>
@@ -434,7 +434,7 @@ const EnhancedUpdateAdminPanel: React.FC = () => {
                   <Server className="h-6 w-6 text-orange-500 mr-3" />
                   <div>
                     <h4 className="font-semibold">Full System Update</h4>
-                    <p className="text-sm text-gray-600">Update VeLink + system packages</p>
+                    <p className="text-sm text-gray-600">Update Velink + system packages</p>
                   </div>
                 </div>
               </button>

@@ -814,9 +814,34 @@ class Database {
   }
 
   // Admin methods
-  getAllLinks() {
+  getAllLinks(options = {}) {
     return new Promise((resolve, reject) => {
-      const sql = `
+      const {
+        page = 1,
+        limit = 50,
+        sortBy = 'created_at',
+        sortOrder = 'DESC',
+        search = ''
+      } = options;
+
+      const offset = (page - 1) * limit;
+      const validSortColumns = ['created_at', 'clicks', 'short_code', 'original_url', 'last_accessed'];
+      const validSortOrder = ['ASC', 'DESC'];
+      
+      const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+      const safeSortOrder = validSortOrder.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+      let whereClause = '';
+      let params = [];
+
+      if (search) {
+        whereClause = `WHERE (short_code LIKE ? OR original_url LIKE ? OR description LIKE ?)`;
+        const searchPattern = `%${search}%`;
+        params = [searchPattern, searchPattern, searchPattern];
+      }
+
+      const countSql = `SELECT COUNT(*) as total FROM short_urls ${whereClause}`;
+      const dataSql = `
         SELECT 
           id as _id,
           short_code as shortCode,
@@ -827,17 +852,45 @@ class Database {
           description,
           ip_address as ipAddress,
           user_agent as userAgent,
-          is_active as isActive
+          is_active as isActive,
+          expires_at as expiresAt,
+          custom_options as customOptions
         FROM short_urls 
-        ORDER BY created_at DESC
+        ${whereClause}
+        ORDER BY ${safeSortBy} ${safeSortOrder}
+        LIMIT ? OFFSET ?
       `;
-      
-      this.db.all(sql, [], (err, rows) => {
+
+      // Get total count first
+      this.db.get(countSql, params, (err, countResult) => {
         if (err) {
           reject(err);
-        } else {
-          resolve(rows);
+          return;
         }
+
+        const total = countResult.total;
+        const totalPages = Math.ceil(total / limit);
+
+        // Get paginated data
+        const dataParams = [...params, limit, offset];
+        this.db.all(dataSql, dataParams, (err, rows) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve({
+              success: true,
+              data: rows,
+              pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1
+              }
+            });
+          }
+        });
       });
     });
   }

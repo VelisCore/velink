@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ===================================================================
-# VeLink Ultra-Robust Update System for Ubuntu Server
+# Velink Ultra-Robust Update System for Ubuntu Server
 # ===================================================================
 # Features:
 # - Comprehensive backup system
@@ -23,13 +23,13 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKUP_DIR="$PROJECT_DIR/backups"
 LOG_FILE="$PROJECT_DIR/update.log"
 PROGRESS_FILE="$PROJECT_DIR/.update_progress"
 PID_FILE="$PROJECT_DIR/.update.pid"
 MAINTENANCE_FILE="$PROJECT_DIR/server/.maintenance"
-HEALTH_CHECK_URL="http://localhost:80/api/stats"
+HEALTH_CHECK_URL="http://localhost:80/api/health"
 SERVICE_NAME="velink"
 MAX_ROLLBACK_ATTEMPTS=3
 UPDATE_TIMEOUT=1800 # 30 minutes
@@ -157,7 +157,7 @@ check_prerequisites() {
     
     # Check if running as appropriate user
     if [[ $EUID -eq 0 ]] && [[ "$FORCE_UPDATE" != "true" ]]; then
-        log "WARN" "Running as root. Consider using a dedicated user for VeLink."
+        log "WARN" "Running as root. Consider using a dedicated user for Velink."
     fi
     
     # Check required commands
@@ -314,7 +314,7 @@ set -euo pipefail
 BACKUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$(dirname "$BACKUP_DIR")")"
 
-echo "Restoring VeLink from backup: $BACKUP_DIR"
+echo "Restoring Velink from backup: $BACKUP_DIR"
 
 # Stop services
 sudo systemctl stop velink || true
@@ -545,7 +545,7 @@ validate_installation() {
 start_services() {
     update_progress "Starting services"
     
-    log "INFO" "Starting VeLink services..."
+    log "INFO" "Starting Velink services..."
     
     if systemctl list-unit-files | grep -q "^$SERVICE_NAME.service"; then
         sudo systemctl start "$SERVICE_NAME"
@@ -668,7 +668,7 @@ main() {
     echo $$ > "$PID_FILE"
     mkdir -p "$BACKUP_DIR"
     
-    log "INFO" "Starting VeLink Ultra-Robust Update System"
+    log "INFO" "Starting Velink Ultra-Robust Update System"
     log "INFO" "Options: skip-backup=$SKIP_BACKUP, force=$FORCE_UPDATE, auto-restart=$AUTO_RESTART"
     log "INFO" "Branch: $BRANCH, Update system: $UPDATE_SYSTEM, Verbose: $VERBOSE"
     
@@ -706,7 +706,7 @@ main() {
     
     log "INFO" "Update completed successfully!"
     log "INFO" "Backup created at: $backup_path"
-    log "INFO" "VeLink is now running the latest version"
+    log "INFO" "Velink is now running the latest version"
     
     # Final cleanup
     trap - ERR EXIT
@@ -715,7 +715,7 @@ main() {
 
 show_help() {
     cat << EOF
-VeLink Ultra-Robust Update System
+Velink Ultra-Robust Update System
 
 USAGE:
     $0 [OPTIONS]

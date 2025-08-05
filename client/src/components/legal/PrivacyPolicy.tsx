@@ -76,6 +76,9 @@ const PrivacyPolicy: React.FC = () => {
                     This Privacy Policy explains how Velink, operated by Devin Oldenburg, collects, uses, and protects your data. 
                     We are committed to transparency and your privacy rights under GDPR and other applicable data protection laws.
                   </p>
+                  <p className="text-gray-600 text-sm mt-2 italic">
+                    <strong>Note:</strong> Velink provides comprehensive mobile API routes for developers to create third-party mobile applications. We don't operate our own mobile app, but welcome developers to build innovative mobile solutions using our platform.
+                  </p>
                 </div>
               </div>
             </motion.section>
@@ -101,6 +104,7 @@ const PrivacyPolicy: React.FC = () => {
                         <li>• Generated short URL code</li>
                         <li>• Creation timestamp</li>
                         <li>• Optional custom alias (if provided)</li>
+                        <li>• Password protection settings (if enabled)</li>
                       </ul>
                     </div>
                     <div className="bg-white rounded-lg p-4 border border-blue-100">
@@ -110,8 +114,27 @@ const PrivacyPolicy: React.FC = () => {
                         <li>• Anonymized IP addresses (after 30 days)</li>
                         <li>• Referrer information (where you came from)</li>
                         <li>• Basic device/browser information</li>
+                        <li>• Geographic location (country/region only)</li>
+                        <li>• Third-party mobile app data (via our public API routes)</li>
                       </ul>
                     </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-blue-100 md:col-span-2">
+                    <h4 className="font-medium text-gray-900 mb-2">📱 Third-Party Mobile API Usage</h4>
+                    <p className="text-sm text-gray-600 mb-2 italic">
+                      <strong>Important:</strong> Velink doesn't have its own mobile app. We provide mobile API routes that third-party developers can use to create mobile applications.
+                    </p>
+                    <ul className="text-sm space-y-1">
+                      <li>• API requests from third-party mobile applications</li>
+                      <li>• Sync data for third-party app functionality (links, analytics)</li>
+                      <li>• QR code generation and scanning data via API</li>
+                      <li>• Widget data requests for third-party mobile widgets</li>
+                      <li>• Push notification data (managed by third-party apps)</li>
+                      <li>• Offline action processing for third-party mobile sync</li>
+                    </ul>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Developers are free to create mobile apps using our comprehensive API. We only collect data when third-party apps interact with our API endpoints.
+                    </p>
                   </div>
                   <div className="mt-4 p-3 bg-blue-100 rounded-lg">
                     <p className="text-sm font-medium text-blue-800">
@@ -141,8 +164,23 @@ const PrivacyPolicy: React.FC = () => {
                         <li>• Click tracking and analytics</li>
                         <li>• Service performance monitoring</li>
                         <li>• Fraud and abuse prevention</li>
+                        <li>• Third-party mobile API functionality</li>
+                        <li>• QR code generation for mobile sharing</li>
+                        <li>• Data sync for third-party mobile apps</li>
                       </ul>
                     </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Third-Party API Services</h4>
+                      <ul className="text-sm space-y-1">
+                        <li>• Mobile app data synchronization</li>
+                        <li>• Widget data for mobile developers</li>
+                        <li>• Push notification routing (via third-party apps)</li>
+                        <li>• Offline action processing</li>
+                        <li>• QR code scanning analytics</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-1 gap-4 mt-4">
                     <div>
                       <h4 className="font-medium text-gray-900 mb-2">Legal Basis (GDPR)</h4>
                       <ul className="text-sm space-y-1">
@@ -153,7 +191,10 @@ const PrivacyPolicy: React.FC = () => {
                       </ul>
                     </div>
                   </div>
-                  <div className="mt-4 p-3 bg-purple-100 rounded-lg">
+                  <div className="mt-4 p-3 bg-purple-100 rounded-lg space-y-2">
+                    <p className="text-sm text-purple-800">
+                      <strong>Mobile App Clarification:</strong> Velink provides API routes for third-party mobile app development but doesn't operate its own mobile app. Developers can freely create mobile applications using our comprehensive API endpoints.
+                    </p>
                     <p className="text-sm text-purple-800">
                       <strong>No Third-Party Sharing:</strong> We never sell, rent, or share your data with third parties for marketing purposes.
                     </p>

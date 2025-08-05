@@ -99,6 +99,10 @@ const TermsOfService: React.FC = () => {
                     <li>Track click statistics for your shortened links</li>
                     <li>Access analytics and reporting features</li>
                     <li>Use our service free of charge for personal and commercial use</li>
+                    <li>Generate QR codes for easy mobile sharing</li>
+                    <li>Access mobile applications for iOS and Android (when available)</li>
+                    <li>Sync data across web and mobile platforms</li>
+                    <li>Set password protection for sensitive links</li>
                   </ul>
                   <div className="mt-4 p-3 bg-green-100 rounded-lg">
                     <p className="text-sm font-medium text-green-800">

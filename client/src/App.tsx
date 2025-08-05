@@ -17,6 +17,7 @@ import AdminPanel from './components/CleanAdminPanel';
 import PrivacyGate from './components/PrivacyGate';
 import BugReport from './components/BugReport';
 import SEO from './components/SEO';
+import { NotFound } from './components/error';
 // Performance components
 import { 
   ResourcePreloader, 
@@ -186,6 +187,16 @@ function App() {
                     url="/bug-report"
                   />
                   <BugReport />
+                </>
+              } />
+              <Route path="*" element={
+                <>
+                  <SEO 
+                    title="Page Not Found - Velink | 404 Error"
+                    description="The page you're looking for doesn't exist. Return to Velink homepage or try a different URL."
+                    noIndex={true}
+                  />
+                  <NotFound />
                 </>
               } />
             </Routes>

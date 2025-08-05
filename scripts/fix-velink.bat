@@ -1,5 +1,5 @@
 @echo off
-echo Fixing VeLink for Windows development...
+echo Fixing Velink for Windows development...
 
 cd /d "%~dp0"
 
@@ -33,7 +33,7 @@ if %errorlevel% neq 0 (
     )
 )
 
-echo VeLink Windows fix completed!
+echo Velink Windows fix completed!
 echo You can now run: npm run dev
 
 pause

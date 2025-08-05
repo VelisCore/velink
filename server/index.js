@@ -1781,25 +1781,60 @@ try {
 // Set up API routes
 app.use('/api/v1', setupApiRoutes(db));
 
-// Sitemap route (must be before catch-all route)
+// Special routes that must be handled before static files
+// Sitemap route
 app.get('/sitemap.xml', (req, res) => {
   const sitemapPath = path.join(__dirname, 'public', 'sitemap.xml');
   
   if (fs.existsSync(sitemapPath)) {
-    res.header('Content-Type', 'application/xml');
+    res.set({
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+      'Last-Modified': fs.statSync(sitemapPath).mtime.toUTCString()
+    });
     res.sendFile(sitemapPath);
   } else {
     // Generate sitemap on the fly if it doesn't exist
     sitemapGenerator.generateSitemap()
       .then(() => {
-        res.header('Content-Type', 'application/xml');
-        res.sendFile(sitemapPath);
+        if (fs.existsSync(sitemapPath)) {
+          res.set({
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600',
+            'Last-Modified': fs.statSync(sitemapPath).mtime.toUTCString()
+          });
+          res.sendFile(sitemapPath);
+        } else {
+          res.status(404).send('Sitemap not found');
+        }
       })
       .catch(err => {
         console.error('Error generating sitemap:', err);
         res.status(500).send('Error generating sitemap');
       });
   }
+});
+
+// Robots.txt route
+app.get('/robots.txt', (req, res) => {
+  res.set('Content-Type', 'text/plain; charset=utf-8');
+  res.send(`User-agent: *
+Allow: /
+Allow: /features
+Allow: /api-docs
+Allow: /privacy
+Allow: /terms
+Allow: /impressum
+
+# Disallow admin and analytics pages
+Disallow: /admin
+Disallow: /analytics/
+
+# Sitemap location
+Sitemap: https://velink.me/sitemap.xml
+
+# Crawl delay for bots
+Crawl-delay: 1`);
 });
 
 // Serve static files
@@ -2010,12 +2045,10 @@ app.get('*', (req, res, next) => {
   }
 });
 
-// Initialize and generate sitemap
+// Initialize and generate sitemap with forced production URL
 const sitemapGenerator = new SitemapGenerator(
   db,
-  process.env.NODE_ENV === 'production' 
-    ? 'https://velink.me' 
-    : `http://localhost:${PORT}`
+  'https://velink.me' // Always use production URL for sitemap
 );
 
 // Generate sitemap on startup
@@ -2565,6 +2598,74 @@ app.get('/api/admin/bug-report-stats', verifyAdminToken, async (req, res) => {
   } catch (error) {
     log('error', 'Error fetching bug report stats', { error: error.message });
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 404 handler for unmatched routes
+app.use('*', (req, res) => {
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({ 
+      error: 'API endpoint not found',
+      path: req.path,
+      method: req.method 
+    });
+  } else {
+    // For non-API routes, let React handle the 404
+    const indexPath = path.join(clientBuildPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send('Application not found. Please build the client first.');
+    }
+  }
+});
+
+// Global error handler
+app.use((error, req, res, next) => {
+  console.error('Global error handler:', error);
+  
+  // Don't log stack trace for 404s
+  if (error.status !== 404) {
+    console.error(error.stack);
+  }
+  
+  // API error responses
+  if (req.path.startsWith('/api/')) {
+    const status = error.status || 500;
+    const message = error.message || 'Internal Server Error';
+    
+    res.status(status).json({
+      error: message,
+      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    });
+  } else {
+    // For non-API routes, send generic error page
+    res.status(500).send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Server Error - Velink</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          h1 { color: #e74c3c; margin-bottom: 20px; }
+          p { color: #666; line-height: 1.6; }
+          .button { display: inline-block; background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-top: 20px; }
+          .button:hover { background: #2980b9; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>🚨 Server Error</h1>
+          <p>Something went wrong on our servers. We're working to fix this issue.</p>
+          <p>Please try refreshing the page or come back later.</p>
+          <a href="/" class="button">← Go Home</a>
+        </div>
+      </body>
+      </html>
+    `);
   }
 });
 

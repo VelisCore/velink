@@ -34,6 +34,13 @@ yarn-error.log*
 lerna-debug.log*
 server/logs/
 *.log
+update.log
+
+# Update and maintenance files
+.update_progress
+.update.pid
+.maintenance
+backups/
 
 # Runtime data
 pids

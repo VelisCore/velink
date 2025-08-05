@@ -14,7 +14,7 @@ import {
   Code,
   Book,
   Zap,
-  Clock
+  Smartphone
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -73,6 +73,18 @@ const ApiDocumentation: React.FC = () => {
       description: 'Admin endpoints that require authentication'
     },
     {
+      id: 'system',
+      name: 'System',
+      icon: <Server className="h-5 w-5" />,
+      description: 'System endpoints for health checks, redirects, and static files'
+    },
+    {
+      id: 'mobile',
+      name: 'Mobile API',
+      icon: <Smartphone className="h-5 w-5" />,
+      description: 'Third-party mobile app development endpoints - Velink provides these routes for developers to create mobile applications'
+    },
+    {
       id: 'examples',
       name: 'Code Examples',
       icon: <Code className="h-5 w-5" />,
@@ -81,12 +93,13 @@ const ApiDocumentation: React.FC = () => {
   ];
 
   const apiEndpoints: ApiEndpoint[] = [
+    // =============== PUBLIC API ENDPOINTS ===============
     {
       id: 'shorten-url',
       name: 'Shorten URL',
       method: 'POST',
       endpoint: '/api/shorten',
-      description: 'Create a new shortened URL',
+      description: 'Create a new shortened URL from a long URL. This is the core functionality of Velink. Accepts any valid HTTP/HTTPS URL and returns a short code that can be used to redirect users. Optional expiration time can be set (e.g., "30d" for 30 days, "1h" for 1 hour). Rate limited to prevent abuse.',
       category: 'public',
       requestBody: {
         url: 'https://example.com/very-long-url-to-shorten',
@@ -105,7 +118,7 @@ const ApiDocumentation: React.FC = () => {
       name: 'Batch Shorten URLs',
       method: 'POST',
       endpoint: '/api/batch-shorten',
-      description: 'Create multiple shortened URLs at once',
+      description: 'Create multiple shortened URLs at once for bulk operations. Accepts an array of URLs and processes them in a single request. Each URL is validated and shortened individually. Failed URLs are reported in the response. Rate limited with daily limits per IP address to prevent abuse. Perfect for content creators or marketers who need to shorten many links.',
       category: 'public',
       requestBody: {
         urls: [
@@ -127,11 +140,42 @@ const ApiDocumentation: React.FC = () => {
       }
     },
     {
+      id: 'verify-password',
+      name: 'Verify Link Password',
+      method: 'POST',
+      endpoint: '/api/verify-password/:shortCode',
+      description: 'Verify the password for a password-protected shortened link. When a link is created with password protection, users must provide the correct password before being redirected. This endpoint validates the password and returns verification status. Used by the frontend when users encounter password-protected links.',
+      category: 'public',
+      requestBody: {
+        password: 'link-password'
+      },
+      responseExample: {
+        success: true,
+        message: 'Password verified',
+        shortCode: 'abc123'
+      }
+    },
+    {
+      id: 'check-password',
+      name: 'Check Password Required',
+      method: 'POST',
+      endpoint: '/api/check-password',
+      description: 'Check if a shortened URL requires a password before access. This endpoint allows you to determine whether a link has password protection enabled without attempting to access it. Returns a boolean indicating if a password is required. Useful for frontend applications to show appropriate UI elements.',
+      category: 'public',
+      requestBody: {
+        shortCode: 'abc123'
+      },
+      responseExample: {
+        requiresPassword: true,
+        shortCode: 'abc123'
+      }
+    },
+    {
       id: 'get-link-info',
       name: 'Get Link Information',
       method: 'GET',
       endpoint: '/api/info/:shortCode',
-      description: 'Get information about a specific shortened URL',
+      description: 'Retrieve detailed information about a specific shortened URL including original URL, creation date, click count, and metadata. Does not increment the click counter - this is purely informational. Useful for link previews, analytics dashboards, or verifying link details before sharing.',
       category: 'public',
       responseExample: {
         success: true,
@@ -146,7 +190,7 @@ const ApiDocumentation: React.FC = () => {
       name: 'Get Global Statistics',
       method: 'GET',
       endpoint: '/api/stats',
-      description: 'Get global statistics including total links and clicks',
+      description: 'Retrieve global platform statistics including total number of links created, total clicks across all links, daily counts, and other aggregate metrics. This is public data that showcases platform usage and can be used for marketing or informational purposes. Updated in real-time.',
       category: 'public',
       responseExample: {
         totalLinks: 1250,
@@ -156,23 +200,88 @@ const ApiDocumentation: React.FC = () => {
       }
     },
     {
-      id: 'delete-link',
-      name: 'Delete Link',
-      method: 'DELETE',
-      endpoint: '/api/links/:shortCode',
-      description: 'Delete a shortened URL',
+      id: 'get-detailed-stats',
+      name: 'Get Detailed Statistics',
+      method: 'GET',
+      endpoint: '/api/stats/detailed',
+      description: 'Get comprehensive platform statistics with additional metrics including monthly trends, geographic distribution, browser statistics, referrer data, and recent activity logs. More detailed than the basic stats endpoint, providing insights for analytics and business intelligence.',
       category: 'public',
       responseExample: {
-        success: true,
-        message: 'Link deleted successfully'
+        totalLinks: 1250,
+        totalClicks: 8765,
+        clicksThisMonth: 5432,
+        topCountries: [],
+        browserStats: {},
+        recentActivity: []
       }
     },
+    {
+      id: 'track-click',
+      name: 'Track Link Click',
+      method: 'POST',
+      endpoint: '/api/track/:shortCode',
+      description: 'Track analytics data for a link click. This endpoint records visitor information including user agent, referrer, and geographical data for analytics purposes. Used internally when users click on shortened links.',
+      category: 'public',
+      requestBody: {
+        userAgent: 'Mozilla/5.0...',
+        referrer: 'https://google.com',
+        country: 'US'
+      },
+      responseExample: {
+        success: true,
+        tracked: true
+      }
+    },
+
+    // =============== SYSTEM & HEALTH ENDPOINTS ===============
+    {
+      id: 'health-check',
+      name: 'System Health Check',
+      method: 'GET',
+      endpoint: '/health',
+      description: 'Basic system health check endpoint',
+      category: 'system',
+      responseExample: {
+        status: 'healthy',
+        timestamp: '2024-01-15T10:30:00Z',
+        uptime: 86400
+      }
+    },
+    {
+      id: 'robots-txt',
+      name: 'Robots.txt',
+      method: 'GET',
+      endpoint: '/robots.txt',
+      description: 'Provides the robots.txt file for web crawler guidance and search engine optimization. This endpoint serves standardized directives for web crawlers including allowed and disallowed paths, crawl delays, and sitemap references. Essential for SEO management, crawler control, and search engine visibility while protecting sensitive admin areas from indexing.',
+      category: 'system',
+      responseExample: 'User-agent: *\nDisallow: /admin/'
+    },
+    {
+      id: 'sitemap-xml',
+      name: 'XML Sitemap',
+      method: 'GET',
+      endpoint: '/sitemap.xml',
+      description: 'Provides the XML sitemap for search engine indexing and SEO optimization. This endpoint generates a comprehensive sitemap containing all publicly accessible pages and shortened URLs for search engine crawlers. Essential for search engine visibility, content discovery, and maintaining optimal SEO performance with automatic updates and proper XML formatting.',
+      category: 'system',
+      responseExample: '<?xml version="1.0" encoding="UTF-8"?>...'
+    },
+    {
+      id: 'qr-code',
+      name: 'QR Code Generator',
+      method: 'GET',
+      endpoint: '/qr/:shortCode',
+      description: 'Generates QR codes for shortened URLs enabling easy mobile sharing and offline-to-online bridge functionality. This endpoint creates high-quality QR code images that encode the short URL for convenient scanning with mobile devices. Essential for mobile marketing, offline promotions, and seamless link sharing with customizable size and error correction levels.',
+      category: 'system',
+      responseExample: 'PNG image data'
+    },
+
+    // =============== ADMIN AUTHENTICATION ===============
     {
       id: 'admin-verify',
       name: 'Verify Admin Token',
       method: 'POST',
       endpoint: '/api/admin/verify',
-      description: 'Verify admin authentication token',
+      description: 'Verify the validity of an admin authentication token. This endpoint checks if the provided token is valid and grants admin privileges. Required for all admin operations. Tokens can expire and need to be refreshed. Essential for maintaining secure admin sessions.',
       category: 'admin',
       authentication: 'Bearer Token',
       requestBody: {
@@ -183,12 +292,14 @@ const ApiDocumentation: React.FC = () => {
         message: 'Token verified'
       }
     },
+
+    // =============== ADMIN LINK MANAGEMENT ===============
     {
-      id: 'admin-links',
+      id: 'admin-get-links',
       name: 'Get All Links',
       method: 'GET',
       endpoint: '/api/admin/links',
-      description: 'Get all shortened links with admin access',
+      description: 'Retrieve all shortened links in the system with comprehensive details including click counts, creation dates, expiration times, and activity status. Supports pagination for large datasets. Essential for link management and analytics. Provides complete overview of platform usage.',
       category: 'admin',
       authentication: 'Bearer Token',
       responseExample: {
@@ -199,11 +310,82 @@ const ApiDocumentation: React.FC = () => {
             shortCode: 'abc123',
             originalUrl: 'https://example.com',
             clicks: 42,
-            createdAt: '2024-01-15T10:30:00Z'
+            createdAt: '2024-01-15T10:30:00Z',
+            isActive: true
           }
-        ]
+        ],
+        totalCount: 1250,
+        currentPage: 1
       }
     },
+    {
+      id: 'admin-delete-link',
+      name: 'Delete Link by ID',
+      method: 'DELETE',
+      endpoint: '/api/admin/links/:id',
+      description: 'Permanently delete a specific shortened link using its database ID. This action is irreversible and will break any existing references to the link. Useful for removing spam, inappropriate content, or expired promotional links. Includes audit logging for security.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        message: 'Link deleted successfully'
+      }
+    },
+    {
+      id: 'admin-bulk-delete',
+      name: 'Bulk Delete Links',
+      method: 'DELETE',
+      endpoint: '/api/admin/links/bulk',
+      description: 'Delete multiple shortened links simultaneously using their database IDs. Efficient for content moderation, cleanup operations, or removing batches of expired links. Includes transaction support to ensure data consistency. Returns detailed results for each deletion attempt.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        linkIds: [1, 2, 3, 4, 5]
+      },
+      responseExample: {
+        success: true,
+        deleted: 5,
+        message: '5 links deleted successfully'
+      }
+    },
+    {
+      id: 'admin-toggle-link',
+      name: 'Toggle Link Status',
+      method: 'PATCH',
+      endpoint: '/api/admin/links/:id/toggle',
+      description: 'Toggle a link between active and inactive status without permanently deleting it. Inactive links will return a 404 error when accessed but remain in the database for potential reactivation. Useful for temporarily disabling problematic links or conducting maintenance.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        newStatus: 'inactive',
+        message: 'Link status updated'
+      }
+    },
+    {
+      id: 'admin-update-link',
+      name: 'Update Link Details',
+      method: 'PATCH',
+      endpoint: '/api/admin/links/:id',
+      description: 'Update link details such as original URL or expiration',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        originalUrl: 'https://new-example.com',
+        expiresAt: '2024-12-31T23:59:59Z'
+      },
+      responseExample: {
+        success: true,
+        message: 'Link updated successfully',
+        link: {
+          id: 1,
+          shortCode: 'abc123',
+          originalUrl: 'https://new-example.com'
+        }
+      }
+    },
+
+    // =============== ADMIN STATISTICS & ANALYTICS ===============
     {
       id: 'admin-stats',
       name: 'Get Admin Statistics',
@@ -217,15 +399,107 @@ const ApiDocumentation: React.FC = () => {
         totalClicks: 8765,
         activeLinks: 1200,
         topLinks: [],
-        recentActivity: []
+        recentActivity: [],
+        clicksByDay: {},
+        browserStats: {},
+        countryStats: {}
       }
     },
     {
+      id: 'admin-link-analytics',
+      name: 'Get Link Analytics',
+      method: 'GET',
+      endpoint: '/api/admin/analytics/:shortCode',
+      description: 'Get detailed analytics for a specific link',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        shortCode: 'abc123',
+        totalClicks: 156,
+        uniqueClicks: 98,
+        clicksByDate: {},
+        referrers: {},
+        countries: {},
+        browsers: {},
+        operatingSystems: {}
+      }
+    },
+
+    // =============== ADMIN SYSTEM MANAGEMENT ===============
+    {
+      id: 'admin-system-info',
+      name: 'Get System Information',
+      method: 'GET',
+      endpoint: '/api/admin/system/info',
+      description: 'Retrieves comprehensive system information including version details, resource usage metrics, and operational statistics. This endpoint provides administrators with essential data for monitoring system performance, tracking resource consumption, and planning capacity. The response includes current memory usage, disk space allocation, database size, Node.js version, and system uptime for complete operational visibility.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        version: '1.2.3',
+        uptime: '5 days, 12 hours',
+        memoryUsage: {
+          used: '256MB',
+          total: '512MB',
+          percentage: 50
+        },
+        diskSpace: {
+          used: '2.5GB',
+          free: '15GB',
+          total: '17.5GB'
+        },
+        databaseSize: '45MB',
+        nodeVersion: 'v18.17.0'
+      }
+    },
+    {
+      id: 'admin-system-health',
+      name: 'Get System Health',
+      method: 'GET',
+      endpoint: '/api/admin/system/health',
+      description: 'Provides real-time system health monitoring with comprehensive status checks across all critical services and components. This endpoint evaluates database connectivity, web server status, file system health, and overall system performance metrics. Essential for automated monitoring, alerting systems, and ensuring service reliability. Returns detailed performance metrics including response times, error rates, and throughput statistics for proactive system management.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        status: 'healthy',
+        uptime: '5 days, 12 hours',
+        services: {
+          database: 'healthy',
+          webServer: 'healthy',
+          fileSystem: 'healthy'
+        },
+        metrics: {
+          responseTime: '45ms',
+          errorRate: '0.01%',
+          throughput: '150 req/min'
+        }
+      }
+    },
+    {
+      id: 'admin-maintenance',
+      name: 'Toggle Maintenance Mode',
+      method: 'POST',
+      endpoint: '/api/admin/maintenance',
+      description: 'Controls system-wide maintenance mode to temporarily disable public access during updates, maintenance, or emergency situations. When enabled, all public endpoints return maintenance notices while admin functions remain accessible. Supports custom maintenance messages for user communication and ensures graceful service interruption with proper status codes and user-friendly error pages.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        enabled: true,
+        message: 'System maintenance in progress'
+      },
+      responseExample: {
+        success: true,
+        maintenanceMode: true,
+        message: 'Maintenance mode enabled'
+      }
+    },
+
+    // =============== ADMIN UPDATE SYSTEM ===============
+    {
       id: 'admin-update-check',
-      name: 'Check Update Status',
+      name: 'Check for Updates',
       method: 'GET',
       endpoint: '/api/admin/update/check',
-      description: 'Check if updates are available and get system health status',
+      description: 'Checks for available system updates by comparing the current version against the latest release version. This endpoint connects to update repositories, validates version compatibility, and retrieves release information including change logs and update notes. Essential for maintaining system security and accessing new features. Provides detailed version comparison and update availability status for informed upgrade decisions.',
       category: 'admin',
       authentication: 'Bearer Token',
       responseExample: {
@@ -233,21 +507,16 @@ const ApiDocumentation: React.FC = () => {
         updateAvailable: true,
         currentVersion: '1.2.3',
         latestVersion: '1.3.0',
-        systemHealth: {
-          status: 'healthy',
-          uptime: '5 days, 12 hours',
-          memoryUsage: '256MB',
-          diskSpace: '15GB free'
-        },
+        releaseNotes: 'Bug fixes and performance improvements',
         lastCheck: '2024-01-15T10:30:00Z'
       }
     },
     {
       id: 'admin-update-status',
-      name: 'Get Update Progress',
+      name: 'Get Update Status',
       method: 'GET',
       endpoint: '/api/admin/update/status',
-      description: 'Get real-time update progress and status information',
+      description: 'Provides real-time monitoring of ongoing update processes with detailed progress tracking and status information. This endpoint returns current update step, completion percentage, estimated time remaining, and any encountered issues. Critical for monitoring long-running update operations and providing administrators with visibility into update progress. Supports automated monitoring and progress reporting during system upgrades.',
       category: 'admin',
       authentication: 'Bearer Token',
       responseExample: {
@@ -262,11 +531,7 @@ const ApiDocumentation: React.FC = () => {
           status: 'running',
           progress: 65
         },
-        estimatedTimeRemaining: 120,
-        logs: [
-          { timestamp: '2024-01-15T10:30:00Z', level: 'info', message: 'Starting update process...' },
-          { timestamp: '2024-01-15T10:30:05Z', level: 'info', message: 'Backing up current version...' }
-        ]
+        estimatedTimeRemaining: 120
       }
     },
     {
@@ -274,7 +539,7 @@ const ApiDocumentation: React.FC = () => {
       name: 'Start System Update',
       method: 'POST',
       endpoint: '/api/admin/update/perform',
-      description: 'Initiate system update process with configurable options',
+      description: 'Initiates a comprehensive system update process with configurable options for backup creation, service management, and dependency handling. This endpoint orchestrates the entire update workflow including automatic backup creation, dependency installation, database migrations, and service restarts. Supports selective update branches, maintenance mode activation, and rollback preparation for safe system upgrades.',
       category: 'admin',
       authentication: 'Bearer Token',
       requestBody: {
@@ -282,16 +547,14 @@ const ApiDocumentation: React.FC = () => {
         restartServices: true,
         skipDependencyCheck: false,
         updateBranch: 'main',
-        maintenanceMode: true,
-        notifyUsers: true
+        maintenanceMode: true
       },
       responseExample: {
         success: true,
-        message: 'Update process initiated successfully',
+        message: 'Update process initiated',
         updateId: 'upd_1234567890',
         estimatedDuration: 300,
-        maintenanceModeEnabled: true,
-        backupCreated: true
+        maintenanceModeEnabled: true
       }
     },
     {
@@ -299,7 +562,7 @@ const ApiDocumentation: React.FC = () => {
       name: 'Cancel Update Process',
       method: 'POST',
       endpoint: '/api/admin/update/cancel',
-      description: 'Cancel ongoing update process and restore from backup if needed',
+      description: 'Safely cancels an ongoing update process and optionally restores the system from the most recent backup. This endpoint handles graceful termination of update operations, rollback procedures, and system state restoration. Includes automatic service restoration, maintenance mode disabling, and data integrity verification to ensure stable system operation after cancellation.',
       category: 'admin',
       authentication: 'Bearer Token',
       requestBody: {
@@ -318,7 +581,7 @@ const ApiDocumentation: React.FC = () => {
       name: 'Create System Backup',
       method: 'POST',
       endpoint: '/api/admin/update/backup',
-      description: 'Create a manual backup of the current system state',
+      description: 'Creates a comprehensive manual backup of the current system state including database, configuration files, and optionally log files. This endpoint generates compressed backup archives with metadata for easy identification and restoration. Supports selective backup components, custom naming, and automatic size optimization for efficient storage management and quick recovery operations.',
       category: 'admin',
       authentication: 'Bearer Token',
       requestBody: {
@@ -340,7 +603,7 @@ const ApiDocumentation: React.FC = () => {
       name: 'Restore from Backup',
       method: 'POST',
       endpoint: '/api/admin/update/restore',
-      description: 'Restore system from a specific backup',
+      description: 'Restores the system to a previous state using a specified backup archive with configurable restoration options. This endpoint handles complete system rollback including database restoration, configuration file replacement, and service management. Supports selective restoration components, automatic service restart, and maintenance mode coordination for safe system recovery operations.',
       category: 'admin',
       authentication: 'Bearer Token',
       requestBody: {
@@ -362,7 +625,7 @@ const ApiDocumentation: React.FC = () => {
       name: 'List Available Backups',
       method: 'GET',
       endpoint: '/api/admin/update/backups',
-      description: 'Get list of all available system backups',
+      description: 'Retrieves a comprehensive list of all available system backups with detailed metadata including creation dates, sizes, versions, and backup types. This endpoint provides administrators with complete backup inventory for restoration planning, storage management, and backup retention policies. Includes automatic and manual backup classifications for efficient backup lifecycle management.',
       category: 'admin',
       authentication: 'Bearer Token',
       responseExample: {
@@ -453,6 +716,981 @@ const ApiDocumentation: React.FC = () => {
         },
         lastUpdate: '2024-01-10T08:00:00Z',
         nextScheduledMaintenance: '2024-01-20T02:00:00Z'
+      }
+    },
+
+    // =============== ADMIN DATABASE MANAGEMENT ===============
+    {
+      id: 'admin-databases-list',
+      name: 'List Database Backups',
+      method: 'GET',
+      endpoint: '/api/admin/databases',
+      description: 'Retrieves a comprehensive inventory of all database backup files with detailed metadata including creation timestamps, file sizes, backup types, and storage locations. This endpoint provides administrators with complete backup visibility for database recovery planning, storage optimization, and backup retention management. Essential for database disaster recovery and data protection strategies.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        backups: [
+          {
+            id: 'db_backup_001',
+            name: 'daily-backup-2024-01-15',
+            size: '25MB',
+            createdAt: '2024-01-15T03:00:00Z',
+            type: 'automatic'
+          }
+        ],
+        totalBackups: 15,
+        totalSize: '375MB'
+      }
+    },
+    {
+      id: 'admin-db-backup',
+      name: 'Create Database Backup',
+      method: 'POST',
+      endpoint: '/api/admin/databases/backup',
+      description: 'Creates a comprehensive database backup with configurable options for compression, data inclusion, and backup naming. This endpoint generates complete database snapshots including link data, analytics information, user settings, and system configurations. Supports automatic compression for storage efficiency and selective data inclusion for customized backup strategies.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        name: 'manual-backup',
+        compress: true,
+        includeAnalytics: true
+      },
+      responseExample: {
+        success: true,
+        backupId: 'db_backup_002',
+        backupPath: '/backups/db/manual-backup.db',
+        size: '28MB',
+        duration: '15s'
+      }
+    },
+    {
+      id: 'admin-db-restore',
+      name: 'Restore Database',
+      method: 'POST',
+      endpoint: '/api/admin/databases/restore/:backupId',
+      description: 'Restores the database from a specified backup file with comprehensive data recovery and validation. This endpoint handles complete database restoration including all link records, analytics data, user configurations, and system settings. Includes automatic data integrity verification, foreign key constraint validation, and rollback capabilities for safe database recovery operations.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        confirmRestore: true
+      },
+      responseExample: {
+        success: true,
+        message: 'Database restored successfully',
+        restoredFrom: 'db_backup_001',
+        restoreTime: '45s'
+      }
+    },
+    {
+      id: 'admin-db-delete',
+      name: 'Delete Database Backup',
+      method: 'DELETE',
+      endpoint: '/api/admin/databases/:backupId',
+      description: 'Permanently removes a specific database backup file from storage with confirmation requirements and safety checks. This endpoint includes validation to prevent deletion of critical backups, confirmation mechanisms to avoid accidental deletion, and automatic storage space reclamation. Essential for backup retention management and storage optimization while maintaining data protection policies.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        message: 'Database backup deleted',
+        deletedBackupId: 'db_backup_001'
+      }
+    },
+    {
+      id: 'admin-db-download',
+      name: 'Download Database Backup',
+      method: 'GET',
+      endpoint: '/api/admin/databases/:backupId/download',
+      description: 'Provides secure download access to database backup files for external storage, analysis, or offline backup management. This endpoint serves database backup files as binary downloads with proper content-type headers, filename preservation, and download progress support. Essential for creating off-site backup copies, compliance requirements, and external database analysis workflows.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: 'Binary file download'
+    },
+
+    // =============== ADMIN LOG MANAGEMENT ===============
+    {
+      id: 'admin-logs-list',
+      name: 'List Log Files',
+      method: 'GET',
+      endpoint: '/api/admin/logs',
+      description: 'Retrieves a comprehensive inventory of all system log files with detailed metadata including file sizes, modification dates, line counts, and storage information. This endpoint provides administrators with complete log file visibility for debugging, audit trail management, and system monitoring. Essential for troubleshooting, performance analysis, and compliance reporting with organized log file categorization.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        logs: [
+          {
+            filename: '2024-01-15.log',
+            size: '2.5MB',
+            lastModified: '2024-01-15T23:59:59Z',
+            lines: 15678
+          }
+        ],
+        totalFiles: 30,
+        totalSize: '125MB'
+      }
+    },
+    {
+      id: 'admin-logs-view',
+      name: 'View Log File',
+      method: 'GET',
+      endpoint: '/api/admin/logs/:filename',
+      description: 'Provides secure access to view the complete contents of specific log files with formatted display and metadata information. This endpoint renders log files in a readable format with proper line numbering, timestamp parsing, and content organization. Essential for real-time debugging, error investigation, and system monitoring with support for large log file handling and content filtering.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        filename: '2024-01-15.log',
+        content: 'Log file contents...',
+        lines: 15678,
+        size: '2.5MB'
+      }
+    },
+    {
+      id: 'admin-logs-download',
+      name: 'Download Log File',
+      method: 'GET',
+      endpoint: '/api/admin/logs/:filename/download',
+      description: 'Provides secure download access to log files for offline analysis, external processing, or compliance archiving. This endpoint serves log files as text downloads with proper content-type headers, filename preservation, and support for large file streaming. Essential for detailed log analysis, audit compliance, and external monitoring tool integration with comprehensive download management.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: 'Text file download'
+    },
+    {
+      id: 'admin-logs-delete',
+      name: 'Delete Log File',
+      method: 'DELETE',
+      endpoint: '/api/admin/logs/:filename',
+      description: 'Permanently removes a specific log file from storage with confirmation requirements and safety validation. This endpoint includes checks to prevent deletion of active or critical log files, confirmation mechanisms for accidental deletion prevention, and automatic storage space reclamation. Essential for log retention management and storage optimization while maintaining audit trail requirements.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        message: 'Log file deleted',
+        deletedFile: '2024-01-15.log'
+      }
+    },
+    {
+      id: 'admin-logs-clear',
+      name: 'Clear All Logs',
+      method: 'DELETE',
+      endpoint: '/api/admin/logs/clear',
+      description: 'Performs bulk deletion of all log files with comprehensive safety checks and storage space recovery reporting. This endpoint includes confirmation requirements, selective preservation options for critical logs, and detailed reporting of freed storage space. Essential for major cleanup operations, storage management, and log rotation policies with proper audit trail maintenance.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        message: 'All log files deleted',
+        deletedFiles: 25,
+        freedSpace: '98MB'
+      }
+    },
+
+    // =============== ADMIN PRIVACY & SETTINGS ===============
+    {
+      id: 'admin-privacy-settings',
+      name: 'Update Privacy Settings',
+      method: 'POST',
+      endpoint: '/api/admin/privacy-settings',
+      description: 'Configures comprehensive privacy and GDPR compliance settings including data retention policies, anonymization rules, and analytics preferences. This endpoint manages system-wide privacy controls, automatic data lifecycle management, and compliance with international privacy regulations. Essential for legal compliance, user privacy protection, and automated data governance with configurable retention periods.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        gdprCompliance: true,
+        dataRetentionDays: 365,
+        anonymizeAfterDays: 90,
+        allowAnalytics: true
+      },
+      responseExample: {
+        success: true,
+        message: 'Privacy settings updated',
+        settings: {
+          gdprCompliance: true,
+          dataRetentionDays: 365,
+          anonymizeAfterDays: 90
+        }
+      }
+    },
+
+    // =============== BUG REPORTING SYSTEM ===============
+    {
+      id: 'submit-bug-report',
+      name: 'Submit Bug Report',
+      method: 'POST',
+      endpoint: '/api/bug-reports',
+      description: 'Submit bug reports or feature requests to the Velink development team. Includes automatic collection of browser information, current URL, and user-provided description. Helps improve the platform by allowing users to report issues directly from the interface. All reports are reviewed by the development team.',
+      category: 'public',
+      requestBody: {
+        title: 'Bug title',
+        description: 'Detailed bug description',
+        severity: 'medium',
+        userAgent: 'Mozilla/5.0...',
+        currentUrl: 'https://velink.me/admin'
+      },
+      responseExample: {
+        success: true,
+        reportId: 'bug_report_001',
+        message: 'Bug report submitted successfully'
+      }
+    },
+    {
+      id: 'admin-bug-reports-list',
+      name: 'List Bug Reports',
+      method: 'GET',
+      endpoint: '/api/admin/bug-reports',
+      description: 'Retrieves a comprehensive list of all submitted bug reports with detailed metadata including severity levels, status tracking, submission timestamps, and resolution progress. This endpoint provides administrators with complete bug report visibility for issue management, priority assessment, and development planning. Essential for quality assurance, user feedback analysis, and systematic issue resolution.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        reports: [
+          {
+            id: 'bug_report_001',
+            title: 'Bug title',
+            severity: 'medium',
+            status: 'open',
+            createdAt: '2024-01-15T10:30:00Z',
+            updatedAt: '2024-01-15T10:30:00Z'
+          }
+        ],
+        totalReports: 15,
+        openReports: 8
+      }
+    },
+    {
+      id: 'admin-bug-report-update',
+      name: 'Update Bug Report',
+      method: 'PATCH',
+      endpoint: '/api/admin/bug-reports/:id',
+      description: 'Updates the status, priority, and resolution details of specific bug reports with comprehensive tracking and notification capabilities. This endpoint manages the complete bug lifecycle including status transitions, priority adjustments, assignment tracking, and resolution documentation. Essential for issue management workflows, developer coordination, and user feedback communication.',
+      category: 'admin',
+      authentication: 'Bearer Token',
+      requestBody: {
+        status: 'resolved',
+        resolution: 'Fixed in version 1.2.4',
+        assignedTo: 'dev-team'
+      },
+      responseExample: {
+        success: true,
+        message: 'Bug report updated',
+        report: {
+          id: 'bug_report_001',
+          status: 'resolved',
+          updatedAt: '2024-01-15T15:30:00Z'
+        }
+      }
+    },
+
+    // =============== SYSTEM & HEALTH ENDPOINTS ===============
+    {
+      id: 'health-check',
+      name: 'System Health Check',
+      method: 'GET',
+      endpoint: '/health',
+      description: 'Basic system health check endpoint',
+      category: 'system',
+      responseExample: {
+        status: 'healthy',
+        timestamp: '2024-01-15T10:30:00Z',
+        uptime: 86400
+      }
+    },
+    {
+      id: 'favicon',
+      name: 'Favicon',
+      method: 'GET',
+      endpoint: '/favicon.ico',
+      description: 'Serves the website favicon icon file for browser tab display, bookmark representation, and browser integration. This endpoint provides the standard 16x16 pixel ICO format favicon used by web browsers for visual identification of the website. Essential for brand recognition, professional appearance, and consistent user experience across different browsers and platforms.',
+      category: 'system',
+      responseExample: 'ICO image file'
+    },
+    {
+      id: 'app-manifest',
+      name: 'App Manifest',
+      method: 'GET',
+      endpoint: '/manifest.json',
+      description: 'Provides the Progressive Web App (PWA) manifest file containing application metadata, display preferences, and installation configuration. This endpoint enables web app installation, defines app appearance, and configures standalone app behavior. Essential for PWA functionality, mobile app-like experience, and home screen installation on compatible devices.',
+      category: 'system',
+      responseExample: {
+        name: 'Velink',
+        short_name: 'Velink',
+        description: 'URL Shortener with Analytics',
+        start_url: '/',
+        display: 'standalone'
+      }
+    },
+
+    // =============== REDIRECTS & LINK RESOLUTION ===============
+    {
+      id: 'redirect-link',
+      name: 'Redirect Short Link',
+      method: 'GET',
+      endpoint: '/:shortCode',
+      description: 'Performs URL redirection from a short code to its original destination URL with comprehensive tracking and analytics collection. This is the core functionality that resolves shortened links, records click analytics, handles link expiration, and manages access controls. Includes automatic click tracking, geographic data collection, referrer analysis, and user agent parsing for comprehensive link analytics.',
+      category: 'system',
+      responseExample: 'HTTP 302 redirect to original URL'
+    },
+
+    // =============== MOBILE APP API ===============
+    {
+      id: 'mobile-app-info',
+      name: 'Mobile App Information',
+      method: 'GET',
+      endpoint: '/api/mobile/app-info',
+      description: 'Provides comprehensive mobile application information including current app version, download links, feature compatibility, and update notifications. This endpoint serves mobile app metadata for in-app updates, feature discovery, and cross-platform synchronization. Essential for mobile app management and user experience optimization.',
+      category: 'mobile',
+      responseExample: {
+        version: '1.0.0',
+        buildNumber: 42,
+        downloadUrls: {
+          ios: 'https://apps.apple.com/app/velink',
+          android: 'https://play.google.com/store/apps/details?id=com.velink.app'
+        },
+        features: ['url_shortening', 'analytics', 'qr_codes', 'offline_sync'],
+        minimumOsVersions: {
+          ios: '13.0',
+          android: '7.0'
+        }
+      }
+    },
+    {
+      id: 'mobile-sync-data',
+      name: 'Sync Mobile Data',
+      method: 'POST',
+      endpoint: '/api/mobile/sync',
+      description: 'Synchronizes mobile app data with the web platform including user preferences, recently created links, analytics data, and offline actions. This endpoint handles bidirectional data sync, conflict resolution, and incremental updates for seamless cross-platform experience. Essential for maintaining data consistency between mobile and web interfaces.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        lastSyncTimestamp: '2024-01-15T10:30:00Z',
+        pendingActions: [
+          {
+            type: 'create_link',
+            url: 'https://example.com',
+            timestamp: '2024-01-15T10:35:00Z'
+          }
+        ],
+        deviceInfo: {
+          platform: 'ios',
+          version: '17.2',
+          deviceId: 'mobile_device_123'
+        }
+      },
+      responseExample: {
+        success: true,
+        syncTimestamp: '2024-01-15T10:40:00Z',
+        updatedLinks: [],
+        conflictResolutions: [],
+        pendingUploads: 0
+      }
+    },
+    {
+      id: 'mobile-offline-actions',
+      name: 'Process Offline Actions',
+      method: 'POST',
+      endpoint: '/api/mobile/offline-actions',
+      description: 'Processes actions that were performed offline in the mobile app and queued for server synchronization. This endpoint handles bulk processing of offline link creation, analytics events, and user interactions. Includes conflict detection, duplicate prevention, and error recovery for reliable offline-to-online data migration.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        actions: [
+          {
+            id: 'offline_action_001',
+            type: 'create_link',
+            data: {
+              url: 'https://example.com/offline-created',
+              customCode: 'offline123'
+            },
+            timestamp: '2024-01-15T08:30:00Z'
+          }
+        ]
+      },
+      responseExample: {
+        success: true,
+        processedActions: 1,
+        failedActions: 0,
+        results: [
+          {
+            actionId: 'offline_action_001',
+            status: 'success',
+            shortCode: 'abc123',
+            shortUrl: 'https://velink.me/abc123'
+          }
+        ]
+      }
+    },
+    {
+      id: 'mobile-push-notifications',
+      name: 'Configure Push Notifications',
+      method: 'POST',
+      endpoint: '/api/mobile/push-notifications',
+      description: 'Configures push notification settings for mobile devices including notification preferences, token registration, and targeted messaging. This endpoint manages mobile notification delivery, user preferences, and cross-platform messaging coordination. Essential for user engagement, update notifications, and real-time analytics alerts.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        deviceToken: 'push_token_123456789',
+        platform: 'ios',
+        preferences: {
+          linkClicks: true,
+          weeklyReports: true,
+          systemUpdates: false,
+          securityAlerts: true
+        }
+      },
+      responseExample: {
+        success: true,
+        deviceRegistered: true,
+        notificationId: 'notification_settings_001'
+      }
+    },
+    {
+      id: 'mobile-analytics-events',
+      name: 'Track Mobile Analytics',
+      method: 'POST',
+      endpoint: '/api/mobile/analytics',
+      description: 'Tracks mobile-specific analytics events including app usage patterns, feature interactions, performance metrics, and user behavior data. This endpoint collects mobile app analytics separately from web analytics, enabling platform-specific insights and mobile user experience optimization.',
+      category: 'mobile',
+      requestBody: {
+        events: [
+          {
+            type: 'link_created_mobile',
+            timestamp: '2024-01-15T10:30:00Z',
+            metadata: {
+              feature_used: 'quick_share',
+              app_version: '1.0.0'
+            }
+          }
+        ],
+        sessionInfo: {
+          sessionId: 'mobile_session_123',
+          platform: 'ios',
+          appVersion: '1.0.0'
+        }
+      },
+      responseExample: {
+        success: true,
+        eventsTracked: 1,
+        sessionUpdated: true
+      }
+    },
+    {
+      id: 'mobile-qr-scan',
+      name: 'Process QR Code Scan',
+      method: 'POST',
+      endpoint: '/api/mobile/qr-scan',
+      description: 'Processes QR code scans from mobile devices including link validation, security checks, and analytics tracking. This endpoint handles mobile QR code interactions, validates scanned links, and provides enhanced mobile scanning experience with security warnings and link previews.',
+      category: 'mobile',
+      requestBody: {
+        scannedData: 'https://velink.me/abc123',
+        scanTimestamp: '2024-01-15T10:30:00Z',
+        deviceInfo: {
+          platform: 'android',
+          location: {
+            latitude: 40.7128,
+            longitude: -74.0060
+          }
+        }
+      },
+      responseExample: {
+        success: true,
+        linkValid: true,
+        linkInfo: {
+          shortCode: 'abc123',
+          originalUrl: 'https://example.com',
+          requiresPassword: false,
+          isExpired: false
+        },
+        securityWarning: null
+      }
+    },
+    {
+      id: 'mobile-widget-data',
+      name: 'Get Widget Data',
+      method: 'GET',
+      endpoint: '/api/mobile/widget-data',
+      description: 'Provides data for mobile app widgets including quick stats, recent links, and trending analytics. This endpoint delivers optimized data for mobile home screen widgets, notification center summaries, and quick-access interfaces. Essential for mobile user engagement and at-a-glance information display.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        widgetData: {
+          totalLinks: 156,
+          todayClicks: 42,
+          recentLinks: [
+            {
+              shortCode: 'abc123',
+              clicks: 15,
+              createdAt: '2024-01-15T09:30:00Z'
+            }
+          ],
+          trendingLink: {
+            shortCode: 'trending1',
+            clicks: 89,
+            growth: '+25%'
+          }
+        }
+      }
+    },
+
+    // =============== ENHANCED MOBILE STATISTICS & ANALYTICS ===============
+    {
+      id: 'mobile-user-stats',
+      name: 'Get User Statistics',
+      method: 'GET',
+      endpoint: '/api/mobile/stats/user',
+      description: 'Comprehensive user statistics for mobile dashboard including total links created, clicks received, top performing links, and time-based analytics. Provides detailed insights for mobile app users to track their link performance and engagement metrics.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        stats: {
+          totalLinks: 247,
+          totalClicks: 15847,
+          averageClicksPerLink: 64.2,
+          topPerformingLink: {
+            shortCode: 'viral123',
+            clicks: 2891,
+            originalUrl: 'https://example.com/popular-content'
+          },
+          recentPerformance: {
+            last7Days: { links: 12, clicks: 892 },
+            last30Days: { links: 45, clicks: 3247 }
+          },
+          clicksByDay: {
+            '2024-01-15': 156,
+            '2024-01-14': 203,
+            '2024-01-13': 178
+          }
+        }
+      }
+    },
+    {
+      id: 'mobile-link-stats',
+      name: 'Get Link Statistics',
+      method: 'GET',
+      endpoint: '/api/mobile/stats/link/:shortCode',
+      description: 'Detailed analytics for a specific link including click history, geographic distribution, device breakdown, referrer sources, and time-based performance. Essential for mobile users to analyze individual link performance and optimize their sharing strategy.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        link: {
+          shortCode: 'abc123',
+          originalUrl: 'https://example.com',
+          totalClicks: 456,
+          uniqueClicks: 287,
+          createdAt: '2024-01-10T14:30:00Z',
+          analytics: {
+            clicksByCountry: {
+              'United States': 145,
+              'Germany': 89,
+              'United Kingdom': 67
+            },
+            clicksByDevice: {
+              'Mobile': 298,
+              'Desktop': 124,
+              'Tablet': 34
+            },
+            clicksByReferrer: {
+              'Direct': 156,
+              'Twitter': 123,
+              'Facebook': 89,
+              'LinkedIn': 45
+            },
+            hourlyDistribution: {
+              '00': 12, '01': 8, '02': 5, '03': 3,
+              '09': 45, '10': 52, '11': 48, '12': 39
+            }
+          }
+        }
+      }
+    },
+    {
+      id: 'mobile-trending-stats',
+      name: 'Get Trending Statistics',
+      method: 'GET',
+      endpoint: '/api/mobile/stats/trending',
+      description: 'Real-time trending analytics including most clicked links, fastest growing links, recent viral content, and platform-wide statistics. Helps mobile users discover trending content and understand platform usage patterns.',
+      category: 'mobile',
+      responseExample: {
+        success: true,
+        trending: {
+          mostClickedToday: [
+            { shortCode: 'viral1', clicks: 1247, growth: '+89%' },
+            { shortCode: 'trend2', clicks: 892, growth: '+67%' },
+            { shortCode: 'hot3', clicks: 634, growth: '+45%' }
+          ],
+          fastestGrowing: [
+            { shortCode: 'rocket1', clicksPerHour: 156, growth: '+234%' },
+            { shortCode: 'boom2', clicksPerHour: 89, growth: '+178%' }
+          ],
+          platformStats: {
+            totalLinksToday: 1247,
+            totalClicksToday: 45892,
+            activeUsers: 2847,
+            peakHour: '14:00'
+          }
+        }
+      }
+    },
+
+    // =============== MOBILE LINK MANAGEMENT ===============
+    {
+      id: 'mobile-create-link',
+      name: 'Create Short Link',
+      method: 'POST',
+      endpoint: '/api/mobile/links/create',
+      description: 'Create shortened links from mobile apps with enhanced mobile-specific features including custom expiration, mobile-optimized redirects, app deep linking support, and offline queuing capability.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        url: 'https://example.com/very-long-url',
+        customAlias: 'my-link',
+        password: 'optional-password',
+        expiresAt: '2024-12-31T23:59:59Z',
+        mobileOptimized: true,
+        deepLinkSupport: {
+          ios: 'myapp://content/123',
+          android: 'intent://content/123#Intent;package=com.myapp;end'
+        },
+        tags: ['mobile', 'campaign', 'social']
+      },
+      responseExample: {
+        success: true,
+        link: {
+          shortCode: 'mob123',
+          shortUrl: 'https://velink.com/mob123',
+          originalUrl: 'https://example.com/very-long-url',
+          qrCode: 'https://velink.com/api/qr/mob123',
+          createdAt: '2024-01-15T10:30:00Z',
+          expiresAt: '2024-12-31T23:59:59Z',
+          isPasswordProtected: true,
+          mobileOptimized: true
+        }
+      }
+    },
+    {
+      id: 'mobile-edit-link',
+      name: 'Edit Short Link',
+      method: 'PUT',
+      endpoint: '/api/mobile/links/:shortCode/edit',
+      description: 'Edit existing short links from mobile apps including changing destination URL, updating expiration, modifying passwords, and updating mobile-specific settings. Supports batch editing for mobile efficiency.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        originalUrl: 'https://updated-example.com',
+        password: 'new-password',
+        expiresAt: '2025-06-30T23:59:59Z',
+        tags: ['updated', 'mobile'],
+        mobileOptimized: true
+      },
+      responseExample: {
+        success: true,
+        message: 'Link updated successfully',
+        link: {
+          shortCode: 'mob123',
+          originalUrl: 'https://updated-example.com',
+          updatedAt: '2024-01-15T11:45:00Z'
+        }
+      }
+    },
+    {
+      id: 'mobile-delete-link',
+      name: 'Delete Short Link',
+      method: 'DELETE',
+      endpoint: '/api/mobile/links/:shortCode/delete',
+      description: 'Delete short links from mobile apps with confirmation and bulk delete support. Includes safety checks to prevent accidental deletion of high-traffic links.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        confirmDeletion: true,
+        reason: 'No longer needed'
+      },
+      responseExample: {
+        success: true,
+        message: 'Link deleted successfully',
+        deletedLink: {
+          shortCode: 'mob123',
+          finalStats: {
+            totalClicks: 1247,
+            lifetime: '45 days'
+          }
+        }
+      }
+    },
+    {
+      id: 'mobile-bulk-operations',
+      name: 'Bulk Link Operations',
+      method: 'POST',
+      endpoint: '/api/mobile/links/bulk',
+      description: 'Perform bulk operations on multiple links including creation, editing, deletion, and status changes. Optimized for mobile apps with batch processing and progress tracking.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        operation: 'create',
+        links: [
+          {
+            url: 'https://example.com/page1',
+            customAlias: 'page1',
+            tags: ['bulk', 'mobile']
+          },
+          {
+            url: 'https://example.com/page2',
+            customAlias: 'page2',
+            tags: ['bulk', 'mobile']
+          }
+        ]
+      },
+      responseExample: {
+        success: true,
+        results: {
+          successful: 2,
+          failed: 0,
+          links: [
+            { shortCode: 'page1', status: 'created' },
+            { shortCode: 'page2', status: 'created' }
+          ]
+        }
+      }
+    },
+
+    // =============== MOBILE USER MANAGEMENT ===============
+    {
+      id: 'mobile-user-profile',
+      name: 'Get User Profile',
+      method: 'GET',
+      endpoint: '/api/mobile/user/profile',
+      description: 'Retrieve comprehensive user profile information for mobile apps including account details, preferences, usage statistics, and mobile-specific settings.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        profile: {
+          userId: 'user_123',
+          username: 'mobile_user',
+          email: 'user@example.com',
+          accountCreated: '2024-01-01T00:00:00Z',
+          subscription: {
+            plan: 'pro',
+            expiresAt: '2024-12-31T23:59:59Z',
+            features: ['custom_domains', 'analytics', 'api_access']
+          },
+          usage: {
+            linksCreated: 247,
+            totalClicks: 15847,
+            apiCallsThisMonth: 1247
+          },
+          preferences: {
+            defaultExpiration: '30d',
+            mobileNotifications: true,
+            analyticsLevel: 'detailed'
+          }
+        }
+      }
+    },
+    {
+      id: 'mobile-update-preferences',
+      name: 'Update User Preferences',
+      method: 'PUT',
+      endpoint: '/api/mobile/user/preferences',
+      description: 'Update user preferences specific to mobile app usage including notification settings, default link options, sync preferences, and privacy settings.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        mobileNotifications: true,
+        defaultExpiration: '7d',
+        autoSync: true,
+        privacyLevel: 'standard',
+        themePref: 'dark'
+      },
+      responseExample: {
+        success: true,
+        message: 'Preferences updated successfully',
+        preferences: {
+          mobileNotifications: true,
+          defaultExpiration: '7d',
+          autoSync: true,
+          privacyLevel: 'standard',
+          themePref: 'dark'
+        }
+      }
+    },
+
+    // =============== MOBILE QR CODE & SHARING ===============
+    {
+      id: 'mobile-generate-qr',
+      name: 'Generate QR Code',
+      method: 'POST',
+      endpoint: '/api/mobile/qr/generate',
+      description: 'Generate customizable QR codes optimized for mobile sharing with various formats, sizes, and styling options. Includes batch generation for multiple links.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        shortCodes: ['abc123', 'def456'],
+        format: 'png',
+        size: 512,
+        style: {
+          foregroundColor: '#000000',
+          backgroundColor: '#ffffff',
+          logoUrl: 'https://example.com/logo.png'
+        },
+        mobileOptimized: true
+      },
+      responseExample: {
+        success: true,
+        qrCodes: [
+          {
+            shortCode: 'abc123',
+            qrCodeUrl: 'https://velink.com/api/qr/abc123.png',
+            downloadUrl: 'https://velink.com/api/qr/abc123/download'
+          }
+        ]
+      }
+    },
+    {
+      id: 'mobile-share-link',
+      name: 'Share Link',
+      method: 'POST',
+      endpoint: '/api/mobile/share',
+      description: 'Advanced sharing functionality for mobile apps including platform-specific optimization, tracking share events, and generating shareable content with previews.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        shortCode: 'abc123',
+        platform: 'whatsapp',
+        includePreview: true,
+        customMessage: 'Check this out!',
+        trackingEnabled: true
+      },
+      responseExample: {
+        success: true,
+        shareData: {
+          optimizedUrl: 'https://velink.com/abc123?utm_source=whatsapp&utm_medium=mobile',
+          previewImage: 'https://velink.com/api/preview/abc123.png',
+          suggestedText: 'Check this out! https://velink.com/abc123',
+          deepLink: 'whatsapp://send?text=Check%20this%20out!%20https://velink.com/abc123'
+        }
+      }
+    },
+
+    // =============== MOBILE ANALYTICS & INSIGHTS ===============
+    {
+      id: 'mobile-realtime-analytics',
+      name: 'Real-time Analytics',
+      method: 'GET',
+      endpoint: '/api/mobile/analytics/realtime',
+      description: 'Real-time analytics feed for mobile apps showing live click events, active users, trending links, and instant performance metrics. Perfect for mobile dashboards and live monitoring.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        realtime: {
+          activeUsers: 847,
+          clicksLastMinute: 23,
+          clicksLastHour: 1247,
+          liveEvents: [
+            {
+              timestamp: '2024-01-15T10:30:45Z',
+              event: 'click',
+              shortCode: 'abc123',
+              country: 'US',
+              device: 'mobile'
+            }
+          ],
+          trendingNow: [
+            { shortCode: 'hot1', clicksPerMinute: 12 },
+            { shortCode: 'viral2', clicksPerMinute: 8 }
+          ]
+        }
+      }
+    },
+    {
+      id: 'mobile-export-data',
+      name: 'Export Analytics Data',
+      method: 'POST',
+      endpoint: '/api/mobile/analytics/export',
+      description: 'Export comprehensive analytics data in various formats (CSV, JSON, PDF) optimized for mobile download and sharing. Includes customizable date ranges and data filtering.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        format: 'csv',
+        dateRange: {
+          start: '2024-01-01',
+          end: '2024-01-31'
+        },
+        includeFields: ['clicks', 'countries', 'devices', 'referrers'],
+        links: ['abc123', 'def456']
+      },
+      responseExample: {
+        success: true,
+        export: {
+          downloadUrl: 'https://velink.com/api/exports/analytics_jan2024.csv',
+          expiresAt: '2024-01-16T10:30:00Z',
+          fileSize: '2.4MB',
+          recordCount: 15847
+        }
+      }
+    },
+
+    // =============== MOBILE NOTIFICATIONS & ALERTS ===============
+    {
+      id: 'mobile-notification-settings',
+      name: 'Notification Settings',
+      method: 'GET',
+      endpoint: '/api/mobile/notifications/settings',
+      description: 'Retrieve and manage push notification settings for mobile apps including alert preferences, frequency settings, and notification categories.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      responseExample: {
+        success: true,
+        settings: {
+          pushEnabled: true,
+          categories: {
+            linkClicks: { enabled: true, threshold: 100 },
+            dailyReports: { enabled: true, time: '09:00' },
+            weeklyReports: { enabled: false },
+            securityAlerts: { enabled: true, immediate: true }
+          },
+          devices: [
+            {
+              deviceId: 'device_123',
+              platform: 'ios',
+              token: 'apns_token_here',
+              lastSeen: '2024-01-15T10:30:00Z'
+            }
+          ]
+        }
+      }
+    },
+    {
+      id: 'mobile-send-notification',
+      name: 'Send Notification',
+      method: 'POST',
+      endpoint: '/api/mobile/notifications/send',
+      description: 'Send custom push notifications to mobile devices with rich content, action buttons, and deep linking capabilities. Supports targeted delivery and scheduling.',
+      category: 'mobile',
+      authentication: 'Bearer Token',
+      requestBody: {
+        title: 'Link Performance Alert',
+        body: 'Your link abc123 just hit 1000 clicks!',
+        data: {
+          shortCode: 'abc123',
+          action: 'view_analytics'
+        },
+        actionButtons: [
+          { title: 'View Stats', action: 'view_stats' },
+          { title: 'Share', action: 'share_link' }
+        ],
+        scheduleFor: '2024-01-15T15:00:00Z'
+      },
+      responseExample: {
+        success: true,
+        notification: {
+          notificationId: 'notif_123',
+          status: 'scheduled',
+          scheduledFor: '2024-01-15T15:00:00Z',
+          targetDevices: 3
+        }
       }
     }
   ];
@@ -651,18 +1889,18 @@ const ApiDocumentation: React.FC = () => {
                 
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <div className="bg-green-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                    <Zap className="h-8 w-8 text-green-600" />
+                    <Server className="h-8 w-8 text-green-600" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">1000</div>
-                  <div className="text-sm text-gray-600">Requests/Day</div>
+                  <div className="text-2xl font-bold text-gray-900">{apiEndpoints.filter(e => e.category === 'system').length}</div>
+                  <div className="text-sm text-gray-600">System Endpoints</div>
                 </div>
                 
                 <div className="text-center p-4 bg-orange-50 rounded-lg">
                   <div className="bg-orange-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                    <Clock className="h-8 w-8 text-orange-600" />
+                    <Zap className="h-8 w-8 text-orange-600" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">99.9%</div>
-                  <div className="text-sm text-gray-600">Uptime</div>
+                  <div className="text-2xl font-bold text-gray-900">{apiEndpoints.length}</div>
+                  <div className="text-sm text-gray-600">Total Endpoints</div>
                 </div>
               </div>
             </div>
@@ -737,17 +1975,59 @@ const ApiDocumentation: React.FC = () => {
 
       case 'public':
       case 'admin':
+      case 'system':
+      case 'mobile':
         return (
           <div className="space-y-8">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                {activeTab === 'public' ? 'Public API Endpoints' : 'Admin API Endpoints'}
+                {activeTab === 'public' ? 'Public API Endpoints' : 
+                 activeTab === 'admin' ? 'Admin API Endpoints' : 
+                 activeTab === 'mobile' ? 'Mobile API Endpoints' :
+                 'System Endpoints'}
               </h2>
               <p className="text-gray-600 mb-6">
                 {activeTab === 'public' 
                   ? 'These endpoints are publicly accessible and do not require authentication.'
-                  : 'These endpoints require admin authentication using a Bearer token.'}
+                  : activeTab === 'admin' 
+                  ? 'These endpoints require admin authentication using a Bearer token.'
+                  : activeTab === 'mobile'
+                  ? 'Comprehensive mobile development API with 20+ endpoints covering link management, real-time analytics, user profiles, notifications, and advanced features. Velink provides these production-ready routes for third-party developers to build powerful mobile applications with full platform capabilities.'
+                  : 'System endpoints for health checks, redirects, static files, and infrastructure.'}
               </p>
+              
+              {activeTab === 'mobile' && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <Smartphone className="h-6 w-6 text-blue-600 mt-1" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-900 mb-2">Comprehensive Third-Party Mobile Development API</h3>
+                      <p className="text-blue-800 text-sm mb-3">
+                        Velink provides a complete mobile development ecosystem with 20+ specialized endpoints. Build powerful mobile applications with full feature parity to our web platform:
+                      </p>
+                      <div className="grid md:grid-cols-3 gap-2 text-sm text-blue-700">
+                        <div>• Advanced Link Management</div>
+                        <div>• Real-time Analytics & Stats</div>
+                        <div>• User Profile Management</div>
+                        <div>• QR Code Generation & Sharing</div>
+                        <div>• Push Notifications & Alerts</div>
+                        <div>• Data Export & Reporting</div>
+                        <div>• Bulk Operations</div>
+                        <div>• Widget Data for Home Screens</div>
+                        <div>• Live Performance Monitoring</div>
+                        <div>• Cross-platform Data Sync</div>
+                        <div>• Custom App Integration</div>
+                        <div>• Trending Content Discovery</div>
+                      </div>
+                      <p className="text-blue-600 text-xs mt-3 italic">
+                        <strong>Production-Ready:</strong> All endpoints include comprehensive request/response examples, authentication details, and real-world usage scenarios. Perfect for iOS, Android, and cross-platform development.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {filteredEndpoints.length === 0 ? (
                 <div className="text-center py-8">

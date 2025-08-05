@@ -492,9 +492,14 @@ app.get('/api/analytics/:shortCode', async (req, res) => {
   }
 });
 
+// Secure admin token generation
+const generateSecureToken = () => {
+  const crypto = require('crypto');
+  return 'velink-admin-' + crypto.randomBytes(32).toString('hex');
+};
+
 // Admin token for authentication
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'velink-admin-2025-secure-token-v2';
-console.log('🔑 Admin token loaded:', ADMIN_TOKEN ? 'Yes (length: ' + ADMIN_TOKEN.length + ')' : 'No');
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || generateSecureToken();
 
 // Admin middleware to verify token
 const verifyAdminToken = (req, res, next) => {
@@ -522,6 +527,43 @@ app.post('/api/admin/verify', (req, res) => {
   }
   
   res.json({ success: true });
+});
+
+// Security: Explicitly deny any requests for admin token
+app.get('/api/admin/token', (req, res) => {
+  res.status(403).json({ 
+    error: 'Access Denied', 
+    message: 'Admin token is not accessible via API for security reasons. Check server startup logs.' 
+  });
+});
+
+app.post('/api/admin/token', (req, res) => {
+  res.status(403).json({ 
+    error: 'Access Denied', 
+    message: 'Admin token is not accessible via API for security reasons. Check server startup logs.' 
+  });
+});
+
+// Admin route to reset first-launch flag (emergency token display reset)
+app.post('/api/admin/reset-token-display', verifyAdminToken, (req, res) => {
+  try {
+    const firstLaunchFlagFile = path.join(__dirname, '.admin-token-shown');
+    if (fs.existsSync(firstLaunchFlagFile)) {
+      fs.unlinkSync(firstLaunchFlagFile);
+      res.json({ 
+        success: true, 
+        message: 'First-launch flag reset. Admin token will be displayed on next server restart.' 
+      });
+    } else {
+      res.json({ 
+        success: true, 
+        message: 'First-launch flag was not set. Admin token will be displayed on next server restart.' 
+      });
+    }
+  } catch (error) {
+    console.error('Error resetting token display flag:', error);
+    res.status(500).json({ error: 'Could not reset token display flag' });
+  }
 });
 
 // Admin route to get all links
@@ -2671,10 +2713,38 @@ app.use((error, req, res, next) => {
 
 // Start the server
 const startServer = () => {
+  // Check if this is the first launch
+  const firstLaunchFlagFile = path.join(__dirname, '.admin-token-shown');
+  const isFirstLaunch = !fs.existsSync(firstLaunchFlagFile);
+
   // Start HTTP server
   http.createServer(app).listen(PORT, () => {
     console.log(`🚀 Velink HTTP server running on port ${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Security: Show admin token ONLY on first launch
+    if (isFirstLaunch) {
+      console.log('\n' + '='.repeat(60));
+      console.log('🔐 ADMIN PANEL ACCESS TOKEN (FIRST LAUNCH ONLY)');
+      console.log('='.repeat(60));
+      console.log(`🔑 Admin Token: ${ADMIN_TOKEN}`);
+      console.log('📋 COPY THIS TOKEN NOW - IT WILL NEVER BE SHOWN AGAIN!');
+      console.log('🌐 Admin Panel: http://localhost:' + PORT + '/admin');
+      console.log('⚠️  Keep this token secure - treat it like a password!');
+      console.log('🚨 After this launch, you must refer to your saved copy!');
+      console.log('='.repeat(60) + '\n');
+      
+      // Create flag file to mark that token has been shown
+      try {
+        fs.writeFileSync(firstLaunchFlagFile, new Date().toISOString());
+        console.log('✅ First launch complete - admin token will not be displayed again.');
+      } catch (error) {
+        console.error('⚠️ Warning: Could not create first-launch flag file:', error.message);
+      }
+    } else {
+      console.log('🔒 Admin token hidden for security (not first launch)');
+      console.log('💡 If you need the token, refer to your saved copy from first launch');
+    }
   });
 
   // Start HTTPS server if SSL certificates are available

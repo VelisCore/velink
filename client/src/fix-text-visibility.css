@@ -1,0 +1,153 @@
+/* Fix for text visibility issues across the application */
+
+/* Ensure all form inputs have proper text colors */
+input,
+select,
+textarea {
+  color: #1e293b !important; /* Force dark gray text */
+  background-color: #ffffff !important; /* Force white background */
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+/* Fix input placeholders */
+input::placeholder,
+textarea::placeholder {
+  color: #64748b !important; /* Medium gray for placeholders */
+  opacity: 1 !important;
+}
+
+/* Fix select options */
+select option {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+/* Specific fixes for form elements with Tailwind classes */
+.input-primary {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+.input-primary:focus {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+/* Fix for disabled inputs */
+input:disabled,
+select:disabled,
+textarea:disabled {
+  color: #64748b !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Fix gradient text that might become invisible */
+.gradient-text {
+  background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b) !important;
+  background-size: 400% 400% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  /* Fallback for browsers that don't support background-clip: text */
+  color: #3b82f6;
+}
+
+/* Fix for text-transparent fallbacks */
+.text-transparent {
+  color: #1e293b !important;
+}
+
+.bg-clip-text {
+  color: #1e293b !important;
+}
+
+/* Ensure proper contrast for white backgrounds */
+.bg-white,
+.bg-gray-50 {
+  color: #1e293b !important;
+}
+
+.bg-white *:not(.text-white):not(.text-gray-100):not(.text-gray-200),
+.bg-gray-50 *:not(.text-white):not(.text-gray-100):not(.text-gray-200) {
+  color: inherit !important;
+}
+
+/* Fix admin panel form visibility */
+.admin-panel input,
+.admin-panel select,
+.admin-panel textarea {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+}
+
+/* Fix for any remaining invisible text */
+*[class*="text-white"]:not(.bg-primary):not(.bg-blue):not(.bg-red):not(.bg-green):not(.bg-purple):not(.bg-gray-800):not(.bg-gray-900) {
+  color: #1e293b !important;
+}
+
+/* Specific fix for form labels */
+label {
+  color: #374151 !important;
+  font-weight: 500 !important;
+}
+
+/* Fix for button text that might be invisible */
+button:not(.text-white):not(.bg-primary):not(.bg-blue):not(.bg-red):not(.bg-green):not(.bg-purple) {
+  color: #1e293b !important;
+}
+
+/* Fix for any text inside cards */
+.card input,
+.card select,
+.card textarea,
+.card label {
+  color: #1e293b !important;
+}
+
+.card input:focus,
+.card select:focus,
+.card textarea:focus {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+/* Fix for checkbox and radio button labels */
+input[type="checkbox"] + label,
+input[type="radio"] + label {
+  color: #374151 !important;
+}
+
+/* Fix for select dropdown arrows */
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 0.5rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1.5em 1.5em !important;
+  padding-right: 2.5rem !important;
+}
+
+/* Ensure proper contrast on hover states */
+.hover\:bg-gray-50:hover,
+.hover\:bg-gray-100:hover {
+  color: #1e293b !important;
+}
+
+/* Fix for any text that might inherit transparent */
+.text-gray-600,
+.text-gray-700,
+.text-gray-800,
+.text-gray-900 {
+  color: var(--tw-text-opacity) !important;
+}
+
+/* Override any problematic inherited colors */
+.text-inherit {
+  color: #1e293b !important;
+}

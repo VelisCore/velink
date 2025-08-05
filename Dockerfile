@@ -1,6 +1,6 @@
 # 🐳 Docker Configuration for Velink
 
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 
 # Set working directory
 WORKDIR /app
@@ -31,7 +31,7 @@ COPY client ./client
 RUN cd client && npm run build
 
 # Production image
-FROM node:20-alpine AS production
+FROM node:24-alpine AS production
 
 # Create app user
 RUN addgroup -g 1001 -S nodejs

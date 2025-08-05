@@ -1,53 +1,161 @@
 /* Fix for text visibility issues across the application */
+/* Detailed color analysis for perfect contrast ratios */
 
-/* Ensure all form inputs have proper text colors */
+/* ========== FORM ELEMENTS ========== */
+/* All form inputs - white backgrounds need dark text */
 input,
 select,
 textarea {
-  color: #1e293b !important; /* Force dark gray text */
-  background-color: #ffffff !important; /* Force white background */
+  color: #0f172a !important; /* Gray-900 - Maximum contrast on white */
+  background-color: #ffffff !important; /* Pure white background */
 }
 
+/* Focus states for form elements */
 input:focus,
 select:focus,
 textarea:focus {
-  color: #1e293b !important;
-  background-color: #ffffff !important;
+  color: #0f172a !important; /* Gray-900 - Maximum contrast */
+  background-color: #ffffff !important; /* Keep white background */
 }
 
-/* Fix input placeholders */
+/* Placeholder text - medium gray for good contrast without being too strong */
 input::placeholder,
 textarea::placeholder {
-  color: #64748b !important; /* Medium gray for placeholders */
+  color: #64748b !important; /* Gray-500 - Perfect medium contrast */
   opacity: 1 !important;
 }
 
-/* Fix select options */
+/* Select dropdown options */
 select option {
-  color: #1e293b !important;
-  background-color: #ffffff !important;
+  color: #0f172a !important; /* Gray-900 - Maximum contrast */
+  background-color: #ffffff !important; /* White background */
 }
 
-/* Specific fixes for form elements with Tailwind classes */
-.input-primary {
-  color: #1e293b !important;
-  background-color: #ffffff !important;
-}
-
-.input-primary:focus {
-  color: #1e293b !important;
-  background-color: #ffffff !important;
-}
-
-/* Fix for disabled inputs */
+/* Disabled form elements - lighter text on light gray background */
 input:disabled,
 select:disabled,
 textarea:disabled {
-  color: #64748b !important;
-  background-color: #f1f5f9 !important;
+  color: #64748b !important; /* Gray-500 - Good contrast on light backgrounds */
+  background-color: #f1f5f9 !important; /* Gray-100 - Very light background */
 }
 
-/* Fix gradient text that might become invisible */
+/* ========== TAILWIND FORM CLASSES ========== */
+/* .input-primary class used throughout the app */
+.input-primary {
+  color: #0f172a !important; /* Gray-900 */
+  background-color: #ffffff !important; /* White */
+  border-color: #d1d5db !important; /* Gray-300 - Subtle border */
+}
+
+.input-primary:focus {
+  color: #0f172a !important; /* Gray-900 */
+  background-color: #ffffff !important; /* White */
+}
+
+/* ========== BACKGROUND-SPECIFIC TEXT COLORS ========== */
+
+/* White backgrounds - need very dark text for maximum contrast */
+.bg-white,
+.bg-white * {
+  color: #0f172a !important; /* Gray-900 */
+}
+
+/* Light gray backgrounds (gray-50) - need dark text */
+.bg-gray-50,
+.bg-gray-50 * {
+  color: #1e293b !important; /* Gray-800 */
+}
+
+/* Medium gray backgrounds (gray-100) - need darker text */
+.bg-gray-100,
+.bg-gray-100 * {
+  color: #0f172a !important; /* Gray-900 */
+}
+
+/* Primary gradient backgrounds (Hero section) - need dark text on light areas */
+.bg-gradient-to-br.from-primary-50 {
+  color: #0f172a !important; /* Gray-900 for light gradient */
+}
+
+/* Dark backgrounds (gray-800, gray-900) - need light text */
+.bg-gray-800,
+.bg-gray-900,
+.bg-gray-800 *,
+.bg-gray-900 * {
+  color: #f8fafc !important; /* Gray-50 - Light text on dark */
+}
+
+/* Primary blue backgrounds - need white text */
+.bg-primary-600,
+.bg-primary-700,
+.bg-blue-600,
+.bg-blue-700 {
+  color: #ffffff !important; /* White text on blue backgrounds */
+}
+
+/* ========== CARD AND CONTAINER ELEMENTS ========== */
+/* Cards typically have white backgrounds */
+.card,
+.card input,
+.card select,
+.card textarea,
+.card label,
+.card p,
+.card span {
+  color: #0f172a !important; /* Gray-900 on white cards */
+}
+
+.card input:focus,
+.card select:focus,
+.card textarea:focus {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+/* ========== LABELS AND DESCRIPTIVE TEXT ========== */
+/* Form labels - should be medium-dark for hierarchy */
+label {
+  color: #374151 !important; /* Gray-700 - Good contrast, not too strong */
+  font-weight: 500 !important;
+}
+
+/* Secondary text (descriptions, meta info) */
+.text-gray-600,
+.text-gray-500 {
+  color: #64748b !important; /* Gray-500 - Perfect for secondary text */
+}
+
+/* Primary text on various backgrounds */
+.text-gray-700 {
+  color: #374151 !important; /* Gray-700 */
+}
+
+.text-gray-800 {
+  color: #1e293b !important; /* Gray-800 */
+}
+
+.text-gray-900 {
+  color: #0f172a !important; /* Gray-900 */
+}
+
+/* ========== BUTTON TEXT ========== */
+/* Buttons without explicit background colors */
+button:not(.text-white):not(.bg-primary-600):not(.bg-primary-700):not(.bg-blue-600):not(.bg-blue-700):not(.bg-red-600):not(.bg-green-600):not(.bg-purple-600) {
+  color: #0f172a !important; /* Gray-900 for light button backgrounds */
+}
+
+/* ========== ADMIN PANEL SPECIFIC ========== */
+/* Admin panels often use white cards */
+.admin-panel input,
+.admin-panel select,
+.admin-panel textarea {
+  color: #0f172a !important; /* Gray-900 on white */
+  background-color: #ffffff !important;
+  border: 1px solid #d1d5db !important; /* Gray-300 border */
+}
+
+/* ========== GRADIENT TEXT FIXES ========== */
+/* Fix for gradient text that might become invisible */
 .gradient-text {
   background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b) !important;
   background-size: 400% 400% !important;
@@ -55,76 +163,36 @@ textarea:disabled {
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
   /* Fallback for browsers that don't support background-clip: text */
-  color: #3b82f6;
+  color: #2563eb !important; /* Primary-600 as fallback */
 }
 
-/* Fix for text-transparent fallbacks */
+/* Fix problematic text-transparent classes */
 .text-transparent {
-  color: #1e293b !important;
+  color: #0f172a !important; /* Gray-900 fallback */
 }
 
 .bg-clip-text {
-  color: #1e293b !important;
+  color: #2563eb !important; /* Primary-600 fallback for gradient text */
 }
 
-/* Ensure proper contrast for white backgrounds */
-.bg-white,
-.bg-gray-50 {
-  color: #1e293b !important;
+/* ========== HOVER STATES ========== */
+/* Hover states for light backgrounds */
+.hover\:bg-gray-50:hover,
+.hover\:bg-gray-100:hover {
+  color: #0f172a !important; /* Gray-900 on light hover backgrounds */
 }
 
-.bg-white *:not(.text-white):not(.text-gray-100):not(.text-gray-200),
-.bg-gray-50 *:not(.text-white):not(.text-gray-100):not(.text-gray-200) {
-  color: inherit !important;
+.hover\:bg-white:hover {
+  color: #0f172a !important; /* Gray-900 on white hover */
 }
 
-/* Fix admin panel form visibility */
-.admin-panel input,
-.admin-panel select,
-.admin-panel textarea {
-  color: #1e293b !important;
-  background-color: #ffffff !important;
-  border: 1px solid #d1d5db !important;
-}
-
-/* Fix for any remaining invisible text */
-*[class*="text-white"]:not(.bg-primary):not(.bg-blue):not(.bg-red):not(.bg-green):not(.bg-purple):not(.bg-gray-800):not(.bg-gray-900) {
-  color: #1e293b !important;
-}
-
-/* Specific fix for form labels */
-label {
-  color: #374151 !important;
-  font-weight: 500 !important;
-}
-
-/* Fix for button text that might be invisible */
-button:not(.text-white):not(.bg-primary):not(.bg-blue):not(.bg-red):not(.bg-green):not(.bg-purple) {
-  color: #1e293b !important;
-}
-
-/* Fix for any text inside cards */
-.card input,
-.card select,
-.card textarea,
-.card label {
-  color: #1e293b !important;
-}
-
-.card input:focus,
-.card select:focus,
-.card textarea:focus {
-  color: #1e293b !important;
-  background-color: #ffffff !important;
-}
-
-/* Fix for checkbox and radio button labels */
+/* ========== CHECKBOX AND RADIO LABELS ========== */
 input[type="checkbox"] + label,
 input[type="radio"] + label {
-  color: #374151 !important;
+  color: #374151 !important; /* Gray-700 for form labels */
 }
 
-/* Fix for select dropdown arrows */
+/* ========== SELECT DROPDOWN STYLING ========== */
 select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
   background-position: right 0.5rem center !important;
@@ -133,21 +201,70 @@ select {
   padding-right: 2.5rem !important;
 }
 
-/* Ensure proper contrast on hover states */
-.hover\:bg-gray-50:hover,
-.hover\:bg-gray-100:hover {
-  color: #1e293b !important;
+/* ========== HERO SECTION SPECIFIC ========== */
+/* Hero has gradient background from primary-50 to white to primary-100 */
+.hero h1,
+.hero p,
+.hero .text-gray-900 {
+  color: #0f172a !important; /* Gray-900 for maximum contrast on light gradient */
 }
 
-/* Fix for any text that might inherit transparent */
-.text-gray-600,
-.text-gray-700,
-.text-gray-800,
-.text-gray-900 {
-  color: var(--tw-text-opacity) !important;
+.hero .text-gray-600 {
+  color: #4b5563 !important; /* Gray-600 for secondary text */
 }
 
-/* Override any problematic inherited colors */
+/* ========== LINK SHORTENER SECTION ========== */
+/* LinkShortener has bg-white background */
+#shortener {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+#shortener h2 {
+  color: #0f172a !important; /* Gray-900 on white background */
+}
+
+#shortener p {
+  color: #4b5563 !important; /* Gray-600 for descriptions */
+}
+
+/* ========== ERROR STATES ========== */
+/* Error text should be red but still readable */
+.text-red-600,
+.text-red-500 {
+  color: #dc2626 !important; /* Red-600 for good contrast */
+}
+
+/* ========== SUCCESS STATES ========== */
+/* Success text should be green but readable */
+.text-green-600,
+.text-green-500 {
+  color: #059669 !important; /* Green-600 for good contrast */
+}
+
+/* ========== OVERRIDE ANY INHERITED TRANSPARENCY ========== */
 .text-inherit {
-  color: #1e293b !important;
+  color: #0f172a !important; /* Gray-900 fallback */
+}
+
+/* ========== SPECIFIC COMPONENT OVERRIDES ========== */
+/* Stats section with white cards */
+.stat {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Navigation links */
+.nav a {
+  color: #64748b !important; /* Gray-500 for nav links */
+}
+
+.nav a:hover {
+  color: #2563eb !important; /* Primary-600 on hover */
+}
+
+/* ========== ACCESSIBILITY IMPROVEMENTS ========== */
+/* Ensure minimum contrast ratios are met */
+*[style*="color: white"]:not(.bg-gray-800):not(.bg-gray-900):not(.bg-primary-600):not(.bg-primary-700):not(.bg-blue-600):not(.bg-blue-700) {
+  color: #0f172a !important; /* Override white text on light backgrounds */
 }

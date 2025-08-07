@@ -16,7 +16,7 @@ const NotFound: React.FC = () => {
           <div className="p-8">
             {/* 404 Number */}
             <div className="mb-8">
-              <h1 className="text-9xl font-bold text-primary-600 mb-2">404</h1>
+              <h1 className="text-9xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent mb-2">404</h1>
               <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-primary-700 mx-auto rounded-full"></div>
             </div>
 

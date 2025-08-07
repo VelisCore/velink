@@ -22,7 +22,7 @@ const Header: React.FC = () => {
             <div className="transition-all duration-300 group-hover:scale-105">
               <img src="/logo512.png" alt="Velink Logo" className="h-10 w-10" />
             </div>
-            <h1 className="text-2xl font-bold text-primary-600">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
               Velink
             </h1>
           </Link>

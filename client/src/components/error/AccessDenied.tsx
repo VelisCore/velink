@@ -24,7 +24,7 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
           <div className="p-8">
             {/* 403 Number */}
             <div className="mb-8">
-              <h1 className="text-9xl font-bold text-purple-600 mb-2">403</h1>
+              <h1 className="text-9xl font-bold bg-gradient-to-r from-purple-600 to-primary-600 bg-clip-text text-transparent mb-2">403</h1>
               <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-primary-500 mx-auto rounded-full"></div>
             </div>
 

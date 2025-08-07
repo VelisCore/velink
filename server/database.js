@@ -1455,6 +1455,240 @@ class Database {
     });
   }
 
+  // Mobile API: Get basic stats without private data
+  getBasicStats() {
+    return new Promise((resolve, reject) => {
+      const basicStatsSQL = `
+        SELECT 
+          COUNT(*) as totalUrls,
+          SUM(clicks) as totalClicks,
+          COUNT(CASE WHEN created_at >= date('now', '-24 hours') THEN 1 END) as urlsToday,
+          (
+            SELECT SUM(clicks) 
+            FROM short_urls 
+            WHERE created_at >= date('now', '-24 hours')
+          ) as clicksToday
+        FROM short_urls
+        WHERE is_active = 1
+      `;
+
+      this.db.get(basicStatsSQL, [], (err, basicStats) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        // Get top links (public only)
+        const topLinksSQL = `
+          SELECT 
+            short_code,
+            original_url,
+            clicks,
+            created_at
+          FROM short_urls 
+          WHERE is_active = 1 
+            AND (custom_options IS NULL OR custom_options NOT LIKE '%"isPrivate":true%')
+            AND clicks > 0
+          ORDER BY clicks DESC 
+          LIMIT 5
+        `;
+
+        this.db.all(topLinksSQL, [], (err, topLinks) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          // Get recent activity (clicks in last 24 hours)
+          const recentActivitySQL = `
+            SELECT 
+              s.short_code,
+              s.original_url,
+              COUNT(c.id) as recent_clicks
+            FROM short_urls s
+            LEFT JOIN clicks c ON s.short_code = c.short_code 
+              AND c.clicked_at >= datetime('now', '-24 hours')
+            WHERE s.is_active = 1 
+              AND (s.custom_options IS NULL OR s.custom_options NOT LIKE '%"isPrivate":true%')
+            GROUP BY s.short_code, s.original_url
+            HAVING recent_clicks > 0
+            ORDER BY recent_clicks DESC
+            LIMIT 5
+          `;
+
+          this.db.all(recentActivitySQL, [], (err, recentClicks) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+
+            resolve({
+              totalUrls: basicStats.totalUrls || 0,
+              totalClicks: basicStats.totalClicks || 0,
+              urlsToday: basicStats.urlsToday || 0,
+              clicksToday: basicStats.clicksToday || 0,
+              topLinks: topLinks || [],
+              recentClicks: recentClicks || []
+            });
+          });
+        });
+      });
+    });
+  }
+
+  // Mobile API: Get click analytics for a specific link
+  getClickAnalytics(shortCode) {
+    return new Promise((resolve, reject) => {
+      // Get clicks by day (last 30 days)
+      const clicksByDaySQL = `
+        SELECT 
+          date(clicked_at) as date,
+          COUNT(*) as clicks
+        FROM clicks 
+        WHERE short_code = ? 
+          AND clicked_at >= date('now', '-30 days')
+        GROUP BY date(clicked_at)
+        ORDER BY date
+      `;
+
+      this.db.all(clicksByDaySQL, [shortCode], (err, clicksByDay) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        // Get clicks by country (from IP geolocation - simplified)
+        const clicksByCountrySQL = `
+          SELECT 
+            CASE 
+              WHEN country IS NOT NULL AND country != '' THEN country
+              ELSE 'Unknown'
+            END as country,
+            COUNT(*) as clicks
+          FROM clicks 
+          WHERE short_code = ?
+          GROUP BY country
+          ORDER BY clicks DESC
+          LIMIT 10
+        `;
+
+        this.db.all(clicksByCountrySQL, [shortCode], (err, clicksByCountry) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          // Get clicks by device type (from user agent)
+          const clicksByDeviceSQL = `
+            SELECT 
+              CASE 
+                WHEN user_agent LIKE '%Mobile%' OR user_agent LIKE '%Android%' THEN 'Mobile'
+                WHEN user_agent LIKE '%Tablet%' OR user_agent LIKE '%iPad%' THEN 'Tablet'
+                ELSE 'Desktop'
+              END as device_type,
+              COUNT(*) as clicks
+            FROM clicks 
+            WHERE short_code = ?
+            GROUP BY device_type
+            ORDER BY clicks DESC
+          `;
+
+          this.db.all(clicksByDeviceSQL, [shortCode], (err, clicksByDevice) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+
+            // Get clicks by browser (simplified from user agent)
+            const clicksByBrowserSQL = `
+              SELECT 
+                CASE 
+                  WHEN user_agent LIKE '%Chrome%' THEN 'Chrome'
+                  WHEN user_agent LIKE '%Firefox%' THEN 'Firefox'
+                  WHEN user_agent LIKE '%Safari%' AND user_agent NOT LIKE '%Chrome%' THEN 'Safari'
+                  WHEN user_agent LIKE '%Edge%' THEN 'Edge'
+                  WHEN user_agent LIKE '%Opera%' THEN 'Opera'
+                  ELSE 'Other'
+                END as browser,
+                COUNT(*) as clicks
+              FROM clicks 
+              WHERE short_code = ?
+              GROUP BY browser
+              ORDER BY clicks DESC
+              LIMIT 10
+            `;
+
+            this.db.all(clicksByBrowserSQL, [shortCode], (err, clicksByBrowser) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+
+              // Get clicks by OS (simplified from user agent)
+              const clicksByOSSQL = `
+                SELECT 
+                  CASE 
+                    WHEN user_agent LIKE '%Windows%' THEN 'Windows'
+                    WHEN user_agent LIKE '%Mac OS%' OR user_agent LIKE '%macOS%' THEN 'macOS'
+                    WHEN user_agent LIKE '%Linux%' THEN 'Linux'
+                    WHEN user_agent LIKE '%Android%' THEN 'Android'
+                    WHEN user_agent LIKE '%iOS%' OR user_agent LIKE '%iPhone%' OR user_agent LIKE '%iPad%' THEN 'iOS'
+                    ELSE 'Other'
+                  END as os,
+                  COUNT(*) as clicks
+                FROM clicks 
+                WHERE short_code = ?
+                GROUP BY os
+                ORDER BY clicks DESC
+                LIMIT 10
+              `;
+
+              this.db.all(clicksByOSSQL, [shortCode], (err, clicksByOS) => {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+
+                // Get recent clicks (last 50)
+                const recentClicksSQL = `
+                  SELECT 
+                    clicked_at,
+                    ip_address,
+                    referrer,
+                    CASE 
+                      WHEN user_agent LIKE '%Mobile%' OR user_agent LIKE '%Android%' THEN 'Mobile'
+                      WHEN user_agent LIKE '%Tablet%' OR user_agent LIKE '%iPad%' THEN 'Tablet'
+                      ELSE 'Desktop'
+                    END as device_type
+                  FROM clicks 
+                  WHERE short_code = ?
+                  ORDER BY clicked_at DESC
+                  LIMIT 50
+                `;
+
+                this.db.all(recentClicksSQL, [shortCode], (err, recentClicks) => {
+                  if (err) {
+                    reject(err);
+                    return;
+                  }
+
+                  resolve({
+                    clicksByDay: clicksByDay || [],
+                    clicksByCountry: clicksByCountry || [],
+                    clicksByDevice: clicksByDevice || [],
+                    clicksByBrowser: clicksByBrowser || [],
+                    clicksByOS: clicksByOS || [],
+                    recentClicks: recentClicks || []
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+
 }
 
 module.exports = Database;

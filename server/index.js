@@ -191,8 +191,10 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
     
     // Check if website is private
     if (process.env.WEBSITE_PRIVATE === 'true') {
-        // Allow admin routes and password check
-        if (req.path.startsWith('/api/admin') || req.path === '/api/check-password') {
+        // Allow admin routes, password check, and mobile API routes (no auth)
+        if (req.path.startsWith('/api/admin') || 
+            req.path === '/api/check-password' || 
+            req.path.startsWith('/api/mobile/')) {
             return next();
         }
         
@@ -2030,6 +2032,576 @@ try {
 
 // Set up API routes
 app.use('/api/v1', setupApiRoutes(db));
+
+// ================================
+// MOBILE API ROUTES (NO AUTH)
+// ================================
+
+// Mobile rate limiting - more lenient for mobile apps
+const mobileRateLimit = rateLimit({
+  windowMs: 1000, // 1 second
+  max: 10, // 10 requests per second for mobile
+  message: { 
+    error: 'Too many requests',
+    message: 'Mobile rate limit: 10 requests per second'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.ip || req.connection.remoteAddress || 'unknown';
+  },
+});
+
+// Daily limit for mobile link creation - higher limit
+const mobileDailyLimit = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 1000, // 1000 links per day for mobile
+  message: { 
+    error: 'Daily limit exceeded',
+    message: 'Mobile daily limit: 1000 links per day'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.ip || req.connection.remoteAddress || 'unknown';
+  },
+  skipSuccessfulRequests: false
+});
+
+// Mobile API: Shorten URL (No Auth)
+app.post('/api/mobile/shorten', 
+  mobileRateLimit,
+  mobileDailyLimit,
+  [
+    body('url')
+      .isURL({ protocols: ['http', 'https'], require_protocol: true })
+      .withMessage('Please provide a valid URL with http:// or https://')
+      .isLength({ max: 2048 })
+      .withMessage('URL is too long (max 2048 characters)'),
+    body('expiresIn')
+      .optional()
+      .isIn(['1d', '7d', '30d', '365d', 'never'])
+      .withMessage('Invalid expiration option'),
+    body('customAlias')
+      .optional()
+      .isLength({ min: 3, max: 50 })
+      .matches(/^[a-zA-Z0-9-_]+$/)
+      .withMessage('Custom alias must be 3-50 characters and contain only letters, numbers, hyphens, and underscores'),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ 
+          success: false,
+          error: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        });
+      }
+
+      const { url, expiresIn, customOptions, customAlias, description } = req.body;
+      const ip = req.ip || req.connection.remoteAddress;
+      const userAgent = req.get('User-Agent') || 'Mobile App';
+      
+      // Calculate expiration date
+      let expiresAt = null;
+      if (expiresIn && expiresIn !== 'never') {
+        const days = { '1d': 1, '7d': 7, '30d': 30, '365d': 365 };
+        const expireDate = new Date();
+        expireDate.setDate(expireDate.getDate() + days[expiresIn]);
+        expiresAt = expireDate.toISOString();
+      }
+
+      // Generate or use custom short code
+      let shortCode;
+      if (customAlias) {
+        // Check if custom alias already exists
+        const existing = await db.findByShortCode(customAlias);
+        if (existing) {
+          return res.status(409).json({
+            success: false,
+            error: 'Custom alias already exists',
+            code: 'ALIAS_EXISTS'
+          });
+        }
+        shortCode = customAlias;
+      } else {
+        // Generate unique short code
+        let attempts = 0;
+        do {
+          shortCode = generateShortCode();
+          attempts++;
+          if (attempts > 15) {
+            throw new Error('Failed to generate unique short code');
+          }
+        } while (await db.findByShortCode(shortCode));
+      }
+
+      // Save to database
+      const result = await db.createShortUrl({
+        shortCode,
+        originalUrl: url,
+        expiresAt,
+        ip,
+        userAgent,
+        customOptions,
+        description
+      });
+
+      // Generate sitemap in background
+      sitemapGenerator.generateSitemap().catch(err => {
+        console.error('Failed to update sitemap:', err);
+      });
+
+      // Mobile-optimized response
+      res.status(201).json({
+        success: true,
+        data: {
+          shortUrl: `${req.protocol}://${req.get('host')}/${shortCode}`,
+          shortCode,
+          originalUrl: url,
+          description: description || null,
+          expiresAt,
+          createdAt: result.created_at,
+          qrCode: `${req.protocol}://${req.get('host')}/api/mobile/qr/${shortCode}`,
+          clicks: 0,
+          customOptions: customOptions || null
+        },
+        message: 'URL shortened successfully'
+      });
+
+    } catch (error) {
+      console.error('Mobile API - Error shortening URL:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to shorten URL',
+        code: 'INTERNAL_ERROR'
+      });
+    }
+  }
+);
+
+// Mobile API: Get URL info (No Auth)
+app.get('/api/mobile/info/:shortCode', mobileRateLimit, async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+    const urlData = await db.findByShortCode(shortCode);
+    
+    if (!urlData) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Link not found',
+        code: 'NOT_FOUND'
+      });
+    }
+
+    // Check if expired
+    if (urlData.expires_at && new Date(urlData.expires_at) < new Date()) {
+      return res.status(410).json({ 
+        success: false,
+        error: 'Link has expired',
+        code: 'EXPIRED'
+      });
+    }
+
+    const customOptions = urlData.custom_options ? JSON.parse(urlData.custom_options) : {};
+    
+    res.json({
+      success: true,
+      data: {
+        shortCode: urlData.short_code,
+        originalUrl: urlData.original_url,
+        description: urlData.description || null,
+        clicks: urlData.clicks || 0,
+        createdAt: urlData.created_at,
+        expiresAt: urlData.expires_at,
+        qrCode: `${req.protocol}://${req.get('host')}/api/mobile/qr/${shortCode}`,
+        isPasswordProtected: !!customOptions.password,
+        customOptions: customOptions
+      }
+    });
+
+  } catch (error) {
+    console.error('Mobile API - Error getting URL info:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get URL info',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// Mobile API: Get basic stats (No Auth)
+app.get('/api/mobile/stats', mobileRateLimit, async (req, res) => {
+  try {
+    const stats = await db.getBasicStats();
+    
+    res.json({
+      success: true,
+      data: {
+        totalLinks: stats.totalUrls || 0,
+        totalClicks: stats.totalClicks || 0,
+        todayClicks: stats.clicksToday || 0,
+        linksToday: stats.urlsToday || 0,
+        topLinks: stats.topLinks || [],
+        recentActivity: stats.recentClicks || []
+      }
+    });
+
+  } catch (error) {
+    console.error('Mobile API - Error getting stats:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get statistics',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// Mobile API: Verify password for protected links (No Auth)
+app.post('/api/mobile/verify-password/:shortCode', 
+  mobileRateLimit,
+  [
+    body('password').isString().notEmpty().withMessage('Password is required'),
+  ], 
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ 
+          success: false,
+          error: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        });
+      }
+
+      const { shortCode } = req.params;
+      const { password } = req.body;
+
+      const urlData = await db.findByShortCode(shortCode);
+      
+      if (!urlData) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Link not found',
+          code: 'NOT_FOUND'
+        });
+      }
+
+      // Check if expired
+      if (urlData.expires_at && new Date(urlData.expires_at) < new Date()) {
+        return res.status(410).json({ 
+          success: false,
+          error: 'Link has expired',
+          code: 'EXPIRED'
+        });
+      }
+
+      const customOptions = urlData.custom_options ? JSON.parse(urlData.custom_options) : {};
+      
+      if (!customOptions.password) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'This link is not password protected',
+          code: 'NOT_PASSWORD_PROTECTED'
+        });
+      }
+
+      // Verify password
+      if (customOptions.password !== password) {
+        return res.status(401).json({ 
+          success: false,
+          error: 'Invalid password',
+          code: 'INVALID_PASSWORD'
+        });
+      }
+
+      // Return success with the original URL
+      res.json({
+        success: true,
+        data: {
+          shortCode: urlData.short_code,
+          originalUrl: urlData.original_url,
+          description: urlData.description || null,
+          verified: true
+        },
+        message: 'Password verified successfully'
+      });
+
+    } catch (error) {
+      console.error('Mobile API - Error verifying password:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR'
+      });
+    }
+  }
+);
+
+// Mobile API: Batch shorten URLs (No Auth)
+app.post('/api/mobile/batch-shorten', 
+  mobileRateLimit,
+  mobileDailyLimit,
+  [
+    body('urls').isArray({ min: 1, max: 10 }).withMessage('URLs must be an array with 1-10 items'),
+    body('urls.*').isURL({ protocols: ['http', 'https'], require_protocol: true })
+      .withMessage('Each URL must be valid and include http:// or https://'),
+    body('expiresIn')
+      .optional()
+      .isIn(['1d', '7d', '30d', '365d', 'never'])
+      .withMessage('Invalid expiration option')
+  ], 
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ 
+          success: false,
+          error: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        });
+      }
+
+      const { urls, expiresIn, customOptions } = req.body;
+      const ip = req.ip || req.connection.remoteAddress;
+      const userAgent = req.get('User-Agent') || 'Mobile App';
+      
+      // Calculate expiration date
+      let expiresAt = null;
+      if (expiresIn && expiresIn !== 'never') {
+        const days = { '1d': 1, '7d': 7, '30d': 30, '365d': 365 };
+        const expireDate = new Date();
+        expireDate.setDate(expireDate.getDate() + days[expiresIn]);
+        expiresAt = expireDate.toISOString();
+      }
+
+      const results = [];
+      const processingErrors = [];
+
+      for (let i = 0; i < urls.length; i++) {
+        try {
+          const url = urls[i];
+          
+          // Generate unique short code
+          let shortCode;
+          let attempts = 0;
+          do {
+            shortCode = generateShortCode();
+            attempts++;
+            if (attempts > 15) {
+              throw new Error('Failed to generate unique short code');
+            }
+          } while (await db.findByShortCode(shortCode));
+
+          // Save to database
+          const result = await db.createShortUrl({
+            shortCode,
+            originalUrl: url,
+            expiresAt,
+            ip,
+            userAgent,
+            customOptions
+          });
+
+          results.push({
+            shortUrl: `${req.protocol}://${req.get('host')}/${shortCode}`,
+            shortCode,
+            originalUrl: url,
+            expiresAt,
+            createdAt: result.created_at,
+            qrCode: `${req.protocol}://${req.get('host')}/api/mobile/qr/${shortCode}`,
+            clicks: 0
+          });
+
+        } catch (error) {
+          processingErrors.push({
+            url: urls[i],
+            error: error.message
+          });
+        }
+      }
+
+      // Generate sitemap in background
+      if (results.length > 0) {
+        sitemapGenerator.generateSitemap().catch(err => {
+          console.error('Failed to update sitemap:', err);
+        });
+      }
+
+      res.status(201).json({
+        success: true,
+        data: {
+          results,
+          errors: processingErrors,
+          total: urls.length,
+          successful: results.length,
+          failed: processingErrors.length
+        },
+        message: `${results.length}/${urls.length} URLs shortened successfully`
+      });
+
+    } catch (error) {
+      console.error('Mobile API - Error batch shortening URLs:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to process batch shortening',
+        code: 'INTERNAL_ERROR'
+      });
+    }
+  }
+);
+
+// Mobile API: Generate QR Code (No Auth)
+app.get('/api/mobile/qr/:shortCode', mobileRateLimit, async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+    const { size = '200', format = 'png' } = req.query;
+    
+    // Validate parameters
+    const qrSize = Math.min(Math.max(parseInt(size) || 200, 50), 500);
+    const qrFormat = ['png', 'svg', 'jpeg'].includes(format) ? format : 'png';
+    
+    const urlData = await db.findByShortCode(shortCode);
+    if (!urlData) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Link not found',
+        code: 'NOT_FOUND'
+      });
+    }
+
+    const qrUrl = `${req.protocol}://${req.get('host')}/${shortCode}`;
+    
+    // Simple QR code generation without external dependencies
+    const qrCodeData = {
+      url: qrUrl,
+      size: qrSize,
+      format: qrFormat,
+      text: qrUrl
+    };
+    
+    // For now, return QR code data - in production you'd generate actual QR image
+    res.json({
+      success: true,
+      data: {
+        qrCode: qrCodeData,
+        shortUrl: qrUrl,
+        originalUrl: urlData.original_url,
+        downloadUrl: `${req.protocol}://${req.get('host')}/api/mobile/qr/${shortCode}?download=true&size=${qrSize}&format=${qrFormat}`
+      }
+    });
+
+  } catch (error) {
+    console.error('Mobile API - Error generating QR code:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to generate QR code',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// Mobile API: Get link analytics (No Auth)
+app.get('/api/mobile/analytics/:shortCode', mobileRateLimit, async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+    const urlData = await db.findByShortCode(shortCode);
+    
+    if (!urlData) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Link not found',
+        code: 'NOT_FOUND'
+      });
+    }
+
+    // Get click analytics
+    const analytics = await db.getClickAnalytics(shortCode);
+    
+    res.json({
+      success: true,
+      data: {
+        shortCode: urlData.short_code,
+        originalUrl: urlData.original_url,
+        totalClicks: urlData.clicks || 0,
+        createdAt: urlData.created_at,
+        expiresAt: urlData.expires_at,
+        analytics: {
+          clicksByDay: analytics.clicksByDay || [],
+          clicksByCountry: analytics.clicksByCountry || [],
+          clicksByBrowser: analytics.clicksByBrowser || [],
+          clicksByOS: analytics.clicksByOS || [],
+          clicksByDevice: analytics.clicksByDevice || [],
+          recentClicks: analytics.recentClicks || []
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Mobile API - Error getting analytics:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get analytics',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// Mobile API: Health check (No Auth)
+app.get('/api/mobile/health', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      version: '2.0.0',
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
+    },
+    message: 'Mobile API is healthy'
+  });
+});
+
+// Mobile API: Search links (No Auth - Limited)
+app.get('/api/mobile/search', mobileRateLimit, async (req, res) => {
+  try {
+    const { q, limit = 20 } = req.query;
+    
+    if (!q || q.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: 'Search query must be at least 2 characters',
+        code: 'INVALID_QUERY'
+      });
+    }
+
+    const searchLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 50);
+    
+    // Basic search functionality - you might want to implement this in database.js
+    // For now, return a simple response
+    res.json({
+      success: true,
+      data: {
+        query: q.trim(),
+        results: [],
+        total: 0,
+        limit: searchLimit
+      },
+      message: 'Search completed (feature in development)'
+    });
+
+  } catch (error) {
+    console.error('Mobile API - Error searching links:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Search failed',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+console.log('✅ Mobile API routes (no auth) registered successfully');
 
 // Special routes that must be handled before static files
 // Enhanced Sitemap route with Velink branding and design

@@ -2,6 +2,7 @@
 require('dotenv').config({ path: '../.env' });
 
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -448,6 +449,18 @@ const PORT = process.env.PORT || 80;
 
 // Trust proxy for accurate IP detection (required for DigitalOcean)
 app.set('trust proxy', 1);
+
+// Session configuration for password protection
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'velink-session-secret-' + Date.now(),
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true if using HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 // Initialize database
 const db = new Database();
@@ -3107,6 +3120,45 @@ Sitemap: https://velink.me/sitemap.xml
 app.use(express.static(clientBuildPath));
 
 // Redirect short URL (placed after static files to avoid conflicts with React routes)
+// Password protection verification endpoint
+app.post('/:shortCode/verify', async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+    const { password } = req.body;
+
+    const urlData = await db.findByShortCode(shortCode);
+    
+    if (!urlData) {
+      return res.status(404).json({ success: false, error: 'Link not found' });
+    }
+
+    // Check if expired
+    if (urlData.expires_at && new Date(urlData.expires_at) < new Date()) {
+      return res.status(410).json({ success: false, error: 'Link has expired' });
+    }
+
+    const customOptions = urlData.custom_options ? JSON.parse(urlData.custom_options) : {};
+    
+    if (!customOptions.password) {
+      return res.status(400).json({ success: false, error: 'This link is not password protected' });
+    }
+
+    if (customOptions.password !== password) {
+      return res.status(401).json({ success: false, error: 'Invalid password' });
+    }
+
+    // Set session flag that password was verified
+    req.session = req.session || {};
+    req.session[`verified_${shortCode}`] = true;
+
+    res.json({ success: true, message: 'Password verified' });
+
+  } catch (error) {
+    console.error('Error verifying password:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 app.get('/:shortCode', async (req, res, next) => {
   try {
     const { shortCode } = req.params;
@@ -3153,6 +3205,22 @@ app.get('/:shortCode', async (req, res, next) => {
               box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
               text-align: center;
             }
+            .icon {
+              font-size: 4rem;
+              margin-bottom: 24px;
+              color: #ef4444;
+              display: block;
+            }
+            h1 { 
+              font-size: 1.875rem;
+              font-weight: 700;
+              color: #1e293b; 
+              margin: 0 0 16px 0;
+              line-height: 1.25;
+            }
+            p { 
+              color: #64748b; 
+              margin: 0 0 32px 0;
               font-size: 1.125rem;
               line-height: 1.6;
             }
@@ -3276,7 +3344,330 @@ app.get('/:shortCode', async (req, res, next) => {
       `);
     }
 
-    // Increment click count and redirect
+    // Parse custom options
+    const customOptions = urlData.custom_options ? JSON.parse(urlData.custom_options) : {};
+    
+    // Check for password protection
+    if (customOptions.password) {
+      // Check if already verified in session
+      const isVerified = req.session && req.session[`verified_${shortCode}`];
+      
+      if (!isVerified) {
+        return res.send(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Password Protected - Velink</title>
+            <style>
+              body { 
+                margin: 0; 
+                padding: 0; 
+                font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+                background: #f8fafc; 
+                color: #1e293b; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                min-height: 100vh;
+              }
+              .container { 
+                max-width: 450px; 
+                margin: 20px auto; 
+                background: white; 
+                border-radius: 16px; 
+                padding: 48px 32px; 
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                text-align: center;
+              }
+              .icon {
+                font-size: 4rem;
+                margin-bottom: 24px;
+                color: #f59e0b;
+                display: block;
+              }
+              h1 { 
+                font-size: 1.875rem;
+                font-weight: 700;
+                color: #1e293b; 
+                margin: 0 0 16px 0;
+                line-height: 1.25;
+              }
+              p { 
+                color: #64748b; 
+                margin: 0 0 32px 0;
+                font-size: 1.125rem;
+                line-height: 1.6;
+              }
+              .form-group {
+                margin-bottom: 24px;
+                text-align: left;
+              }
+              label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: #374151;
+              }
+              input[type="password"] {
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid #d1d5db;
+                border-radius: 8px;
+                font-size: 1rem;
+                transition: border-color 0.2s ease;
+                box-sizing: border-box;
+              }
+              input[type="password"]:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+              }
+              .submit-btn {
+                width: 100%;
+                background: #3b82f6;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+                margin-bottom: 16px;
+              }
+              .submit-btn:hover {
+                background: #2563eb;
+              }
+              .submit-btn:disabled {
+                background: #9ca3af;
+                cursor: not-allowed;
+              }
+              .error {
+                background: #fef2f2;
+                border: 1px solid #fecaca;
+                color: #dc2626;
+                padding: 12px;
+                border-radius: 8px;
+                margin-bottom: 16px;
+                display: none;
+              }
+              .back-link { 
+                color: #6b7280; 
+                text-decoration: none; 
+                font-size: 0.875rem;
+              }
+              .back-link:hover { 
+                color: #374151;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <span class="icon">🔒</span>
+              <h1>Password Protected</h1>
+              <p>This link is protected. Please enter the password to continue.</p>
+              
+              <div id="error" class="error"></div>
+              
+              <form id="passwordForm" onsubmit="verifyPassword(event)">
+                <div class="form-group">
+                  <label for="password">Password:</label>
+                  <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="submit-btn" id="submitBtn">
+                  Access Link
+                </button>
+              </form>
+              
+              <a href="/" class="back-link">← Back to Velink</a>
+            </div>
+
+            <script>
+              async function verifyPassword(event) {
+                event.preventDefault();
+                
+                const submitBtn = document.getElementById('submitBtn');
+                const errorDiv = document.getElementById('error');
+                const password = document.getElementById('password').value;
+                
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Verifying...';
+                errorDiv.style.display = 'none';
+                
+                try {
+                  const response = await fetch('/` + shortCode + `/verify', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password })
+                  });
+                  
+                  const result = await response.json();
+                  
+                  if (result.success) {
+                    window.location.reload();
+                  } else {
+                    errorDiv.textContent = result.error || 'Invalid password';
+                    errorDiv.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Access Link';
+                  }
+                } catch (error) {
+                  errorDiv.textContent = 'An error occurred. Please try again.';
+                  errorDiv.style.display = 'block';
+                  submitBtn.disabled = false;
+                  submitBtn.textContent = 'Access Link';
+                }
+              }
+            </script>
+          </body>
+          </html>
+        `);
+      }
+    }
+    
+    // Check for delay
+    if (customOptions.delay && customOptions.delay > 0) {
+      const delay = parseInt(customOptions.delay);
+      return res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Redirecting - Velink</title>
+          <style>
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+              background: #f8fafc; 
+              color: #1e293b; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              min-height: 100vh;
+            }
+            .container { 
+              max-width: 450px; 
+              margin: 20px auto; 
+              background: white; 
+              border-radius: 16px; 
+              padding: 48px 32px; 
+              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+              text-align: center;
+            }
+            .icon {
+              font-size: 4rem;
+              margin-bottom: 24px;
+              color: #3b82f6;
+              display: block;
+            }
+            h1 { 
+              font-size: 1.875rem;
+              font-weight: 700;
+              color: #1e293b; 
+              margin: 0 0 16px 0;
+              line-height: 1.25;
+            }
+            p { 
+              color: #64748b; 
+              margin: 0 0 32px 0;
+              font-size: 1.125rem;
+              line-height: 1.6;
+            }
+            .countdown {
+              font-size: 3rem;
+              font-weight: 700;
+              color: #3b82f6;
+              margin: 32px 0;
+            }
+            .progress-bar {
+              width: 100%;
+              height: 8px;
+              background: #e5e7eb;
+              border-radius: 4px;
+              margin: 24px 0;
+              overflow: hidden;
+            }
+            .progress-fill {
+              height: 100%;
+              background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+              border-radius: 4px;
+              transition: width 0.1s linear;
+            }
+            .cancel-btn {
+              color: #6b7280;
+              text-decoration: none;
+              font-size: 0.875rem;
+              padding: 8px 16px;
+              border-radius: 6px;
+              border: 1px solid #d1d5db;
+              display: inline-block;
+              transition: all 0.2s ease;
+            }
+            .cancel-btn:hover {
+              color: #374151;
+              border-color: #9ca3af;
+            }
+            .destination {
+              background: #f3f4f6;
+              padding: 16px;
+              border-radius: 8px;
+              margin: 24px 0;
+              word-break: break-all;
+              font-size: 0.875rem;
+              color: #4b5563;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <span class="icon">🔄</span>
+            <h1>Redirecting...</h1>
+            <p>You will be redirected in:</p>
+            
+            <div class="countdown" id="countdown">${delay}</div>
+            
+            <div class="progress-bar">
+              <div class="progress-fill" id="progress"></div>
+            </div>
+            
+            <div class="destination">
+              Destination: ${urlData.original_url}
+            </div>
+            
+            <a href="/" class="cancel-btn">Cancel</a>
+          </div>
+
+          <script>
+            let timeLeft = ${delay};
+            const totalTime = ${delay};
+            const countdownEl = document.getElementById('countdown');
+            const progressEl = document.getElementById('progress');
+            
+            const timer = setInterval(() => {
+              timeLeft--;
+              countdownEl.textContent = timeLeft;
+              
+              const progress = ((totalTime - timeLeft) / totalTime) * 100;
+              progressEl.style.width = progress + '%';
+              
+              if (timeLeft <= 0) {
+                clearInterval(timer);
+                window.location.href = '${urlData.original_url}';
+              }
+            }, 1000);
+          </script>
+        </body>
+        </html>
+      `);
+    }
+
+    // No special handling needed - redirect normally
     await db.incrementClicks(shortCode);
     res.redirect(302, urlData.original_url);
 

@@ -47,9 +47,31 @@ const BugReport: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      // Prepare data, only including non-empty fields
+      const submitData: any = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        severity: formData.severity,
+        type: formData.type
+      };
+
+      // Only include optional fields if they have content
+      if (formData.email?.trim()) {
+        submitData.email = formData.email.trim();
+      }
+      if (formData.steps?.trim()) {
+        submitData.steps = formData.steps.trim();
+      }
+      if (formData.expected?.trim()) {
+        submitData.expected = formData.expected.trim();
+      }
+      if (formData.actual?.trim()) {
+        submitData.actual = formData.actual.trim();
+      }
+
       // Use absolute URL to ensure correct endpoint
       const apiUrl = `${window.location.origin}/api/bug-reports`;
-      await axios.post(apiUrl, formData);
+      await axios.post(apiUrl, submitData);
       toast.success('Bug report submitted successfully!');
       setSubmitted(true);
     } catch (error) {

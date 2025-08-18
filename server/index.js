@@ -4662,18 +4662,27 @@ app.post('/api/admin/privacy-settings', adminAuth, (req, res) => {
 
 // Bug Report Endpoints
 app.post('/api/bug-reports', [
-  body('title').notEmpty().trim().isLength({ min: 5, max: 200 }),
-  body('description').notEmpty().trim().isLength({ min: 10, max: 2000 }),
-  body('severity').optional().isIn(['low', 'medium', 'high', 'critical']),
-  body('type').optional().isIn(['bug', 'feature', 'improvement', 'question']),
-  body('email').optional().isEmail(),
-  body('steps').optional().isLength({ max: 1000 }),
-  body('expected').optional().isLength({ max: 1000 }),
-  body('actual').optional().isLength({ max: 1000 })
+  body('title').notEmpty().trim().isLength({ min: 5, max: 200 }).withMessage('Title must be 5-200 characters'),
+  body('description').notEmpty().trim().isLength({ min: 10, max: 2000 }).withMessage('Description must be 10-2000 characters'),
+  body('severity').optional().isIn(['low', 'medium', 'high', 'critical']).withMessage('Invalid severity level'),
+  body('type').optional().isIn(['bug', 'feature', 'improvement', 'question']).withMessage('Invalid type'),
+  body('email').optional({ checkFalsy: true }).isEmail().withMessage('Invalid email format'),
+  body('steps').optional({ checkFalsy: true }).isLength({ max: 1000 }).withMessage('Steps must be max 1000 characters'),
+  body('expected').optional({ checkFalsy: true }).isLength({ max: 1000 }).withMessage('Expected result must be max 1000 characters'),
+  body('actual').optional({ checkFalsy: true }).isLength({ max: 1000 }).withMessage('Actual result must be max 1000 characters')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    log('warn', 'Bug report validation failed', { 
+      errors: errors.array(),
+      data: req.body,
+      ip: req.ip || req.connection.remoteAddress 
+    });
+    return res.status(400).json({ 
+      error: 'Validation failed', 
+      details: errors.array(),
+      message: errors.array().map(e => e.msg).join(', ')
+    });
   }
 
   try {

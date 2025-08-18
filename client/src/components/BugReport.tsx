@@ -47,7 +47,9 @@ const BugReport: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post('/api/bug-reports', formData);
+      // Use absolute URL to ensure correct endpoint
+      const apiUrl = `${window.location.origin}/api/bug-reports`;
+      await axios.post(apiUrl, formData);
       toast.success('Bug report submitted successfully!');
       setSubmitted(true);
     } catch (error) {

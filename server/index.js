@@ -1,5 +1,14 @@
-// Load environment variables from parent directory
+// Load environment variables from parent directory first
 require('dotenv').config({ path: '../.env' });
+
+// Load local server .env and override specific values
+const localEnv = require('dotenv').config({ path: __dirname + '/.env' });
+if (localEnv.parsed && localEnv.parsed.ADMIN_TOKEN) {
+  process.env.ADMIN_TOKEN = localEnv.parsed.ADMIN_TOKEN;
+}
+if (localEnv.parsed && localEnv.parsed.PORT) {
+  process.env.PORT = localEnv.parsed.PORT;
+}
 
 const express = require('express');
 const session = require('express-session');

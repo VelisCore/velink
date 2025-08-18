@@ -48,7 +48,7 @@ const SEO: React.FC<SEOProps> = ({
         "offers": {
           "@type": "Offer",
           "price": "0",
-          "priceCurrency": "USD"
+          "priceCurrency": "EUR"
         },
         "featureList": [
           "URL Shortening",
@@ -111,7 +111,7 @@ const SEO: React.FC<SEOProps> = ({
         "offers": {
           "@type": "Offer",
           "price": "0",
-          "priceCurrency": "USD"
+          "priceCurrency": "EUR"
         }
       }
     ]

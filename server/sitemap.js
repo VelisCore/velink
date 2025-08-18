@@ -11,7 +11,7 @@ class SitemapGenerator {
     this.isGenerating = false;
     this.maxUrlsPerSitemap = 40000; // SEO best practice: keep under 50k URLs per sitemap
   }
-
+  
   // Enhanced static pages with comprehensive link shortener SEO
   getStaticPages() {
     return [

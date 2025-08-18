@@ -271,7 +271,7 @@ const BugReport: React.FC = () => {
                 value={formData.title}
                 onChange={handleInputChange}
                 placeholder="Brief description of the issue or request"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
                 required
               />
             </div>
@@ -287,7 +287,7 @@ const BugReport: React.FC = () => {
                 onChange={handleInputChange}
                 rows={4}
                 placeholder="Provide a detailed description of the issue or request"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
                 required
               />
             </div>
@@ -303,7 +303,7 @@ const BugReport: React.FC = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="your@email.com (if you want updates on this report)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
               />
             </div>
 
@@ -320,7 +320,7 @@ const BugReport: React.FC = () => {
                     onChange={handleInputChange}
                     rows={3}
                     placeholder="1. Go to...&#10;2. Click on...&#10;3. See error"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
                   />
                 </div>
 
@@ -336,7 +336,7 @@ const BugReport: React.FC = () => {
                       onChange={handleInputChange}
                       rows={3}
                       placeholder="What did you expect to happen?"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
                     />
                   </div>
                   <div>
@@ -350,7 +350,7 @@ const BugReport: React.FC = () => {
                       onChange={handleInputChange}
                       rows={3}
                       placeholder="What actually happened?"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
                     />
                   </div>
                 </div>

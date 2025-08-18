@@ -26,7 +26,7 @@ code {
   }
   
   .input-primary {
-    @apply block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 transition-all duration-200;
+    @apply block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500;
   }
   
   .card {

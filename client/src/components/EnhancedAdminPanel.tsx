@@ -120,7 +120,7 @@ const EnhancedAdminPanel: React.FC = () => {
   
   // Settings state
   const [siteSettings, setSiteSettings] = useState({
-    siteName: 'VeLink',
+    siteName: 'Velink',
     baseUrl: 'velink.me',
     allowPublicLinks: true,
     requirePasswords: false,
@@ -382,7 +382,7 @@ const EnhancedAdminPanel: React.FC = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">VeLink Admin</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Velink Admin</h1>
             <p className="text-gray-600 mt-2">Enter your admin token to continue</p>
           </div>
           
@@ -395,7 +395,7 @@ const EnhancedAdminPanel: React.FC = () => {
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input-primary"
                 placeholder="Enter admin token..."
                 required
               />
@@ -432,7 +432,7 @@ const EnhancedAdminPanel: React.FC = () => {
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-xl font-bold text-gray-900">VeLink Admin</h1>
+                <h1 className="text-xl font-bold text-gray-900">Velink Admin</h1>
               </div>
               
               {/* Tab Navigation */}
@@ -522,7 +522,7 @@ const EnhancedAdminPanel: React.FC = () => {
             >
               <div>
                 <h2 className="text-3xl font-bold text-gray-900">Live Dashboard</h2>
-                <p className="text-gray-600 mt-2">Real-time overview of your VeLink system</p>
+                <p className="text-gray-600 mt-2">Real-time overview of your Velink system</p>
               </div>
               
               {/* Enhanced Stats Grid with Real Data */}

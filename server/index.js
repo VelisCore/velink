@@ -15,7 +15,7 @@ const https = require('https');
 const Database = require('./database');
 const SitemapGenerator = require('./sitemap');
 const setupApiRoutes = require('./routes/api');
-const { generateShortCode, isValidUrl } = require('./utils');
+const { generateShortCode, isValidUrl, normalizeCustomOptions } = require('./utils');
 
 // Initialize the enhanced update manager
 const UpdateManager = require('./update-manager');
@@ -179,7 +179,7 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
         </head>
         <body>
             <div class="container">
-                <h1>?? Under Maintenance</h1>
+                <h1>🔧 Under Maintenance</h1>
                 <p>Velink is currently undergoing scheduled maintenance to improve your experience.</p>
                 <div class="spinner"></div>
                 <p>We'll be back shortly!</p>
@@ -219,13 +219,13 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
                 });
             }
             
-            // For browser requests, serve VeLink-styled private access page
+            // For browser requests, serve Velink-styled private access page
             const privateAccessHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Access - VeLink</title>
+    <title>Private Access - Velink</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -362,12 +362,12 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
     <div class="container">
         <div class="logo">
             <div class="logo-icon">V</div>
-            <span class="logo-text">VeLink</span>
+            <span class="logo-text">Velink</span>
         </div>
         
         <div class="icon">🔒</div>
         <h1>Private Access Required</h1>
-        <p>This VeLink instance is private and requires a password to access. Please enter the access password to continue.</p>
+        <p>This Velink instance is private and requires a password to access. Please enter the access password to continue.</p>
         
         <form id="accessForm">
             <div class="form-group">
@@ -379,11 +379,11 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
                 Invalid password. Please try again.
             </div>
             
-            <button type="submit" class="btn">Access VeLink</button>
+            <button type="submit" class="btn">Access Velink</button>
         </form>
         
         <div class="footer">
-            <p>Secure access powered by VeLink</p>
+            <p>Secure access powered by Velink</p>
         </div>
     </div>
 
@@ -426,7 +426,7 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
                 errorMessage.style.display = 'block';
             } finally {
                 // Restore button state
-                submitBtn.textContent = 'Access VeLink';
+                submitBtn.textContent = 'Access Velink';
                 submitBtn.disabled = false;
             }
         });
@@ -452,13 +452,15 @@ app.set('trust proxy', 1);
 
 // Session configuration for password protection
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'velink-session-secret-' + Date.now(),
+  secret: process.env.SESSION_SECRET || 'velink-session-secret-fixed-key-2025',
   resave: false,
   saveUninitialized: false,
+  name: 'velink.sid',
   cookie: {
     secure: false, // Set to true if using HTTPS
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax'
   }
 }));
 
@@ -618,6 +620,9 @@ app.post('/api/shorten',
       const { url, expiresIn, customOptions } = req.body;
       const ip = req.ip || req.connection.remoteAddress;
       
+      // Normalize custom options (handle redirectDelay vs delay field name differences)
+      const normalizedCustomOptions = normalizeCustomOptions(customOptions);
+      
       // Calculate expiration date if provided
       let expiresAt = null;
       if (expiresIn && expiresIn !== 'never') {
@@ -652,7 +657,7 @@ app.post('/api/shorten',
         expiresAt,
         ip,
         userAgent: req.get('User-Agent') || '',
-        customOptions,
+        customOptions: normalizedCustomOptions,
         description: req.body.description
       });
 
@@ -2116,6 +2121,9 @@ app.post('/api/mobile/shorten',
       const ip = req.ip || req.connection.remoteAddress;
       const userAgent = req.get('User-Agent') || 'Mobile App';
       
+      // Normalize custom options for consistent field names
+      const normalizedCustomOptions = normalizeCustomOptions(customOptions);
+      
       // Calculate expiration date
       let expiresAt = null;
       if (expiresIn && expiresIn !== 'never') {
@@ -2157,7 +2165,7 @@ app.post('/api/mobile/shorten',
         expiresAt,
         ip,
         userAgent,
-        customOptions,
+        customOptions: normalizedCustomOptions,
         description
       });
 
@@ -2380,6 +2388,9 @@ app.post('/api/mobile/batch-shorten',
       const ip = req.ip || req.connection.remoteAddress;
       const userAgent = req.get('User-Agent') || 'Mobile App';
       
+      // Normalize custom options (handle redirectDelay vs delay field name differences)
+      const normalizedCustomOptions = normalizeCustomOptions(customOptions);
+      
       // Calculate expiration date
       let expiresAt = null;
       if (expiresIn && expiresIn !== 'never') {
@@ -2414,7 +2425,7 @@ app.post('/api/mobile/batch-shorten',
             expiresAt,
             ip,
             userAgent,
-            customOptions
+            customOptions: normalizedCustomOptions
           });
 
           results.push({
@@ -3151,7 +3162,14 @@ app.post('/:shortCode/verify', async (req, res) => {
     req.session = req.session || {};
     req.session[`verified_${shortCode}`] = true;
 
-    res.json({ success: true, message: 'Password verified' });
+    // Ensure session is saved before responding
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error saving session:', err);
+        return res.status(500).json({ success: false, error: 'Session save error' });
+      }
+      res.json({ success: true, message: 'Password verified' });
+    });
 
   } catch (error) {
     console.error('Error verifying password:', error);
@@ -3184,74 +3202,194 @@ app.get('/:shortCode', async (req, res, next) => {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Link Not Found - Velink</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
           <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
             body { 
-              margin: 0; 
-              padding: 0; 
-              font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
-              background: #f8fafc; 
-              color: #1e293b; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+              background: linear-gradient(135deg, #fef3f2 0%, #ffffff 50%, #fef3f2 100%);
               min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #1e293b;
+              position: relative;
+              overflow: hidden;
             }
+            
+            /* Background decoration */
+            body::before,
+            body::after {
+              content: '';
+              position: absolute;
+              width: 320px;
+              height: 320px;
+              border-radius: 50%;
+              filter: blur(40px);
+              opacity: 0.7;
+              z-index: -1;
+            }
+            body::before {
+              background: #fed7d7;
+              top: -160px;
+              right: -160px;
+              animation: pulse 6s infinite;
+            }
+            body::after {
+              background: #fecaca;
+              bottom: -160px;
+              left: -160px;
+              animation: pulse 8s infinite reverse;
+            }
+            
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 0.7; }
+              50% { transform: scale(1.1); opacity: 0.5; }
+            }
+            
             .container { 
-              max-width: 450px; 
-              margin: 20px auto; 
-              background: white; 
-              border-radius: 16px; 
-              padding: 48px 32px; 
-              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+              max-width: 450px;
+              width: 100%;
+              margin: 20px;
+              background: rgba(255, 255, 255, 0.9);
+              backdrop-filter: blur(16px);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 24px;
+              padding: 48px 32px;
               text-align: center;
+              box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+              position: relative;
+              z-index: 1;
             }
-            .icon {
-              font-size: 4rem;
-              margin-bottom: 24px;
-              color: #ef4444;
-              display: block;
+            
+            .logo {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              margin-bottom: 32px;
             }
-            h1 { 
-              font-size: 1.875rem;
+            
+            .logo-icon {
+              width: 48px;
+              height: 48px;
+              background: linear-gradient(135deg, #3b82f6, #2563eb);
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
               font-weight: 700;
-              color: #1e293b; 
-              margin: 0 0 16px 0;
-              line-height: 1.25;
+              font-size: 24px;
+              box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
             }
+            
+            .logo-text {
+              font-size: 28px;
+              font-weight: 700;
+              background: linear-gradient(135deg, #3b82f6, #2563eb);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+            }
+            
+            .error-code {
+              font-size: 96px;
+              font-weight: 700;
+              background: linear-gradient(135deg, #ef4444, #dc2626);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+              margin-bottom: 16px;
+              line-height: 1;
+            }
+            
+            .icon {
+              font-size: 48px;
+              margin-bottom: 24px;
+              display: block;
+              animation: bounce 2s infinite;
+            }
+            
+            @keyframes bounce {
+              0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+              40% { transform: translateY(-10px); }
+              60% { transform: translateY(-5px); }
+            }
+            
+            h1 { 
+              font-size: 28px;
+              font-weight: 700;
+              color: #1e293b;
+              margin-bottom: 16px;
+              line-height: 1.2;
+            }
+            
             p { 
-              color: #64748b; 
-              margin: 0 0 32px 0;
-              font-size: 1.125rem;
+              color: #64748b;
+              font-size: 16px;
               line-height: 1.6;
+              margin-bottom: 32px;
             }
+            
             .back-link { 
               display: inline-flex;
               align-items: center;
               gap: 8px;
-              color: #3b82f6; 
-              text-decoration: none; 
-              font-weight: 600;
-              font-size: 1rem;
-              padding: 12px 24px;
-              border-radius: 8px;
-              background: #eff6ff;
-              border: 1px solid #dbeafe;
+              color: #64748b;
+              text-decoration: none;
+              font-size: 14px;
+              font-weight: 500;
+              padding: 12px 20px;
+              border: 2px solid #e2e8f0;
+              border-radius: 12px;
               transition: all 0.2s ease;
             }
+            
             .back-link:hover { 
-              background: #dbeafe;
-              border-color: #93c5fd;
+              color: #3b82f6;
+              border-color: #bfdbfe;
+              background: #f0f9ff;
               transform: translateY(-1px);
+            }
+            
+            @media (max-width: 640px) {
+              .container {
+                margin: 16px;
+                padding: 32px 24px;
+              }
+              .logo-text {
+                font-size: 24px;
+              }
+              h1 {
+                font-size: 24px;
+              }
+              .error-code {
+                font-size: 72px;
+              }
             }
           </style>
         </head>
         <body>
           <div class="container">
-            <span class="icon">🔗</span>
+            <div class="logo">
+              <div class="logo-icon">V</div>
+              <span class="logo-text">Velink</span>
+            </div>
+            
+            <div class="error-code">404</div>
+            <span class="icon">�</span>
             <h1>Link Not Found</h1>
-            <p>The short link you're looking for doesn't exist or has expired.</p>
+            <p>The short link you're looking for doesn't exist or has been removed.</p>
             <a href="/" class="back-link">
-              ← Back to Velink
+              <span>←</span>
+              Back to Velink
             </a>
           </div>
         </body>
@@ -3268,69 +3406,173 @@ app.get('/:shortCode', async (req, res, next) => {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Link Expired - Velink</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
           <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
             body { 
-              margin: 0; 
-              padding: 0; 
-              font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
-              background: #f8fafc; 
-              color: #1e293b; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+              background: linear-gradient(135deg, #fef3f2 0%, #ffffff 50%, #fef3f2 100%);
               min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #1e293b;
+              position: relative;
+              overflow: hidden;
             }
+            
+            /* Background decoration */
+            body::before,
+            body::after {
+              content: '';
+              position: absolute;
+              width: 320px;
+              height: 320px;
+              border-radius: 50%;
+              filter: blur(40px);
+              opacity: 0.7;
+              z-index: -1;
+            }
+            body::before {
+              background: #fed7d7;
+              top: -160px;
+              right: -160px;
+              animation: pulse 6s infinite;
+            }
+            body::after {
+              background: #fecaca;
+              bottom: -160px;
+              left: -160px;
+              animation: pulse 8s infinite reverse;
+            }
+            
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 0.7; }
+              50% { transform: scale(1.1); opacity: 0.5; }
+            }
+            
             .container { 
-              max-width: 450px; 
-              margin: 20px auto; 
-              background: white; 
-              border-radius: 16px; 
-              padding: 48px 32px; 
-              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+              max-width: 450px;
+              width: 100%;
+              margin: 20px;
+              background: rgba(255, 255, 255, 0.9);
+              backdrop-filter: blur(16px);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 24px;
+              padding: 48px 32px;
               text-align: center;
+              box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+              position: relative;
+              z-index: 1;
             }
-            .icon {
-              font-size: 4rem;
-              margin-bottom: 24px;
-              color: #f59e0b;
-              display: block;
+            
+            .logo {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              margin-bottom: 32px;
             }
-            h1 { 
-              font-size: 1.875rem;
+            
+            .logo-icon {
+              width: 48px;
+              height: 48px;
+              background: linear-gradient(135deg, #3b82f6, #2563eb);
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
               font-weight: 700;
-              color: #1e293b; 
-              margin: 0 0 16px 0;
-              line-height: 1.25;
+              font-size: 24px;
+              box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
             }
+            
+            .logo-text {
+              font-size: 28px;
+              font-weight: 700;
+              background: linear-gradient(135deg, #3b82f6, #2563eb);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+            }
+            
+            .icon {
+              font-size: 48px;
+              margin-bottom: 24px;
+              display: block;
+              animation: bounce 2s infinite;
+            }
+            
+            @keyframes bounce {
+              0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+              40% { transform: translateY(-10px); }
+              60% { transform: translateY(-5px); }
+            }
+            
+            h1 { 
+              font-size: 28px;
+              font-weight: 700;
+              color: #1e293b;
+              margin-bottom: 16px;
+              line-height: 1.2;
+            }
+            
             p { 
-              color: #64748b; 
-              margin: 0 0 32px 0;
-              font-size: 1.125rem;
+              color: #64748b;
+              font-size: 16px;
               line-height: 1.6;
+              margin-bottom: 32px;
             }
+            
             .back-link { 
               display: inline-flex;
               align-items: center;
               gap: 8px;
-              color: #3b82f6; 
-              text-decoration: none; 
-              font-weight: 600;
-              font-size: 1rem;
-              padding: 12px 24px;
-              border-radius: 8px;
-              background: #eff6ff;
-              border: 1px solid #dbeafe;
+              color: #64748b;
+              text-decoration: none;
+              font-size: 14px;
+              font-weight: 500;
+              padding: 12px 20px;
+              border: 2px solid #e2e8f0;
+              border-radius: 12px;
               transition: all 0.2s ease;
             }
+            
             .back-link:hover { 
-              background: #dbeafe;
-              border-color: #93c5fd;
+              color: #3b82f6;
+              border-color: #bfdbfe;
+              background: #f0f9ff;
               transform: translateY(-1px);
+            }
+            
+            @media (max-width: 640px) {
+              .container {
+                margin: 16px;
+                padding: 32px 24px;
+              }
+              .logo-text {
+                font-size: 24px;
+              }
+              h1 {
+                font-size: 24px;
+              }
             }
           </style>
         </head>
         <body>
           <div class="container">
+            <div class="logo">
+              <div class="logo-icon">V</div>
+              <span class="logo-text">Velink</span>
+            </div>
+            
             <span class="icon">⏰</span>
             <h1>Link Expired</h1>
             <p>This short link has expired and is no longer accessible.</p>
@@ -3360,111 +3602,244 @@ app.get('/:shortCode', async (req, res, next) => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Password Protected - Velink</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
             <style>
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
               body { 
-                margin: 0; 
-                padding: 0; 
-                font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
-                background: #f8fafc; 
-                color: #1e293b; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eff6ff 100%);
                 min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #1e293b;
+                position: relative;
+                overflow: hidden;
               }
+              
+              /* Background decoration */
+              body::before,
+              body::after {
+                content: '';
+                position: absolute;
+                width: 320px;
+                height: 320px;
+                border-radius: 50%;
+                filter: blur(40px);
+                opacity: 0.7;
+                z-index: -1;
+              }
+              body::before {
+                background: #bfdbfe;
+                top: -160px;
+                right: -160px;
+                animation: pulse 6s infinite;
+              }
+              body::after {
+                background: #93c5fd;
+                bottom: -160px;
+                left: -160px;
+                animation: pulse 8s infinite reverse;
+              }
+              
+              @keyframes pulse {
+                0%, 100% { transform: scale(1); opacity: 0.7; }
+                50% { transform: scale(1.1); opacity: 0.5; }
+              }
+              
               .container { 
-                max-width: 450px; 
-                margin: 20px auto; 
-                background: white; 
-                border-radius: 16px; 
-                padding: 48px 32px; 
-                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                max-width: 450px;
+                width: 100%;
+                margin: 20px;
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(16px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 24px;
+                padding: 48px 32px;
                 text-align: center;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+                position: relative;
+                z-index: 1;
               }
-              .icon {
-                font-size: 4rem;
-                margin-bottom: 24px;
-                color: #f59e0b;
-                display: block;
+              
+              .logo {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                margin-bottom: 32px;
               }
-              h1 { 
-                font-size: 1.875rem;
+              
+              .logo-icon {
+                width: 48px;
+                height: 48px;
+                background: linear-gradient(135deg, #3b82f6, #2563eb);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
                 font-weight: 700;
-                color: #1e293b; 
-                margin: 0 0 16px 0;
-                line-height: 1.25;
+                font-size: 24px;
+                box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
               }
+              
+              .logo-text {
+                font-size: 28px;
+                font-weight: 700;
+                background: linear-gradient(135deg, #3b82f6, #2563eb);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+              }
+              
+              .icon {
+                font-size: 48px;
+                margin-bottom: 24px;
+                display: block;
+                animation: bounce 2s infinite;
+              }
+              
+              @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+                40% { transform: translateY(-10px); }
+                60% { transform: translateY(-5px); }
+              }
+              
+              h1 { 
+                font-size: 28px;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 16px;
+                line-height: 1.2;
+              }
+              
               p { 
-                color: #64748b; 
-                margin: 0 0 32px 0;
-                font-size: 1.125rem;
+                color: #64748b;
+                font-size: 16px;
                 line-height: 1.6;
+                margin-bottom: 32px;
               }
+              
               .form-group {
                 margin-bottom: 24px;
                 text-align: left;
               }
+              
               label {
                 display: block;
-                font-weight: 600;
-                margin-bottom: 8px;
+                font-weight: 500;
                 color: #374151;
+                margin-bottom: 8px;
+                font-size: 14px;
               }
+              
               input[type="password"] {
                 width: 100%;
-                padding: 12px 16px;
-                border: 2px solid #d1d5db;
-                border-radius: 8px;
-                font-size: 1rem;
-                transition: border-color 0.2s ease;
-                box-sizing: border-box;
+                padding: 16px;
+                border: 2px solid #e2e8f0;
+                border-radius: 12px;
+                font-size: 16px;
+                background: white;
+                transition: all 0.2s ease;
+                font-family: inherit;
               }
+              
               input[type="password"]:focus {
                 outline: none;
                 border-color: #3b82f6;
                 box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
               }
+              
               .submit-btn {
                 width: 100%;
-                background: #3b82f6;
+                padding: 16px;
+                background: linear-gradient(135deg, #3b82f6, #2563eb);
                 color: white;
                 border: none;
-                padding: 12px 24px;
-                border-radius: 8px;
-                font-size: 1rem;
+                border-radius: 12px;
+                font-size: 16px;
                 font-weight: 600;
                 cursor: pointer;
-                transition: background-color 0.2s ease;
+                transition: all 0.2s ease;
+                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
                 margin-bottom: 16px;
               }
+              
               .submit-btn:hover {
-                background: #2563eb;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
               }
+              
+              .submit-btn:active {
+                transform: translateY(0);
+              }
+              
               .submit-btn:disabled {
-                background: #9ca3af;
+                opacity: 0.6;
                 cursor: not-allowed;
+                transform: none;
               }
+              
               .error {
-                background: #fef2f2;
+                background: linear-gradient(135deg, #fef2f2, #fee2e2);
                 border: 1px solid #fecaca;
                 color: #dc2626;
-                padding: 12px;
-                border-radius: 8px;
+                padding: 16px;
+                border-radius: 12px;
                 margin-bottom: 16px;
+                font-size: 14px;
                 display: none;
               }
+              
               .back-link { 
-                color: #6b7280; 
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                color: #64748b; 
                 text-decoration: none; 
-                font-size: 0.875rem;
+                font-size: 14px;
+                font-weight: 500;
+                padding: 12px 20px;
+                border: 2px solid #e2e8f0;
+                border-radius: 12px;
+                transition: all 0.2s ease;
               }
+              
               .back-link:hover { 
-                color: #374151;
+                color: #3b82f6;
+                border-color: #bfdbfe;
+                background: #f0f9ff;
+                transform: translateY(-1px);
+              }
+              
+              @media (max-width: 640px) {
+                .container {
+                  margin: 16px;
+                  padding: 32px 24px;
+                }
+                .logo-text {
+                  font-size: 24px;
+                }
+                h1 {
+                  font-size: 24px;
+                }
               }
             </style>
           </head>
           <body>
             <div class="container">
+              <div class="logo">
+                <div class="logo-icon">V</div>
+                <span class="logo-text">Velink</span>
+              </div>
+              
               <span class="icon">🔒</span>
               <h1>Password Protected</h1>
               <p>This link is protected. Please enter the password to continue.</p>
@@ -3481,7 +3856,10 @@ app.get('/:shortCode', async (req, res, next) => {
                 </button>
               </form>
               
-              <a href="/" class="back-link">← Back to Velink</a>
+              <a href="/" class="back-link">
+                <span>←</span>
+                Back to Velink
+              </a>
             </div>
 
             <script>
@@ -3529,9 +3907,10 @@ app.get('/:shortCode', async (req, res, next) => {
       }
     }
     
-    // Check for delay
-    if (customOptions.delay && customOptions.delay > 0) {
-      const delay = parseInt(customOptions.delay);
+    // Check for delay (accept both 'delay' and 'redirectDelay' for compatibility)
+    const delayValue = customOptions.delay || customOptions.redirectDelay;
+    if (delayValue && delayValue > 0) {
+      const delay = parseInt(delayValue);
       return res.send(`
         <!DOCTYPE html>
         <html lang="en">
@@ -3539,93 +3918,216 @@ app.get('/:shortCode', async (req, res, next) => {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Redirecting - Velink</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
           <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
             body { 
-              margin: 0; 
-              padding: 0; 
-              font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
-              background: #f8fafc; 
-              color: #1e293b; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+              background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eff6ff 100%);
               min-height: 100vh;
-            }
-            .container { 
-              max-width: 450px; 
-              margin: 20px auto; 
-              background: white; 
-              border-radius: 16px; 
-              padding: 48px 32px; 
-              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-              text-align: center;
-            }
-            .icon {
-              font-size: 4rem;
-              margin-bottom: 24px;
-              color: #3b82f6;
-              display: block;
-            }
-            h1 { 
-              font-size: 1.875rem;
-              font-weight: 700;
-              color: #1e293b; 
-              margin: 0 0 16px 0;
-              line-height: 1.25;
-            }
-            p { 
-              color: #64748b; 
-              margin: 0 0 32px 0;
-              font-size: 1.125rem;
-              line-height: 1.6;
-            }
-            .countdown {
-              font-size: 3rem;
-              font-weight: 700;
-              color: #3b82f6;
-              margin: 32px 0;
-            }
-            .progress-bar {
-              width: 100%;
-              height: 8px;
-              background: #e5e7eb;
-              border-radius: 4px;
-              margin: 24px 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #1e293b;
+              position: relative;
               overflow: hidden;
             }
+            
+            /* Background decoration */
+            body::before,
+            body::after {
+              content: '';
+              position: absolute;
+              width: 320px;
+              height: 320px;
+              border-radius: 50%;
+              filter: blur(40px);
+              opacity: 0.7;
+              z-index: -1;
+            }
+            body::before {
+              background: #bfdbfe;
+              top: -160px;
+              right: -160px;
+              animation: pulse 6s infinite;
+            }
+            body::after {
+              background: #93c5fd;
+              bottom: -160px;
+              left: -160px;
+              animation: pulse 8s infinite reverse;
+            }
+            
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 0.7; }
+              50% { transform: scale(1.1); opacity: 0.5; }
+            }
+            
+            .container { 
+              max-width: 450px;
+              width: 100%;
+              margin: 20px;
+              background: rgba(255, 255, 255, 0.9);
+              backdrop-filter: blur(16px);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 24px;
+              padding: 48px 32px;
+              text-align: center;
+              box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+              position: relative;
+              z-index: 1;
+            }
+            
+            .logo {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              margin-bottom: 32px;
+            }
+            
+            .logo-icon {
+              width: 48px;
+              height: 48px;
+              background: linear-gradient(135deg, #3b82f6, #2563eb);
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: 700;
+              font-size: 24px;
+              box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+            }
+            
+            .logo-text {
+              font-size: 28px;
+              font-weight: 700;
+              background: linear-gradient(135deg, #3b82f6, #2563eb);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+            }
+            
+            .icon {
+              font-size: 48px;
+              margin-bottom: 24px;
+              display: block;
+              animation: spin 2s linear infinite;
+            }
+            
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+            
+            h1 { 
+              font-size: 28px;
+              font-weight: 700;
+              color: #1e293b;
+              margin-bottom: 16px;
+              line-height: 1.2;
+            }
+            
+            p { 
+              color: #64748b;
+              font-size: 16px;
+              line-height: 1.6;
+              margin-bottom: 32px;
+            }
+            
+            .countdown {
+              font-size: 64px;
+              font-weight: 700;
+              background: linear-gradient(135deg, #3b82f6, #2563eb);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+              margin: 32px 0;
+              text-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+            }
+            
+            .progress-bar {
+              width: 100%;
+              height: 12px;
+              background: #e2e8f0;
+              border-radius: 6px;
+              margin: 24px 0;
+              overflow: hidden;
+              box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            
             .progress-fill {
               height: 100%;
-              background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-              border-radius: 4px;
-              transition: width 0.1s linear;
-            }
-            .cancel-btn {
-              color: #6b7280;
-              text-decoration: none;
-              font-size: 0.875rem;
-              padding: 8px 16px;
+              background: linear-gradient(90deg, #3b82f6, #2563eb);
               border-radius: 6px;
-              border: 1px solid #d1d5db;
-              display: inline-block;
-              transition: all 0.2s ease;
+              transition: width 0.1s linear;
+              box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
             }
-            .cancel-btn:hover {
-              color: #374151;
-              border-color: #9ca3af;
-            }
+            
             .destination {
-              background: #f3f4f6;
-              padding: 16px;
-              border-radius: 8px;
+              background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+              border: 1px solid #bfdbfe;
+              padding: 20px;
+              border-radius: 12px;
               margin: 24px 0;
               word-break: break-all;
-              font-size: 0.875rem;
-              color: #4b5563;
+              font-size: 14px;
+              color: #1e293b;
+              font-weight: 500;
+            }
+            
+            .cancel-btn {
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              color: #64748b;
+              text-decoration: none;
+              font-size: 14px;
+              font-weight: 500;
+              padding: 12px 20px;
+              border: 2px solid #e2e8f0;
+              border-radius: 12px;
+              transition: all 0.2s ease;
+            }
+            
+            .cancel-btn:hover {
+              color: #3b82f6;
+              border-color: #bfdbfe;
+              background: #f0f9ff;
+              transform: translateY(-1px);
+            }
+            
+            @media (max-width: 640px) {
+              .container {
+                margin: 16px;
+                padding: 32px 24px;
+              }
+              .logo-text {
+                font-size: 24px;
+              }
+              h1 {
+                font-size: 24px;
+              }
+              .countdown {
+                font-size: 48px;
+              }
             }
           </style>
         </head>
         <body>
           <div class="container">
+            <div class="logo">
+              <div class="logo-icon">V</div>
+              <span class="logo-text">Velink</span>
+            </div>
+            
             <span class="icon">🔄</span>
             <h1>Redirecting...</h1>
             <p>You will be redirected in:</p>
@@ -3640,7 +4142,10 @@ app.get('/:shortCode', async (req, res, next) => {
               Destination: ${urlData.original_url}
             </div>
             
-            <a href="/" class="cancel-btn">Cancel</a>
+            <a href="/" class="cancel-btn">
+              <span>✕</span>
+              Cancel Redirect
+            </a>
           </div>
 
           <script>

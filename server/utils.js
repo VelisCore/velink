@@ -95,11 +95,33 @@ function getRelativeTime(date) {
   return then.toLocaleDateString();
 }
 
+/**
+ * Normalize custom options to ensure consistent field names
+ * @param {Object} customOptions - Custom options object
+ * @returns {Object} Normalized custom options
+ */
+function normalizeCustomOptions(customOptions) {
+  if (!customOptions || typeof customOptions !== 'object') {
+    return customOptions;
+  }
+
+  const normalized = { ...customOptions };
+
+  // Normalize delay field: redirectDelay -> delay for consistency
+  if (normalized.redirectDelay !== undefined && normalized.delay === undefined) {
+    normalized.delay = normalized.redirectDelay;
+    delete normalized.redirectDelay;
+  }
+
+  return normalized;
+}
+
 module.exports = {
   generateShortCode,
   isValidUrl,
   sanitizeUrl,
   getDomainFromUrl,
   formatNumber,
-  getRelativeTime
+  getRelativeTime,
+  normalizeCustomOptions
 };

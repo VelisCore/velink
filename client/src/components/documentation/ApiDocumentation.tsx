@@ -983,19 +983,6 @@ const ApiDocumentation: React.FC = () => {
 
     // =============== SYSTEM & HEALTH ENDPOINTS ===============
     {
-      id: 'health-check',
-      name: 'System Health Check',
-      method: 'GET',
-      endpoint: '/health',
-      description: 'Basic system health check endpoint',
-      category: 'system',
-      responseExample: {
-        status: 'healthy',
-        timestamp: '2024-01-15T10:30:00Z',
-        uptime: 86400
-      }
-    },
-    {
       id: 'favicon',
       name: 'Favicon',
       method: 'GET',

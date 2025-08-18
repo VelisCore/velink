@@ -44,7 +44,7 @@ const ApiDocumentation: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [copiedCode, setCopiedCode] = useState<string>('');
 
-  const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:80' : 'https://velink.me';
+  const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : 'https://velink.me';
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);

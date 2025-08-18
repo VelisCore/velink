@@ -10,10 +10,10 @@ DEPLOY_USER="velink"
 DEPLOY_PATH="/opt/velink"
 SERVICE_NAME="velink"
 NGINX_CONFIG="/etc/nginx/sites-available/velink"
-SSL_DOMAIN=""
+SSL_DOMAIN="velink.me"
 USE_SSL=false
 INSTALL_NGINX=true
-INSTALL_CERTBOT=true
+INSTALL_CERTBOT=false
 SETUP_FIREWALL=true
 
 # Colors
@@ -143,14 +143,39 @@ install_nginx() {
     cat > $NGINX_CONFIG << EOF
 server {
     listen 80;
-    server_name ${SSL_DOMAIN:-localhost};
+    server_name velink.me;
     
-    # Security headers
+    # Security headers for Cloudflare
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
     add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    
+    # Real IP from Cloudflare
+    set_real_ip_from 103.21.244.0/22;
+    set_real_ip_from 103.22.200.0/22;
+    set_real_ip_from 103.31.4.0/22;
+    set_real_ip_from 104.16.0.0/13;
+    set_real_ip_from 104.24.0.0/14;
+    set_real_ip_from 108.162.192.0/18;
+    set_real_ip_from 131.0.72.0/22;
+    set_real_ip_from 141.101.64.0/18;
+    set_real_ip_from 162.158.0.0/15;
+    set_real_ip_from 172.64.0.0/13;
+    set_real_ip_from 173.245.48.0/20;
+    set_real_ip_from 188.114.96.0/20;
+    set_real_ip_from 190.93.240.0/20;
+    set_real_ip_from 197.234.240.0/22;
+    set_real_ip_from 198.41.128.0/17;
+    set_real_ip_from 2400:cb00::/32;
+    set_real_ip_from 2606:4700::/32;
+    set_real_ip_from 2803:f800::/32;
+    set_real_ip_from 2405:b500::/32;
+    set_real_ip_from 2405:8100::/32;
+    set_real_ip_from 2c0f:f248::/32;
+    set_real_ip_from 2a06:98c0::/29;
+    real_ip_header CF-Connecting-IP;
     
     # Gzip compression
     gzip on;
@@ -218,6 +243,7 @@ EOF
 # Setup SSL with Certbot
 setup_ssl() {
     if [[ "$INSTALL_CERTBOT" != "true" || -z "$SSL_DOMAIN" ]]; then
+        log "Skipping SSL setup - using Cloudflare for HTTPS termination"
         return 0
     fi
     
@@ -397,11 +423,12 @@ show_summary() {
     
     if [[ "$INSTALL_NGINX" == "true" ]]; then
         log "Nginx: Installed and configured"
-        log "Domain: ${SSL_DOMAIN:-localhost}"
+        log "Domain: velink.me"
+        log "HTTPS: Provided by Cloudflare"
     fi
     
     if [[ "$USE_SSL" == "true" && -n "$SSL_DOMAIN" ]]; then
-        log "SSL: Enabled for $SSL_DOMAIN"
+        log "SSL: Handled by Cloudflare"
     fi
     
     echo
@@ -421,9 +448,10 @@ show_summary() {
     
     echo
     if [[ -n "$SSL_DOMAIN" ]]; then
-        success "🌐 Access your application at: https://$SSL_DOMAIN"
+        success "🌐 Access your application at: https://velink.me (via Cloudflare)"
+        log "Note: Make sure Cloudflare is configured to proxy traffic to your server IP on port 80"
     else
-        success "🌐 Access your application at: http://localhost"
+        success "🌐 Access your application at: http://velink.me"
     fi
 }
 

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Field Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        
+        .input-primary {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            outline: none;
+            transition: all 0.2s;
+            background: white !important;
+            color: #1f2937 !important;
+        }
+        
+        .input-primary::placeholder {
+            color: #6b7280 !important;
+        }
+        
+        .input-primary:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .select-primary {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            outline: none;
+            transition: all 0.2s;
+            background: white !important;
+            color: #1f2937 !important;
+        }
+        
+        .select-primary option {
+            background: white !important;
+            color: #1f2937 !important;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Velink Input Field Test</h1>
+        <p>Test page to verify input field text visibility fixes</p>
+        
+        <div class="form-group">
+            <label for="url">Enter your long URL:</label>
+            <input 
+                type="url" 
+                id="url" 
+                class="input-primary" 
+                placeholder="https://example.com/very-long-url-here"
+                value=""
+            />
+        </div>
+        
+        <div class="form-group">
+            <label for="expires">Link expiration:</label>
+            <select id="expires" class="select-primary">
+                <option value="never">Never expire</option>
+                <option value="1d">1 day</option>
+                <option value="7d">7 days</option>
+                <option value="30d">30 days</option>
+                <option value="365d">1 year</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password protection (optional):</label>
+            <input 
+                type="password" 
+                id="password" 
+                class="input-primary" 
+                placeholder="Enter a password"
+            />
+        </div>
+        
+        <p><strong>Instructions:</strong></p>
+        <ul>
+            <li>Type in the URL field - text should be dark gray/black and clearly visible</li>
+            <li>Open the select dropdown - options should be clearly visible</li>
+            <li>Type in the password field - text should be visible as you type</li>
+            <li>Placeholder text should be light gray but readable</li>
+        </ul>
+    </div>
+</body>
+</html>

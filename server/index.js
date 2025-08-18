@@ -361,7 +361,7 @@ const checkPrivacyAndMaintenance = (req, res, next) => {
 <body>
     <div class="container">
         <div class="logo">
-            <div class="logo-icon">V</div>
+            
             <span class="logo-text">Velink</span>
         </div>
         
@@ -2777,7 +2777,7 @@ app.get('/sitemap.xml', (req, res) => {
     <div class="container">
       <div class="header-content">
         <a href="/" class="logo">
-          <div class="logo-icon">V</div>
+          
           <span class="logo-text">Velink</span>
         </a>
         <nav class="nav">
@@ -3039,7 +3039,7 @@ Sitemap: https://velink.me/sitemap.xml
     <div class="container">
       <div class="header-content">
         <a href="/" class="logo">
-          <div class="logo-icon">V</div>
+          
           <span class="logo-text">Velink</span>
         </a>
         <nav class="nav">
@@ -3379,12 +3379,12 @@ app.get('/:shortCode', async (req, res, next) => {
         <body>
           <div class="container">
             <div class="logo">
-              <div class="logo-icon">V</div>
+              
               <span class="logo-text">Velink</span>
             </div>
             
             <div class="error-code">404</div>
-            <span class="icon">�</span>
+            <span class="icon">&#128269;</span>
             <h1>Link Not Found</h1>
             <p>The short link you're looking for doesn't exist or has been removed.</p>
             <a href="/" class="back-link">
@@ -3569,7 +3569,7 @@ app.get('/:shortCode', async (req, res, next) => {
         <body>
           <div class="container">
             <div class="logo">
-              <div class="logo-icon">V</div>
+              
               <span class="logo-text">Velink</span>
             </div>
             
@@ -3836,7 +3836,7 @@ app.get('/:shortCode', async (req, res, next) => {
           <body>
             <div class="container">
               <div class="logo">
-                <div class="logo-icon">V</div>
+                
                 <span class="logo-text">Velink</span>
               </div>
               
@@ -4124,7 +4124,7 @@ app.get('/:shortCode', async (req, res, next) => {
         <body>
           <div class="container">
             <div class="logo">
-              <div class="logo-icon">V</div>
+              
               <span class="logo-text">Velink</span>
             </div>
             

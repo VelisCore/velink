@@ -29,6 +29,14 @@ code {
     @apply block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500;
   }
   
+  .select-primary {
+    @apply block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 bg-white text-gray-900;
+  }
+  
+  .select-primary option {
+    @apply text-gray-900 bg-white;
+  }
+  
   .card {
     @apply bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300;
   }

@@ -230,7 +230,7 @@ const LinkShortener: React.FC = () => {
                   id="expires"
                   value={expiresIn}
                   onChange={(e) => setExpiresIn(e.target.value)}
-                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="select-primary"
                   disabled={isLoading}
                 >
                   <option value="never">Never expire</option>
@@ -276,7 +276,7 @@ const LinkShortener: React.FC = () => {
                       id="redirectDelay"
                       value={redirectDelay}
                       onChange={(e) => setRedirectDelay(Number(e.target.value))}
-                      className="input-primary"
+                      className="select-primary"
                       disabled={isLoading}
                     >
                       <option value={0}>Instant redirect</option>

@@ -232,7 +232,7 @@ const BugReport: React.FC = () => {
                   name="type"
                   value={formData.type}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="select-primary"
                   required
                 >
                   <option value="bug">🐛 Bug Report</option>
@@ -250,7 +250,7 @@ const BugReport: React.FC = () => {
                   name="severity"
                   value={formData.severity}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="select-primary"
                 >
                   <option value="low">🟢 Low</option>
                   <option value="medium">🟡 Medium</option>

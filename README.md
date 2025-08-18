@@ -70,39 +70,6 @@ npm start
 ```
 
 **🎉 Your Velink instance is now running at `https://velink.me`**
-
----
-
-## 🌐 **Production Deployment**
-
-Velink is designed for production-ready deployment with Cloudflare integration.
-
-### **Cloudflare + Ubuntu Setup**
-
-For the complete production setup on Ubuntu with Cloudflare HTTPS:
-
-```bash
-# Run the automated deployment script
-sudo ./deploy-ubuntu.sh
-
-# The script will:
-# - Install Node.js, Nginx, and dependencies
-# - Configure Nginx for Cloudflare integration
-# - Set up systemd service for auto-start
-# - Configure firewall and security
-# - Build and deploy the application
-```
-
-### **Production Configuration**
-
-The production deployment includes:
-- **Domain:** https://velink.me
-- **Server Port:** 80 (HTTP, behind Cloudflare)
-- **HTTPS:** Handled by Cloudflare SSL
-- **Reverse Proxy:** Nginx with Cloudflare IP allowlist
-- **Process Management:** systemd service with auto-restart
-- **Security:** UFW firewall, rate limiting, security headers
-
 ---
 
 ## ⚙️ **Configuration**
